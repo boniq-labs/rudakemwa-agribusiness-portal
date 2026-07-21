@@ -1,0 +1,11 @@
+import mysql from 'mysql2/promise';
+const pool = mysql.createPool({host:'localhost',user:'root',database:'efms',waitForConnections:true});
+const [c] = await pool.query("DESCRIBE milk_collections");
+console.log('milk_collections:', c.map(r => r.Field).join(', '));
+const [q] = await pool.query("DESCRIBE milk_quality_tests");
+console.log('milk_quality_tests:', q.map(r => r.Field).join(', '));
+const [w] = await pool.query("DESCRIBE milk_waste");
+console.log('milk_waste:', w.map(r => r.Field).join(', '));
+const [w2] = await pool.query("DESCRIBE milk_waste_records");
+console.log('milk_waste_records:', w2.map(r => r.Field).join(', '));
+await pool.end();

@@ -1,0 +1,48 @@
+import { z } from 'zod';
+
+export const createUserSchema = z.object({
+  username: z.string().min(3).max(50).regex(/^[a-zA-Z0-9_]+$/).optional().nullable().or(z.literal('')),
+  password: z.string().min(6).max(100).optional().nullable().or(z.literal('')),
+  email: z.string().email().optional().nullable().or(z.literal('')),
+  firstName: z.string().min(1).max(100).optional().nullable(),
+  first_name: z.string().min(1).max(100).optional().nullable(),
+  lastName: z.string().min(1).max(100).optional().nullable(),
+  last_name: z.string().min(1).max(100).optional().nullable(),
+  phone: z.string().max(20).optional().nullable().or(z.literal('')),
+  gender: z.string().optional().nullable().or(z.literal('')),
+  address: z.string().optional().nullable().or(z.literal('')),
+  dob: z.string().optional().nullable().or(z.literal('')),
+  date_of_birth: z.string().optional().nullable().or(z.literal('')),
+  roleId: z.number().int().positive().optional().nullable(),
+  role_id: z.number().int().positive().optional().nullable(),
+  role: z.string().optional().nullable(),
+  departmentId: z.number().int().positive().optional().nullable(),
+  department_id: z.number().int().positive().optional().nullable(),
+  position: z.string().max(100).optional().nullable().or(z.literal('')),
+  isActive: z.number().int().min(0).max(1).optional().nullable(),
+  is_active: z.number().int().min(0).max(1).optional().nullable(),
+  photo: z.string().optional().nullable(),
+  employee_code: z.string().optional().nullable(),
+}).passthrough();
+
+export const updateUserSchema = z.object({
+  email: z.string().email().optional().nullable().or(z.literal('')),
+  firstName: z.string().min(1).max(100).optional().nullable(),
+  lastName: z.string().min(1).max(100).optional().nullable(),
+  phone: z.string().max(20).optional().nullable().or(z.literal('')),
+  gender: z.enum(['Male', 'Female', 'Other']).optional().nullable().or(z.literal('')),
+  address: z.string().optional().nullable().or(z.literal('')),
+  dob: z.string().optional().nullable().or(z.literal('')),
+  roleId: z.number().int().positive().optional().nullable(),
+  departmentId: z.number().int().positive().optional().nullable(),
+  isActive: z.boolean().optional().nullable(),
+  photo: z.string().optional().nullable(),
+}).passthrough();
+
+export const paginationSchema = z.object({
+  page: z.coerce.number().int().positive().optional().default(1),
+  limit: z.coerce.number().int().min(1).max(100).optional().default(25),
+  sort: z.string().optional().default('created_at'),
+  order: z.enum(['ASC', 'DESC']).optional().default('DESC'),
+  search: z.string().optional().default(''),
+});

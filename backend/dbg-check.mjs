@@ -1,0 +1,11 @@
+import mysql from 'mysql2/promise';
+const p = await mysql.createPool({host:'localhost',user:'root',database:'efms',waitForConnections:true});
+const [cat] = await p.query('SELECT * FROM animal_categories');
+console.log('Categories:', JSON.stringify(cat));
+const [br] = await p.query('SELECT * FROM breeds');
+console.log('Breeds:', JSON.stringify(br));
+const [loc] = await p.query('SELECT * FROM animal_locations');
+console.log('Locations:', JSON.stringify(loc));
+const [grp] = await p.query('SELECT * FROM animal_groups');
+console.log('Groups:', JSON.stringify(grp));
+await p.end();
