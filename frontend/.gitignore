@@ -41,4 +41,6 @@ logs/
 
 # Uploads
 uploads/
-**/uploads/
+**/uploads/ 
+# Backend build
+backend/dist/
