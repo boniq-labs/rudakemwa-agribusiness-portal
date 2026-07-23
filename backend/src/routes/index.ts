@@ -11,7 +11,7 @@ import {
   createFeedingRecordSchema, createWeightRecordSchema,
   createMilkCollectionSchema, createQualityTestSchema, createStorageTankSchema,
   createInventoryCategorySchema, createInventoryItemSchema,
-  receiveStockSchema, issueStockSchema,
+  receiveStockSchema,
   createSupplierSchema, createPurchaseRequestSchema, createPurchaseOrderSchema,
   createVehicleSchema, createDriverSchema, createTransportRequestSchema, createTripSchema,
   createFuelRecordSchema, createMaintenanceSchema,
@@ -31,6 +31,10 @@ import { getSystemHealth, createBackup, listBackups, restoreBackup } from '../co
 import { getBranches, createBranch, updateBranch, deleteBranch } from '../controllers/branchController';
 import { getDepartments, createDepartment, updateDepartment, deleteDepartment } from '../controllers/departmentController';
 import { getRoles, createRole, updateRole, deleteRole } from '../controllers/roleController';
+import { getSettings, updateSettings } from '../controllers/settingsController';
+import { uploadSingle } from '../middlewares/upload';
+import { uploadFile } from '../controllers/uploadController';
+import { getShiftEmployees, getShifts, getMyShift, createShift, updateShift, deleteShift } from '../controllers/shiftController';
 
 import { getPositions, createPosition, updatePosition, deletePosition } from '../controllers/hr/positionController';
 import { getHRReports, getTasks } from '../controllers/hr/reportController';
@@ -42,9 +46,9 @@ import { getPerformanceReviews, createPerformanceReview, updatePerformanceReview
 import { getTrainings, createTraining, updateTraining, getTrainingParticipants, enrollParticipant, updateParticipantStatus } from '../controllers/hr/trainingController';
 import { getJobs, createJob, updateJob, closeJob, getApplicants, createApplicant, updateApplicantStatus } from '../controllers/hr/recruitmentController';
 
-import { getAnimalCategories, createAnimalCategory, updateAnimalCategory, deleteAnimalCategory, getBreeds, createBreed, updateBreed, deleteBreed, getAnimals, getAnimalProfile, createAnimal, updateAnimal, deleteAnimal, getAnimalLocations, getAnimalGroups } from '../controllers/animal/animalController';
+import { getAnimalCategories, createAnimalCategory, updateAnimalCategory, deleteAnimalCategory, getBreeds, createBreed, updateBreed, deleteBreed, getAnimals, getAnimalsForSelect, getAnimalProfile, createAnimal, updateAnimal, deleteAnimal, getAnimalLocations, getAnimalGroups } from '../controllers/animal/animalController';
 import { getAnimalReports } from '../controllers/animal/reportController';
-import { getCropTypes, createCropType, updateCropType, deleteCropType, getLandAreas, createLandArea, updateLandArea, deleteLandArea, getCropActivities, createCropActivity, updateCropActivity, deleteCropActivity, getCropDashboard } from '../controllers/crop/cropController';
+import { getCropTypes, createCropType, updateCropType, deleteCropType, getLandAreas, createLandArea, updateLandArea, deleteLandArea, getCropActivities, createCropActivity, updateCropActivity, deleteCropActivity, getCropDashboard, getCropReports } from '../controllers/crop/cropController';
 import { getBreedingRecords, createBreedingRecord, updateBreedingRecord, deleteBreedingRecord, getPregnancies, createPregnancy, updatePregnancy, deletePregnancy, getBirthRecords, createBirthRecord, updateBirthRecord, deleteBirthRecord } from '../controllers/animal/breedingController';
 import { getVaccinations, createVaccination, updateVaccination, deleteVaccination, getDiseases, createDisease, updateDiseaseStatus, updateDisease, deleteDisease, getTreatments, createTreatment, updateTreatment, deleteTreatment } from '../controllers/animal/healthController';
 import { getFeedingRecords, createFeedingRecord, updateFeedingRecord, deleteFeedingRecord, getFeedConsumptionReport } from '../controllers/animal/feedingController';
@@ -56,38 +60,39 @@ import { getStorageTanks, createStorageTank, updateStorageTank, getMilkStorage, 
 import { getProcessingRecords, createProcessingRecord, updateProcessingRecord, deleteProcessingRecord, deleteMilkProduct, getMilkProducts, createMilkProduct, updateMilkProduct } from '../controllers/milk/milkProcessingController';
 import { getWasteRecords, createWasteRecord, updateWasteRecord, deleteWasteRecord } from '../controllers/milk/milkWasteController';
 
-import { getInventoryCategories, createInventoryCategory, updateInventoryCategory, getInventoryItems, createInventoryItem, updateInventoryItem, deleteInventoryItem, getLowStockItems, getStockValue } from '../controllers/stock/inventoryController';
-import { receiveStock, issueStock, transferStock, adjustStock, getStockMovements, getAllStockItems } from '../controllers/stock/stockTransactionController';
+import { getInventoryCategories, createInventoryCategory, updateInventoryCategory, deleteInventoryCategory, getInventoryItems, createInventoryItem, updateInventoryItem, deleteInventoryItem, getLowStockItems, getStockValue } from '../controllers/stock/inventoryController';
+import { receiveStock, getStockMovements, getAllStockItems } from '../controllers/stock/stockTransactionController';
 import { getFeedItems, createFeedItem, updateFeedItem, deleteFeedItem, getFeedConsumption, recordFeedConsumption, getFeedStockReport } from '../controllers/stock/feedController';
-import { getMedicines, createMedicine, updateMedicine, getExpiringMedicines, getExpiredMedicines } from '../controllers/stock/medicineController';
+import { getMedicines, createMedicine, updateMedicine, deleteMedicine, getExpiringMedicines, getExpiredMedicines } from '../controllers/stock/medicineController';
 import { getEquipment, createEquipment, updateEquipment, deleteEquipment, createEquipmentMaintenance } from '../controllers/stock/equipmentController';
 
 import { getCustomers, createCustomer, updateCustomer, deleteCustomer } from '../controllers/sales/customerController';
 import { getProductCategories, createProductCategory, updateProductCategory, getProducts, createProduct, updateProduct, deleteProduct, updateProductStock } from '../controllers/sales/productController';
-import { getSalesOrders, createSalesOrder, updateSalesOrderStatus, getQuotations, createQuotation, convertQuotationToOrder, getSalesReturns, createSalesReturn } from '../controllers/sales/orderController';
+import { getSalesOrders, createSalesOrder, updateSalesOrderStatus, getQuotations, createQuotation, convertQuotationToOrder } from '../controllers/sales/orderController';
 import { getSalesInvoices, createSalesInvoice, recordCustomerPayment } from '../controllers/sales/invoiceController';
 
 import { getIncomeRecords, createIncomeRecord, updateIncomeRecord, deleteIncomeRecord, getIncomeSummary } from '../controllers/accounting/incomeController';
 import { getExpenseCategories, createExpenseCategory, updateExpenseCategory, getExpenseRecords, createExpenseRecord, updateExpenseRecord, deleteExpenseRecord, getExpenseSummary } from '../controllers/accounting/expenseController';
-import { getInvoices, createInvoice, updateInvoiceStatus, recordPayment, getInvoicePDF } from '../controllers/accounting/invoiceController';
+import { getInvoices, createInvoice, updateInvoice, deleteInvoice, updateInvoiceStatus, recordPayment, getInvoicePDF } from '../controllers/accounting/invoiceController';
 
-import { getBudgets, createBudget, updateBudgetStatus, getBudgetVsActual } from '../controllers/accounting/budgetController';
+import { getBudgets, createBudget, updateBudget, deleteBudget, updateBudgetStatus, getBudgetVsActual } from '../controllers/accounting/budgetController';
+import { getPayrollRecords, createPayroll, processPayrollPayment, deletePayrollRecord, getSalaryRecords, createSalaryRecord } from '../controllers/accounting/payrollController';
 import { getProfitLoss, getCashFlow, getFinancialSummary } from '../controllers/accounting/reportController';
 
 import { getSupplierCategories, createSupplierCategory, updateSupplierCategory, getSuppliers, createSupplier, updateSupplier, deleteSupplier, rateSupplier } from '../controllers/procurement/supplierController';
 import { getProcurementReports } from '../controllers/procurement/reportController';
 import { getPurchaseRequests, createPurchaseRequest, updatePurchaseRequest, deletePurchaseRequest, approvePurchaseRequest, rejectPurchaseRequest } from '../controllers/procurement/purchaseRequestController';
 import { getPurchaseOrders, createPurchaseOrder, updatePurchaseOrder, updatePurchaseOrderStatus, receivePurchaseOrder, deletePurchaseOrder } from '../controllers/procurement/purchaseOrderController';
-import { getProcurementInvoices, createProcurementInvoice, payProcurementInvoice } from '../controllers/procurement/invoiceController';
-import { getProcurementContracts, createProcurementContract, updateProcurementContract, getExpiringProcurementContracts } from '../controllers/procurement/contractController';
+import { getProcurementInvoices, createProcurementInvoice, updateProcurementInvoice, deleteProcurementInvoice, payProcurementInvoice } from '../controllers/procurement/invoiceController';
+import { getProcurementContracts, createProcurementContract, updateProcurementContract, deleteProcurementContract, getExpiringProcurementContracts } from '../controllers/procurement/contractController';
 
 import { getVehicleTypes, createVehicleType, getVehicles, createVehicle, updateVehicle, deleteVehicle } from '../controllers/logistics/vehicleController';
 import { getDrivers, createDriver, updateDriver, deleteDriver, getDriverHistory } from '../controllers/logistics/driverController';
-import { getTransportRequests, createTransportRequest, approveTransportRequest, rejectTransportRequest } from '../controllers/logistics/transportController';
+import { getTransportRequests, createTransportRequest, approveTransportRequest, rejectTransportRequest, deleteTransportRequest } from '../controllers/logistics/transportController';
 import { getTrips, createTrip, updateTrip, deleteTrip, updateTripStatus } from '../controllers/logistics/tripController';
 import { getDeliveries, createDelivery, updateDelivery, deleteDelivery, updateDeliveryStatus } from '../controllers/logistics/deliveryController';
 import { getFuelRecords, createFuelRecord, updateFuelRecord, deleteFuelRecord } from '../controllers/logistics/fuelController';
-import { getMaintenanceRecords, createMaintenanceRecord, getDueMaintenance } from '../controllers/logistics/maintenanceController';
+import { getMaintenanceRecords, createMaintenanceRecord, updateMaintenanceRecord, deleteMaintenanceRecord, getDueMaintenance } from '../controllers/logistics/maintenanceController';
 import { getLogisticsReports } from '../controllers/logistics/reportController';
 
 import { getVeterinaryHealth, getVeterinaryHealthById, createVeterinaryHealth, updateVeterinaryHealth, deleteVeterinaryHealth, getVaccinationSchedule, createVaccinationSchedule, getVetVaccinations, createVetVaccination, updateVetVaccination, deleteVetVaccination, getDueVaccinations, getPrescriptions, createPrescription, updatePrescription, deletePrescription } from '../controllers/veterinary/index';
@@ -105,6 +110,21 @@ router.get('/auth/profile', authenticate, getProfile);
 router.put('/auth/profile', authenticate, updateProfile);
 router.post('/auth/change-password', authenticate, validate(changePasswordSchema), changePassword);
 router.post('/auth/logout', authenticate, logout);
+
+// Settings (admin/owner only)
+router.get('/settings', getSettings);
+router.put('/settings', authenticate, hasRole('owner', 'admin'), updateSettings);
+
+// File upload
+router.post('/upload', authenticate, uploadSingle, uploadFile);
+
+// Shift management (Animal Production Manager and above)
+router.get('/shifts/employees', authenticate, hasRole('owner', 'admin', 'animal'), getShiftEmployees);
+router.get('/shifts/my-shift', authenticate, getMyShift);
+router.get('/shifts', authenticate, hasRole('owner', 'admin', 'animal'), getShifts);
+router.post('/shifts', authenticate, hasRole('owner', 'admin', 'animal'), createShift);
+router.put('/shifts/:id', authenticate, hasRole('owner', 'admin', 'animal'), updateShift);
+router.delete('/shifts/:id', authenticate, hasRole('owner', 'admin', 'animal'), deleteShift);
 
 // Dashboard
 router.get('/dashboard', authenticate, getDashboard);
@@ -437,6 +457,7 @@ router.get('/animals/feeding/report', authenticate, authorize(['feeding.view']),
 router.get('/animals/dashboard', authenticate, hasRole('owner', 'admin', 'animal', 'veterinarian'), getDashboard);
 // Animal - Main (keep :id routes AFTER all named routes)
 router.get('/animals/reports', authenticate, authorize(['animals.view']), getAnimalReports);
+router.get('/animals/select', authenticate, hasRole('owner', 'admin', 'animal', 'veterinarian'), getAnimalsForSelect);
 router.get('/animals', authenticate, authorize(['animals.view']), getAnimals);
 router.post('/animals', authenticate, authorize(['animals.create']), validate(createAnimalSchema), createAnimal);
 router.get('/animals/:id', authenticate, authorize(['animals.view']), getAnimalProfile);
@@ -447,6 +468,7 @@ router.delete('/animals/:id', authenticate, authorize(['animals.delete']), delet
 // Animal Frontend Route Aliases (for legacy frontend URLs)
   // --- Crop Production routes ---
   router.get('/crops/dashboard', authenticate, authorize(['crops.view']), getCropDashboard);
+  router.get('/crops/reports', authenticate, authorize(['crops.view']), getCropReports);
   router.get('/crops/types', authenticate, authorize(['crops.view']), getCropTypes);
   router.post('/crops/types', authenticate, authorize(['crops.create']), createCropType);
   router.put('/crops/types/:id', authenticate, authorize(['crops.update']), updateCropType);
@@ -598,6 +620,7 @@ router.get('/stock/all-items', authenticate, authorize(['inventory.view']), getA
 router.get('/stock/categories', authenticate, authorize(['inventory.view']), getInventoryCategories);
 router.post('/stock/categories', authenticate, authorize(['inventory.create']), validate(createInventoryCategorySchema), createInventoryCategory);
 router.put('/stock/categories/:id', authenticate, authorize(['inventory.update']), updateInventoryCategory);
+router.delete('/stock/categories/:id', authenticate, authorize(['inventory.delete']), deleteInventoryCategory);
 
 // Stock - Items
 router.get('/stock/items', authenticate, authorize(['inventory.view']), getInventoryItems);
@@ -610,9 +633,6 @@ router.get('/stock/items/value', authenticate, authorize(['inventory.view']), ge
 // Stock - Transactions
 router.get('/stock/transactions', authenticate, authorize(['stock.view']), getStockMovements);
 router.post('/stock/receive', authenticate, authorize(['stock.create']), validate(receiveStockSchema), receiveStock);
-router.post('/stock/issue', authenticate, authorize(['stock.create']), validate(issueStockSchema), issueStock);
-router.post('/stock/transfer', authenticate, authorize(['stock.create']), transferStock);
-router.post('/stock/adjust', authenticate, authorize(['stock.update']), adjustStock);
 
 // Stock - Feed
 router.get('/stock/feed', authenticate, authorize(['feed.view']), getFeedItems);
@@ -629,6 +649,7 @@ router.post('/stock/medicines', authenticate, authorize(['medicine.create']), cr
 router.put('/stock/medicines/:id', authenticate, authorize(['medicine.update']), updateMedicine);
 router.get('/stock/medicines/expiring', authenticate, authorize(['medicine.view']), getExpiringMedicines);
 router.get('/stock/medicines/expired', authenticate, authorize(['medicine.view']), getExpiredMedicines);
+router.delete('/stock/medicines/:id', authenticate, authorize(['medicine.delete']), deleteMedicine);
 
 // Stock - Equipment
 router.get('/stock/equipment', authenticate, authorize(['equipment.view']), getEquipment);
@@ -668,12 +689,15 @@ router.post('/procurement/orders/:id/receive', authenticate, authorize(['purchas
 // Procurement - Invoices
 router.get('/procurement/invoices', authenticate, authorize(['procurement.view']), getProcurementInvoices);
 router.post('/procurement/invoices', authenticate, authorize(['procurement.create']), createProcurementInvoice);
+router.put('/procurement/invoices/:id', authenticate, authorize(['procurement.update']), updateProcurementInvoice);
+router.delete('/procurement/invoices/:id', authenticate, authorize(['procurement.delete']), deleteProcurementInvoice);
 router.post('/procurement/invoices/:id/pay', authenticate, authorize(['procurement.update']), payProcurementInvoice);
 
 // Procurement - Contracts
 router.get('/procurement/contracts', authenticate, authorize(['procurement.view']), getProcurementContracts);
 router.post('/procurement/contracts', authenticate, authorize(['procurement.create']), createProcurementContract);
 router.put('/procurement/contracts/:id', authenticate, authorize(['procurement.update']), updateProcurementContract);
+router.delete('/procurement/contracts/:id', authenticate, authorize(['procurement.delete']), deleteProcurementContract);
 router.get('/procurement/contracts/expiring', authenticate, authorize(['procurement.view']), getExpiringProcurementContracts);
 
 // Procurement - Reports
@@ -701,6 +725,7 @@ router.get('/logistics/requests', authenticate, authorize(['transport.view']), g
 router.post('/logistics/requests', authenticate, authorize(['transport.create']), validate(createTransportRequestSchema), createTransportRequest);
 router.put('/logistics/requests/:id/approve', authenticate, authorize(['transport.approve']), approveTransportRequest);
 router.put('/logistics/requests/:id/reject', authenticate, authorize(['transport.approve']), rejectTransportRequest);
+router.delete('/logistics/requests/:id', authenticate, authorize(['transport.delete']), deleteTransportRequest);
 
 // Logistics - Trips
 router.get('/logistics/trips', authenticate, authorize(['trips.view']), getTrips);
@@ -725,6 +750,8 @@ router.delete('/logistics/fuel/:id', authenticate, authorize(['fuel.delete']), d
 // Logistics - Maintenance
 router.get('/logistics/maintenance', authenticate, authorize(['logistics.view']), getMaintenanceRecords);
 router.post('/logistics/maintenance', authenticate, authorize(['logistics.create']), validate(createMaintenanceSchema), createMaintenanceRecord);
+router.put('/logistics/maintenance/:id', authenticate, authorize(['logistics.update']), updateMaintenanceRecord);
+router.delete('/logistics/maintenance/:id', authenticate, authorize(['logistics.delete']), deleteMaintenanceRecord);
 router.get('/logistics/maintenance/due', authenticate, authorize(['logistics.view']), getDueMaintenance);
 
 // Logistics - Reports
@@ -752,19 +779,31 @@ router.get('/accounting/expenses/summary', authenticate, authorize(['expenses.vi
 // Accounting - Invoices
 router.get('/accounting/invoices', authenticate, authorize(['invoices.view']), getInvoices);
 router.post('/accounting/invoices', authenticate, authorize(['invoices.create']), validate(createInvoiceSchema), createInvoice);
+router.put('/accounting/invoices/:id', authenticate, authorize(['invoices.update']), updateInvoice);
+router.delete('/accounting/invoices/:id', authenticate, authorize(['invoices.delete']), deleteInvoice);
 router.put('/accounting/invoices/:id/status', authenticate, authorize(['invoices.update']), updateInvoiceStatus);
-router.post('/accounting/invoices/:id/pay', authenticate, authorize(['invoices.update']), recordPayment);
+router.put('/accounting/invoices/:id/pay', authenticate, authorize(['invoices.update']), recordPayment);
 
 // Accounting - Payroll
+router.get('/accounting/payroll', authenticate, authorize(['payroll.view']), getPayrollRecords);
+router.post('/accounting/payroll', authenticate, authorize(['payroll.create']), createPayroll);
+router.put('/accounting/payroll/:id/process', authenticate, authorize(['payroll.update']), processPayrollPayment);
+router.delete('/accounting/payroll/:id', authenticate, authorize(['payroll.delete']), deletePayrollRecord);
+
+// Accounting - Salary Records
+router.get('/accounting/salary-records', authenticate, authorize(['payroll.view']), getSalaryRecords);
+router.post('/accounting/salary-records', authenticate, authorize(['payroll.create']), createSalaryRecord);
 
 // Accounting - Budgets
 router.get('/accounting/budgets', authenticate, authorize(['budgets.view']), getBudgets);
 router.post('/accounting/budgets', authenticate, authorize(['budgets.create']), createBudget);
+router.put('/accounting/budgets/:id', authenticate, authorize(['budgets.update']), updateBudget);
+router.delete('/accounting/budgets/:id', authenticate, authorize(['budgets.delete']), deleteBudget);
 router.put('/accounting/budgets/:id/status', authenticate, authorize(['budgets.update']), updateBudgetStatus);
 router.get('/accounting/budgets/:id/vs-actual', authenticate, authorize(['budgets.view']), getBudgetVsActual);
 
 // Accounting - Reports
-router.get('/accounting/dashboard', authenticate, hasRole('owner', 'admin', 'accountant'), getDashboard);
+router.get('/accounting/dashboard', authenticate, hasRole('owner', 'admin', 'accountant'), getAccountingDashboardHandler);
 router.get('/accounting/reports/profit-loss', authenticate, authorize(['reports.view']), getProfitLoss);
 router.get('/accounting/reports/cash-flow', authenticate, authorize(['reports.view']), getCashFlow);
 router.get('/accounting/reports/summary', authenticate, authorize(['reports.view']), getFinancialSummary);
@@ -849,10 +888,6 @@ router.get('/sales/quotations', authenticate, authorize(['orders.view']), getQuo
 router.post('/sales/quotations', authenticate, authorize(['orders.create']), createQuotation);
 router.put('/sales/quotations/:id/convert', authenticate, authorize(['orders.update']), convertQuotationToOrder);
 
-// Sales - Returns
-router.get('/sales/returns', authenticate, authorize(['orders.view']), getSalesReturns);
-router.post('/sales/returns', authenticate, authorize(['orders.create']), createSalesReturn);
-
 // Sales - Invoices
 router.get('/sales/invoices', authenticate, authorize(['sales_invoices.view']), getSalesInvoices);
 router.post('/sales/invoices', authenticate, authorize(['sales_invoices.create']), createSalesInvoice);
@@ -861,9 +896,9 @@ router.put('/sales/invoices/:id', authenticate, authorize(['sales_invoices.updat
   try {
     const [old]: any = await pool.query('SELECT * FROM sales_invoices WHERE id = ?', [req.params.id]);
     if (old.length === 0) return (await import('../utils/response')).error(res, 'Invoice not found', 404);
-    const { invoice_date, due_date, total_amount, status, notes } = req.body;
-    await pool.query('UPDATE sales_invoices SET invoice_date=?, due_date=?, total_amount=?, status=?, notes=? WHERE id=?',
-      [invoice_date || null, due_date || null, total_amount, status || old[0].status, notes || null, req.params.id]);
+    const { order_id, invoice_number, invoice_date, due_date, total_amount, status, notes } = req.body;
+    await pool.query('UPDATE sales_invoices SET order_id=?, invoice_number=?, invoice_date=?, due_date=?, total_amount=?, status=?, notes=? WHERE id=?',
+      [order_id || old[0].order_id, invoice_number || old[0].invoice_number, invoice_date || null, due_date || null, total_amount, status || old[0].status, notes ?? old[0].notes, req.params.id]);
     return (await import('../utils/response')).success(res, null, 'Invoice updated');
   } catch (err: any) { return (await import('../utils/response')).error(res, err.message); }
 });
@@ -883,9 +918,9 @@ router.get('/sales/reports', authenticate, authorize(['orders.view']), async (re
     const pool = (await import('../config/database')).default;
     const { success } = await import('../utils/response');
     const [[{ monthSales }]]: any = await pool.query("SELECT COALESCE(SUM(total_amount),0) as monthSales FROM sales_orders WHERE MONTH(order_date)=MONTH(CURDATE()) AND deleted_at IS NULL");
-    const [topProducts]: any = await pool.query("SELECT p.name, SUM(soi.quantity) as sold, SUM(soi.total_price) as revenue FROM sales_order_items soi JOIN products p ON soi.product_id=p.id GROUP BY p.id, p.name ORDER BY revenue DESC LIMIT 10");
-    const [[customerStats]]: any = await pool.query("SELECT COUNT(*) as total, SUM(CASE WHEN deleted_at IS NULL THEN 1 ELSE 0 END) as active FROM customers");
-    return success(res, { monthSales: Number(monthSales), topProducts, customerStats });
+    const [topProducts]: any = await pool.query("SELECT p.name, SUM(soi.quantity) as sold, SUM(soi.total_price) as revenue FROM sales_order_items soi JOIN products p ON soi.product_id=p.id WHERE p.deleted_at IS NULL GROUP BY p.id, p.name ORDER BY revenue DESC LIMIT 10");
+    const [[{ activeCustomers }]]: any = await pool.query("SELECT COUNT(*) as activeCustomers FROM customers WHERE status = 'active' AND deleted_at IS NULL");
+    return success(res, { monthSales: Number(monthSales), topProducts, activeCustomers });
   } catch (err: any) { return (await import('../utils/response')).error(res, err.message); }
 });
 
@@ -897,7 +932,11 @@ router.get('/veterinary/dashboard', authenticate, authorize(['veterinary.view'])
     const [[{ openHealthRecords }]]: any = await pool.query("SELECT COUNT(*) as openHealthRecords FROM animal_health_records WHERE deleted_at IS NULL AND status='open'");
     const [[{ vaccinationsDue }]]: any = await pool.query("SELECT COUNT(*) as vaccinationsDue FROM vaccination_records WHERE next_due_date <= DATE_ADD(CURDATE(), INTERVAL 7 DAY)");
     const [[{ treatmentsPending }]]: any = await pool.query("SELECT COUNT(*) as treatmentsPending FROM treatments WHERE deleted_at IS NULL");
-    return success(res, { openHealthRecords, vaccinationsDue, treatmentsPending });
+    const [[{ totalHealthRecords }]]: any = await pool.query("SELECT COUNT(*) as totalHealthRecords FROM animal_health_records WHERE deleted_at IS NULL");
+    const [[{ totalVaccinations }]]: any = await pool.query("SELECT COUNT(*) as totalVaccinations FROM vaccination_records WHERE deleted_at IS NULL");
+    const [[{ totalPrescriptions }]]: any = await pool.query("SELECT COUNT(*) as totalPrescriptions FROM prescriptions WHERE deleted_at IS NULL");
+    const [[{ sickAnimals }]]: any = await pool.query("SELECT COUNT(DISTINCT animal_id) as sickAnimals FROM animal_health_records WHERE deleted_at IS NULL AND status IN ('open','in_progress')");
+    return success(res, { openHealthRecords, vaccinationsDue, treatmentsPending, totalHealthRecords, totalVaccinations, totalPrescriptions, sickAnimals });
   } catch (err: any) { return (await import('../utils/response')).error(res, err.message); }
 });
 
@@ -950,9 +989,6 @@ router.get('/milk/report', authenticate, authorize(['milk_storage.view']), getSt
 router.get('/stock/low-stock', authenticate, authorize(['inventory.view']), getLowStockItems);
 router.get('/stock/value', authenticate, authorize(['inventory.view']), getStockValue);
 router.post('/stock/transactions/receive', authenticate, authorize(['stock.create']), validate(receiveStockSchema), receiveStock);
-router.post('/stock/transactions/issue', authenticate, authorize(['stock.create']), validate(issueStockSchema), issueStock);
-router.post('/stock/transactions/transfer', authenticate, authorize(['stock.create']), transferStock);
-router.post('/stock/transactions/adjust', authenticate, authorize(['stock.update']), adjustStock);
 router.post('/stock/equipment/maintenance', authenticate, authorize(['equipment.update']), (req, res, next) => { const { default: pool } = require('../config/database'); (async () => { if (req.body.equipment_id) req.params.id = req.body.equipment_id; next(); })(); }, createEquipmentMaintenance);
 
 // Accounting aliases (frontend uses shorter paths)

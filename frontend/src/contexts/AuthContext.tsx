@@ -24,8 +24,12 @@ export const useAuth = () => {
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(() => {
-    const s = localStorage.getItem('user') || sessionStorage.getItem('user');
-    return s && s !== 'undefined' ? JSON.parse(s) : null;
+    try {
+      const s = localStorage.getItem('user') || sessionStorage.getItem('user');
+      return s && s !== 'undefined' ? JSON.parse(s) : null;
+    } catch {
+      return null;
+    }
   });
   const [loading, setLoading] = useState(true);
 

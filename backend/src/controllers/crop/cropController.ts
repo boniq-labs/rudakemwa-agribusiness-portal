@@ -146,3 +146,58 @@ export const getCropDashboard = async (req: AuthRequest, res: Response) => {
     return success(res, { totalCrops, totalLand, totalPlanted, totalHarvested, notMatured, recent });
   } catch (err: any) { return error(res, err.message); }
 };
+
+export const getCropReports = async (req: AuthRequest, res: Response) => {
+  try {
+    const start_date = req.query.start_date as string | undefined;
+    const end_date = req.query.end_date as string | undefined;
+    const df = (col: string) => start_date && end_date ? ` AND ${col} BETWEEN ? AND ?` : '';
+    const dp = start_date && end_date ? [start_date, end_date] : [];
+
+    const [[{ totalCropTypes }]]: any = await pool.query('SELECT COUNT(*) as totalCropTypes FROM crop_types WHERE deleted_at IS NULL');
+    const [[{ totalLandAreas }]]: any = await pool.query('SELECT COUNT(*) as totalLandAreas FROM land_areas WHERE deleted_at IS NULL');
+    const [[{ activeCrops }]]: any = await pool.query(`SELECT COUNT(*) as activeCrops FROM crop_activities ca WHERE ca.deleted_at IS NULL AND ca.status IN ('planted','growing')${df('ca.planting_date')}`, dp);
+    const [[{ harvested }]]: any = await pool.query(`SELECT COUNT(*) as harvested FROM crop_activities ca WHERE ca.deleted_at IS NULL AND ca.status = 'harvested'${df('ca.harvest_date')}`, dp);
+    const [[{ diseasesReported }]]: any = await pool.query(`SELECT COUNT(*) as diseasesReported FROM crop_activities ca WHERE ca.deleted_at IS NULL AND ca.diseases IS NOT NULL AND ca.diseases != ''${df('ca.created_at')}`, dp);
+    const [[{ totalSales }]]: any = await pool.query(`SELECT COALESCE(SUM(ca.sales_amount), 0) as totalSales FROM crop_activities ca WHERE ca.deleted_at IS NULL AND ca.sales_amount IS NOT NULL AND ca.sales_amount > 0${df('ca.harvest_date')}`, dp);
+    const [[{ totalHarvestedQty }]]: any = await pool.query(`SELECT COALESCE(SUM(ca.quantity_harvested), 0) as totalHarvestedQty FROM crop_activities ca WHERE ca.deleted_at IS NULL AND ca.status = 'harvested'${df('ca.harvest_date')}`, dp);
+    const [[{ totalPlantedQty }]]: any = await pool.query(`SELECT COALESCE(SUM(ca.quantity_planted), 0) as totalPlantedQty FROM crop_activities ca WHERE ca.deleted_at IS NULL${df('ca.planting_date')}`, dp);
+    const [[{ activeSeasons }]]: any = await pool.query(`SELECT COUNT(DISTINCT YEAR(ca.planting_date)) as activeSeasons FROM crop_activities ca WHERE ca.deleted_at IS NULL${df('ca.planting_date')}`, dp);
+    const [[{ avgYield }]]: any = await pool.query(`SELECT COALESCE(SUM(ca.quantity_harvested) / NULLIF(SUM(ca.quantity_planted), 0), 0) as avgYield FROM crop_activities ca WHERE ca.deleted_at IS NULL AND ca.status = 'harvested' AND ca.quantity_planted > 0${df('ca.harvest_date')}`, dp);
+    const [[{ completedActivities }]]: any = await pool.query(`SELECT COUNT(*) as completedActivities FROM crop_activities ca WHERE ca.deleted_at IS NULL AND ca.status NOT IN ('planted','growing')${df('ca.harvest_date')}`, dp);
+    const [[{ activeDiseaseCases }]]: any = await pool.query(`SELECT COUNT(*) as activeDiseaseCases FROM crop_activities ca WHERE ca.deleted_at IS NULL AND ca.diseases IS NOT NULL AND ca.diseases != '' AND ca.status IN ('planted','growing')${df('ca.created_at')}`, dp);
+    const [[{ totalProductionValue }]]: any = await pool.query(`SELECT COALESCE(SUM(ca.sales_amount), 0) as totalProductionValue FROM crop_activities ca WHERE ca.deleted_at IS NULL AND ca.sales_amount IS NOT NULL AND ca.sales_amount > 0${df('ca.harvest_date')}`, dp);
+
+    const [cropTypes] = await pool.query('SELECT id, name, description, `usage` FROM crop_types WHERE deleted_at IS NULL');
+    const [landAreas] = await pool.query('SELECT id, name, area_size, location, description FROM land_areas WHERE deleted_at IS NULL');
+    const [activities] = await pool.query(`
+      SELECT ca.*, ct.name as crop_name, la.name as land_name
+      FROM crop_activities ca
+      JOIN crop_types ct ON ca.crop_type_id = ct.id
+      JOIN land_areas la ON ca.land_area_id = la.id
+      WHERE ca.deleted_at IS NULL${df('ca.planting_date')} ORDER BY ca.created_at DESC`, dp);
+    const [harvestData] = await pool.query(`
+      SELECT ca.*, ct.name as crop_name, la.name as land_name
+      FROM crop_activities ca
+      JOIN crop_types ct ON ca.crop_type_id = ct.id
+      JOIN land_areas la ON ca.land_area_id = la.id
+      WHERE ca.deleted_at IS NULL AND ca.status = 'harvested'${df('ca.harvest_date')} ORDER BY ca.harvest_date DESC`, dp);
+    const [diseaseData] = await pool.query(`
+      SELECT ca.*, ct.name as crop_name, la.name as land_name
+      FROM crop_activities ca
+      JOIN crop_types ct ON ca.crop_type_id = ct.id
+      JOIN land_areas la ON ca.land_area_id = la.id
+      WHERE ca.deleted_at IS NULL AND ca.diseases IS NOT NULL AND ca.diseases != ''${df('ca.created_at')} ORDER BY ca.created_at DESC`, dp);
+    const [salesData] = await pool.query(`
+      SELECT ca.*, ct.name as crop_name, la.name as land_name
+      FROM crop_activities ca
+      JOIN crop_types ct ON ca.crop_type_id = ct.id
+      JOIN land_areas la ON ca.land_area_id = la.id
+      WHERE ca.deleted_at IS NULL AND ca.sales_amount IS NOT NULL AND ca.sales_amount > 0${df('ca.harvest_date')} ORDER BY ca.harvest_date DESC`, dp);
+
+    return success(res, {
+      summary: { totalCropTypes, totalLandAreas, activeCrops, harvested, diseasesReported, totalSales, totalHarvestedQty, totalPlantedQty, activeSeasons, avgYield, completedActivities, activeDiseaseCases, totalProductionValue },
+      cropTypes, landAreas, activities, harvestData, diseaseData, salesData,
+    });
+  } catch (err: any) { return error(res, err.message); }
+};

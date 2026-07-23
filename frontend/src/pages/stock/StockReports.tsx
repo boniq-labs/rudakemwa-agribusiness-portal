@@ -4,8 +4,7 @@ import ModulePage from '../../components/ModulePage';
 import DataTable from '../../components/DataTable';
 import StatusBadge from '../../components/StatusBadge';
 import { stockAPI } from '../../api/endpoints';
-import { Download, FileText, TrendingUp, Wheat, Pill, Wrench, Calendar } from 'lucide-react';
-import type { Column } from '../../components/DataTable';
+import { Download, Wheat, Pill, Wrench, Calendar } from 'lucide-react';
 
 export default function StockReports() {
   const [dateFrom, setDateFrom] = useState('');
@@ -13,12 +12,19 @@ export default function StockReports() {
 
   const params = dateFrom || dateTo ? { from: dateFrom || undefined, to: dateTo || undefined } : undefined;
 
-  const { data: items } = useQuery({ queryKey: ['stock-items', params], queryFn: () => stockAPI.getItems(params).then(r => r.data.data || []) });
-  const { data: transactions } = useQuery({ queryKey: ['stock-transactions', params], queryFn: () => stockAPI.getTransactions(params).then(r => r.data.data || []) });
   const { data: feed } = useQuery({ queryKey: ['stock-feed', params], queryFn: () => stockAPI.getFeed(params).then(r => r.data.data || []) });
   const { data: feedConsumption } = useQuery({ queryKey: ['stock-feed-consumption', params], queryFn: () => stockAPI.getFeedConsumption(params).then(r => r.data.data || []) });
   const { data: medicines } = useQuery({ queryKey: ['stock-medicines', params], queryFn: () => stockAPI.getMedicines(params).then(r => r.data.data || []) });
   const { data: equipment } = useQuery({ queryKey: ['stock-equipment', params], queryFn: () => stockAPI.getEquipment(params).then(r => r.data.data || []) });
+
+  const totalFeedConsumed = (feedConsumption || []).reduce((s: number, c: any) => s + Number(c.quantity || 0), 0);
+  const totalFeedRemaining = (feed || []).reduce((s: number, f: any) => s + Number(f.quantity || 0), 0);
+  const expiredMeds = (medicines || []).filter((m: any) => m.expiry_date && new Date(m.expiry_date) < new Date()).length;
+  const equipByStatus = (equipment || []).reduce((acc: Record<string, number>, e: any) => {
+    const s = e.status || 'Unknown';
+    acc[s] = (acc[s] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
 
   const exportCSV = (data: any[], filename: string, keys: string[]) => {
     const header = keys.join(',');
@@ -32,36 +38,6 @@ export default function StockReports() {
     a.href = url; a.download = `${filename}.csv`;
     a.click(); URL.revokeObjectURL(url);
   };
-
-  const totalValue = (items || []).reduce((s: number, i: any) => s + Number(i.quantity || 0) * Number(i.purchase_price || 0), 0);
-  const lowStockCount = (items || []).filter((i: any) => i.min_stock_level && Number(i.quantity) <= Number(i.min_stock_level)).length;
-  const totalReceived = (transactions || []).filter((t: any) => t.type === 'receive').reduce((s: number, t: any) => s + Number(t.quantity || 0), 0);
-  const totalIssued = (transactions || []).filter((t: any) => t.type === 'issue').reduce((s: number, t: any) => s + Number(t.quantity || 0), 0);
-  const totalFeedConsumed = (feedConsumption || []).reduce((s: number, c: any) => s + Number(c.quantity || 0), 0);
-  const totalFeedRemaining = (feed || []).reduce((s: number, f: any) => s + Number(f.quantity || 0), 0);
-  const expiredMeds = (medicines || []).filter((m: any) => m.expiry_date && new Date(m.expiry_date) < new Date()).length;
-  const equipByStatus = (equipment || []).reduce((acc: Record<string, number>, e: any) => {
-    const s = e.status || 'Unknown';
-    acc[s] = (acc[s] || 0) + 1;
-    return acc;
-  }, {} as Record<string, number>);
-
-  const inventoryColumns: Column<any>[] = [
-    { key: 'name', label: 'Name' },
-    { key: 'category', label: 'Category', render: (i: any) => typeof i.category === 'object' ? i.category?.name : i.category || '-' },
-    { key: 'quantity', label: 'Qty' },
-    { key: 'unit', label: 'Unit' },
-    { key: 'purchase_price', label: 'Unit Price', render: (i: any) => i.purchase_price ? Number(i.purchase_price).toLocaleString() : '-' },
-    { key: 'total', label: 'Total Value', render: (i: any) => (Number(i.quantity || 0) * Number(i.purchase_price || 0)).toLocaleString() },
-  ];
-
-  const movementColumns: Column<any>[] = [
-    { key: 'date', label: 'Date' },
-    { key: 'type', label: 'Type', render: (t: any) => <StatusBadge status={t.type || t.type || 'unknown'} /> },
-    { key: 'item', label: 'Item', render: (t: any) => typeof t.item === 'object' ? t.item?.name : t.item_name || t.item || '-' },
-    { key: 'quantity', label: 'Qty' },
-    { key: 'notes', label: 'Notes', render: (t: any) => t.notes || '-' },
-  ];
 
   const ReportCard = ({ title, icon: Icon, children, onExport, exportLabel }: {
     title: string; icon: any; children: React.ReactNode; onExport?: () => void; exportLabel?: string;
@@ -81,6 +57,14 @@ export default function StockReports() {
     </div>
   );
 
+  const totalFeed = (feed || []).length;
+  const totalMedicine = (medicines || []).length;
+  const totalEquipment = (equipment || []).length;
+  const totalItems = totalFeed + totalMedicine + totalEquipment;
+  const lowStockCount = (feed || []).filter((f: any) => f.min_stock_level && Number(f.quantity) <= Number(f.min_stock_level)).length
+    + (medicines || []).filter((m: any) => m.min_stock_level && Number(m.quantity) <= Number(m.min_stock_level)).length
+    + (equipment || []).filter((e: any) => e.min_stock_level && Number(e.quantity) <= Number(e.min_stock_level)).length;
+
   return (
     <ModulePage title="Stock Reports" subtitle="Comprehensive stock management reports"
       actions={
@@ -94,29 +78,13 @@ export default function StockReports() {
         </div>
       }
     >
-      <ReportCard title="Inventory Report" icon={FileText}
-        onExport={() => exportCSV(items || [], 'inventory-report', ['name', 'category', 'quantity', 'unit', 'purchase_price'])}
-        exportLabel="Export CSV"
-      >
-        <div className="stats-grid" style={{ marginBottom: 16 }}>
-          <div className="stat-card"><div className="stat-info"><div className="stat-value">{(items || []).length}</div><div className="stat-label">Items</div></div></div>
-          <div className="stat-card"><div className="stat-info"><div className="stat-value">{totalValue.toLocaleString()}</div><div className="stat-label">Total Value</div></div></div>
-          <div className="stat-card"><div className="stat-info"><div className="stat-value">{lowStockCount}</div><div className="stat-label">Low Stock</div></div></div>
-        </div>
-        <DataTable columns={inventoryColumns} data={items || []} emptyMessage="No items" />
-      </ReportCard>
-
-      <ReportCard title="Stock Movement" icon={TrendingUp}
-        onExport={() => exportCSV(transactions || [], 'stock-movement', ['date', 'type', 'item', 'quantity', 'notes'])}
-        exportLabel="Export CSV"
-      >
-        <div className="stats-grid" style={{ marginBottom: 16 }}>
-          <div className="stat-card"><div className="stat-info"><div className="stat-value">{totalReceived}</div><div className="stat-label">Total Received</div></div></div>
-          <div className="stat-card"><div className="stat-info"><div className="stat-value">{totalIssued}</div><div className="stat-label">Total Issued</div></div></div>
-          <div className="stat-card"><div className="stat-info"><div className="stat-value">{(transactions || []).length}</div><div className="stat-label">Transactions</div></div></div>
-        </div>
-        <DataTable columns={movementColumns} data={transactions || []} emptyMessage="No transactions" />
-      </ReportCard>
+      <div className="stats-grid" style={{ marginBottom: 20 }}>
+        <div className="stat-card"><div className="stat-info"><div className="stat-value">{totalFeed}</div><div className="stat-label">Total Feed</div></div></div>
+        <div className="stat-card"><div className="stat-info"><div className="stat-value">{totalMedicine}</div><div className="stat-label">Total Medicine</div></div></div>
+        <div className="stat-card"><div className="stat-info"><div className="stat-value">{totalEquipment}</div><div className="stat-label">Total Equipment</div></div></div>
+        <div className="stat-card"><div className="stat-info"><div className="stat-value">{totalItems}</div><div className="stat-label">Total Items</div></div></div>
+        <div className="stat-card"><div className="stat-info"><div className="stat-value">{lowStockCount}</div><div className="stat-label">Low Stock</div></div></div>
+      </div>
 
       <ReportCard title="Feed Report" icon={Wheat}
         onExport={() => exportCSV(feed || [], 'feed-report', ['name', 'category', 'quantity', 'unit', 'expiry_date'])}
@@ -137,7 +105,7 @@ export default function StockReports() {
       </ReportCard>
 
       <ReportCard title="Medicine Report" icon={Pill}
-        onExport={() => exportCSV(medicines || [], 'medicine-report', ['name', 'manufacturer', 'batch_number', 'quantity', 'expiry_date'])}
+        onExport={() => exportCSV(medicines || [], 'medicine-report', ['name', 'brand', 'category', 'quantity', 'expiry_date'])}
         exportLabel="Export CSV"
       >
         <div className="stats-grid" style={{ marginBottom: 16 }}>
@@ -146,8 +114,8 @@ export default function StockReports() {
         </div>
         <DataTable columns={[
           { key: 'name', label: 'Name' },
-          { key: 'manufacturer', label: 'Manufacturer', render: (m: any) => m.manufacturer || '-' },
-          { key: 'batch_number', label: 'Batch', render: (m: any) => m.batch_number || '-' },
+          { key: 'brand', label: 'Brand', render: (m: any) => m.brand || '-' },
+          { key: 'category', label: 'Category', render: (m: any) => m.category || '-' },
           { key: 'quantity', label: 'Qty' },
           { key: 'expiry_date', label: 'Expiry' },
           { key: 'status', label: 'Status', render: (m: any) => {
@@ -177,8 +145,8 @@ export default function StockReports() {
         <DataTable columns={[
           { key: 'name', label: 'Name' },
           { key: 'serial_number', label: 'Serial #', render: (e: any) => e.serial_number || '-' },
-          { key: 'type', label: 'Type' },
-          { key: 'condition', label: 'Condition' },
+          { key: 'model', label: 'Type', render: (e: any) => e.model || e.category || '-' },
+          { key: 'item_condition', label: 'Condition', render: (e: any) => e.item_condition || '-' },
           { key: 'status', label: 'Status', render: (e: any) => <StatusBadge status={e.status || 'Available'} /> },
           { key: 'location', label: 'Location', render: (e: any) => e.location || '-' },
         ]} data={equipment || []} emptyMessage="No equipment" />

@@ -104,7 +104,10 @@ export default function MilkProducts() {
       quantity: String(product.quantity || 0),
       unit: product.unit,
       description: product.description || '',
+      code: product.code || '',
     });
+
+    setForm(prev => ({ ...prev }));
     setShowModal(true);
   };
 

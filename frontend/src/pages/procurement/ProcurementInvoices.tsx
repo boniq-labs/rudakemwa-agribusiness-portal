@@ -6,7 +6,7 @@ import StatusBadge from '../../components/StatusBadge';
 import FormField from '../../components/FormField';
 import { procurementAPI } from '../../api/endpoints';
 import client from '../../api/client';
-import { Plus, X, DollarSign, Trash2 } from 'lucide-react';
+import { Plus, X, DollarSign, Edit2, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import type { Column } from '../../components/DataTable';
 
@@ -17,6 +17,7 @@ const initialForm: InvoiceForm = { supplier_id: '', po_id: '', amount: '', due_d
 export default function ProcurementInvoices() {
   const queryClient = useQueryClient();
   const [showModal, setShowModal] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
   const [form, setForm] = useState<InvoiceForm>(initialForm);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -39,6 +40,7 @@ export default function ProcurementInvoices() {
     mutationFn: (data: any) => procurementAPI.createInvoice(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['procurement', 'invoices'] });
+      queryClient.invalidateQueries({ queryKey: ['procurement-dashboard'] });
       setShowModal(false);
       setForm(initialForm);
       setErrors({});
@@ -50,16 +52,30 @@ export default function ProcurementInvoices() {
 
   const payMutation = useMutation({
     mutationFn: (id: number) => procurementAPI.payInvoice(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['procurement', 'invoices'] }),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['procurement', 'invoices'] }); queryClient.invalidateQueries({ queryKey: ['procurement-dashboard'] }); },
     onError: (err: any) => {
       setErrors({ submit: err.response?.data?.message || 'Failed to record payment' });
     },
   });
 
-  const deleteMutation = useMutation({
-    mutationFn: (id: number) => client.delete(`/procurement/invoices/${id}`),
+  const updateMutation = useMutation({
+    mutationFn: (data: any) => procurementAPI.updateInvoice(data.id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['procurement', 'invoices'] });
+      queryClient.invalidateQueries({ queryKey: ['procurement-dashboard'] });
+      closeModal();
+      toast.success('Invoice updated');
+    },
+    onError: (err: any) => {
+      setErrors(err.response?.data?.errors || { submit: err.response?.data?.message || 'Failed to update invoice' });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: number) => procurementAPI.deleteInvoice(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['procurement', 'invoices'] });
+      queryClient.invalidateQueries({ queryKey: ['procurement-dashboard'] });
       toast.success('Invoice deleted');
     },
     onError: (err: any) => {
@@ -71,6 +87,31 @@ export default function ProcurementInvoices() {
     setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
+  const closeModal = () => {
+    setShowModal(false);
+    setEditingId(null);
+    setForm(initialForm);
+    setErrors({});
+  };
+
+  const toDateStr = (d: any) => {
+    if (!d) return '';
+    if (typeof d === 'string') return d.substring(0, 10);
+    if (d instanceof Date && !isNaN(d.getTime())) return d.toISOString().split('T')[0];
+    return '';
+  };
+
+  const openEdit = (item: any) => {
+    setEditingId(item.id);
+    setForm({
+      supplier_id: String(item.supplier_id || ''),
+      po_id: String(item.po_id || ''),
+      amount: String(item.amount || ''),
+      due_date: toDateStr(item.due_date),
+    });
+    setShowModal(true);
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const payload = {
@@ -79,7 +120,11 @@ export default function ProcurementInvoices() {
       amount: Number(form.amount),
       due_date: form.due_date || undefined,
     };
-    createMutation.mutate(payload);
+    if (editingId) {
+      updateMutation.mutate({ id: editingId, ...payload });
+    } else {
+      createMutation.mutate(payload);
+    }
   };
 
   const columns: Column<any>[] = [
@@ -102,16 +147,22 @@ export default function ProcurementInvoices() {
     },
     { key: 'status', label: 'Status', render: (i: any) => <StatusBadge status={i.status || 'pending'} /> },
     {
-      key: 'actions', label: '',
+      key: 'actions', label: 'Actions',
       render: (i: any) => (
-        <div className="actions">
+        <div style={{ display: 'flex', gap: 4 }}>
+          <button className="btn btn-sm" style={{ background: '#dbeafe', color: '#1e40af', border: 'none' }}
+            onClick={e => { e.stopPropagation(); openEdit(i); }}>
+            <Edit2 size={14} />
+          </button>
           {(i.status === 'pending' || i.status === 'overdue') && (
-            <button className="btn btn-sm btn-primary" onClick={e => { e.stopPropagation(); payMutation.mutate(i.id); }} disabled={payMutation.isPending}>
-              <DollarSign size={14} /> Record Payment
+            <button className="btn btn-sm" style={{ background: '#dcfce7', color: '#16a34a', border: 'none' }}
+              onClick={e => { e.stopPropagation(); payMutation.mutate(i.id); }} disabled={payMutation.isPending}>
+              <DollarSign size={14} />
             </button>
           )}
-          <button className="btn btn-sm btn-danger" onClick={(e) => { e.stopPropagation(); if (confirm('Delete this invoice?')) deleteMutation.mutate(i.id); }}>
-            <Trash2 size={14} /> Delete
+          <button className="btn btn-sm" style={{ background: '#fef2f2', color: '#991b1b', border: 'none' }}
+            onClick={e => { e.stopPropagation(); if (confirm('Delete this invoice?')) deleteMutation.mutate(i.id); }}>
+            <Trash2 size={14} />
           </button>
         </div>
       ),
@@ -123,7 +174,7 @@ export default function ProcurementInvoices() {
       title="Procurement Invoices"
       subtitle="Manage supplier invoices and payments"
       actions={
-        <button className="btn btn-primary" onClick={() => setShowModal(true)}>
+        <button className="btn btn-primary" onClick={() => { setEditingId(null); setForm(initialForm); setShowModal(true); }}>
           <Plus size={16} /> New Invoice
         </button>
       }
@@ -131,11 +182,11 @@ export default function ProcurementInvoices() {
       <DataTable columns={columns} data={invoices || []} loading={isLoading} emptyMessage="No invoices found" />
 
       {showModal && (
-        <div className="modal-overlay" onClick={() => setShowModal(false)}>
+        <div className="modal-overlay" onClick={closeModal}>
           <div className="modal" onClick={e => e.stopPropagation()} style={{ maxWidth: 560 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-              <h2 style={{ fontSize: '1.2rem', fontWeight: 700 }}>New Invoice</h2>
-              <button onClick={() => setShowModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)' }}><X size={20} /></button>
+              <h2 style={{ fontSize: '1.2rem', fontWeight: 700 }}>{editingId ? 'Edit Invoice' : 'New Invoice'}</h2>
+              <button onClick={closeModal} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)' }}><X size={20} /></button>
             </div>
             <form onSubmit={handleSubmit}>
               <div className="form-row">
@@ -164,9 +215,9 @@ export default function ProcurementInvoices() {
               </FormField>
               {errors.submit && <div className="alert alert-error">{errors.submit}</div>}
               <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 20 }}>
-                <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>Cancel</button>
-                <button type="submit" className="btn btn-primary" disabled={createMutation.isPending}>
-                  {createMutation.isPending ? 'Creating...' : 'Create Invoice'}
+                <button type="button" className="btn btn-secondary" onClick={closeModal}>Cancel</button>
+                <button type="submit" className="btn btn-primary" disabled={createMutation.isPending || updateMutation.isPending}>
+                  {(createMutation.isPending || updateMutation.isPending) ? 'Saving...' : editingId ? 'Update Invoice' : 'Create Invoice'}
                 </button>
               </div>
             </form>

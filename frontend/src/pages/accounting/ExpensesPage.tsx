@@ -35,6 +35,7 @@ export default function ExpensesPage() {
       : client.post('/accounting/expenses', data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['accounting-expenses'] });
+      queryClient.invalidateQueries({ queryKey: ['accounting-dashboard'] });
       closeModal();
       toast.success(editing ? 'Expense updated' : 'Expense recorded');
     },
@@ -47,6 +48,7 @@ export default function ExpensesPage() {
     mutationFn: (id: number) => client.delete(`/accounting/expenses/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['accounting-expenses'] });
+      queryClient.invalidateQueries({ queryKey: ['accounting-dashboard'] });
       toast.success('Expense deleted');
     },
   });
@@ -153,40 +155,42 @@ export default function ExpensesPage() {
 
       {showModal && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }} onClick={closeModal}>
-          <div style={{ background: 'var(--card-bg)', borderRadius: 'var(--radius)', padding: 24, width: 500 }} onClick={e => e.stopPropagation()}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+          <div style={{ background: 'var(--card-bg)', borderRadius: 'var(--radius)', padding: 24, width: 500, maxHeight: '90vh', display: 'flex', flexDirection: 'column' }} onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, flexShrink: 0 }}>
               <h2 style={{ fontSize: '1.2rem', fontWeight: 700 }}>{editing ? 'Edit Expense' : 'New Expense'}</h2>
               <button onClick={closeModal} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)' }}><X size={20} /></button>
             </div>
-            <form onSubmit={handleSubmit}>
-              <FormField label="Amount" required error={errors.amount}>
-                <input name="amount" className="form-input" value={form.amount} onChange={handleChange} placeholder="0.00" type="number" step="0.01" />
-              </FormField>
-              <FormField label="Category" required error={errors.category}>
-                <select name="category" className="form-select" value={form.category} onChange={handleChange}>
-                  <option value="">Select Category</option>
-                  {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-                </select>
-              </FormField>
-              <FormField label="Date" required>
-                <input name="date" className="form-input" value={form.date} onChange={handleChange} type="date" />
-              </FormField>
-              <FormField label="Description">
-                <textarea name="description" className="form-input" value={form.description} onChange={handleChange} rows={2} />
-              </FormField>
-              <FormField label="Payment Method">
-                <select name="payment_method" className="form-select" value={form.payment_method} onChange={handleChange}>
-                  {PAYMENT_METHODS.map(m => <option key={m} value={m}>{m}</option>)}
-                </select>
-              </FormField>
-              <FormField label="Vendor">
-                <input name="vendor" className="form-input" value={form.vendor} onChange={handleChange} placeholder="Vendor name" />
-              </FormField>
-              <FormField label="Notes">
-                <textarea name="notes" className="form-input" value={form.notes} onChange={handleChange} rows={3} />
-              </FormField>
-              {errors.submit && <div className="alert alert-error">{errors.submit}</div>}
-              <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 20 }}>
+            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
+              <div style={{ overflowY: 'auto', flex: 1, paddingRight: 4 }}>
+                <FormField label="Amount" required error={errors.amount}>
+                  <input name="amount" className="form-input" value={form.amount} onChange={handleChange} placeholder="0.00" type="number" step="0.01" />
+                </FormField>
+                <FormField label="Category" required error={errors.category}>
+                  <select name="category" className="form-select" value={form.category} onChange={handleChange}>
+                    <option value="">Select Category</option>
+                    {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                </FormField>
+                <FormField label="Date" required>
+                  <input name="date" className="form-input" value={form.date} onChange={handleChange} type="date" />
+                </FormField>
+                <FormField label="Description">
+                  <textarea name="description" className="form-input" value={form.description} onChange={handleChange} rows={2} />
+                </FormField>
+                <FormField label="Payment Method">
+                  <select name="payment_method" className="form-select" value={form.payment_method} onChange={handleChange}>
+                    {PAYMENT_METHODS.map(m => <option key={m} value={m}>{m}</option>)}
+                  </select>
+                </FormField>
+                <FormField label="Vendor">
+                  <input name="vendor" className="form-input" value={form.vendor} onChange={handleChange} placeholder="Vendor name" />
+                </FormField>
+                <FormField label="Notes">
+                  <textarea name="notes" className="form-input" value={form.notes} onChange={handleChange} rows={3} />
+                </FormField>
+                {errors.submit && <div className="alert alert-error">{errors.submit}</div>}
+              </div>
+              <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 16, flexShrink: 0, borderTop: '1px solid var(--border)', paddingTop: 16 }}>
                 <button type="button" className="btn" onClick={closeModal}>Cancel</button>
                 <button type="submit" className="btn btn-primary" disabled={saveMutation.isPending}>
                   {saveMutation.isPending ? 'Saving...' : editing ? 'Update' : 'Create'}

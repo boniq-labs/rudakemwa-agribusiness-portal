@@ -153,13 +153,14 @@ export const changePassword = async (req: AuthRequest, res: Response) => {
 
 export const updateProfile = async (req: AuthRequest, res: Response) => {
   try {
-    const { firstName, lastName, email, phone } = req.body;
+    const { firstName, lastName, email, phone, photo } = req.body;
     const fields: string[] = [];
     const params: any[] = [];
     if (firstName !== undefined) { fields.push('first_name = ?'); params.push(firstName); }
     if (lastName !== undefined) { fields.push('last_name = ?'); params.push(lastName); }
     if (email !== undefined) { fields.push('email = ?'); params.push(email); }
     if (phone !== undefined) { fields.push('phone = ?'); params.push(phone); }
+    if (photo !== undefined) { fields.push('photo = ?'); params.push(photo); }
     if (fields.length === 0) return error(res, 'No fields to update', 400);
 
     await pool.query(`UPDATE users SET ${fields.join(', ')} WHERE id = ?`, [...params, req.user!.id]);

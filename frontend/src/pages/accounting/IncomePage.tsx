@@ -35,6 +35,7 @@ export default function IncomePage() {
       : client.post('/accounting/income', data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['accounting-income'] });
+      queryClient.invalidateQueries({ queryKey: ['accounting-dashboard'] });
       closeModal();
       toast.success(editing ? 'Income updated' : 'Income recorded');
     },
@@ -47,6 +48,7 @@ export default function IncomePage() {
     mutationFn: (id: number) => client.delete(`/accounting/income/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['accounting-income'] });
+      queryClient.invalidateQueries({ queryKey: ['accounting-dashboard'] });
       toast.success('Income deleted');
     },
   });

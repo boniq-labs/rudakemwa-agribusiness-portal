@@ -30,7 +30,7 @@ export default function Feeding() {
 
   const { data: animalsData } = useQuery({
     queryKey: ['animals'],
-    queryFn: async () => (await client.get('/animals')).data.data || [],
+    queryFn: async () => (await client.get('/animals/select')).data.data || [],
   });
 
   const records = Array.isArray(data) ? data : [];

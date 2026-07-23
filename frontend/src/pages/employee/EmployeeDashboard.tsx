@@ -1,19 +1,62 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../../contexts/AuthContext';
 import client from '../../api/client';
 import { activitiesAPI } from '../../api/endpoints';
+import { shiftsApi, authApi, uploadApi } from '../../api';
 import toast from 'react-hot-toast';
 import {
   Clock, LogIn, LogOut, Bell, User, CalendarDays, Briefcase, Building2, Shield,
-  CheckCircle2, Send, AlertCircle, Phone, Mail, Loader2
+  CheckCircle2, Send, AlertCircle, Phone, Mail, Loader2, Edit3, Save, Lock, X
 } from 'lucide-react';
 
+function safeTime(val: any): string {
+  if (!val) return '';
+  if (typeof val === 'string') {
+    const d = new Date(val);
+    if (!isNaN(d.getTime())) return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    if (val.includes(':')) {
+      const [h, m] = val.split(':');
+      const hour = parseInt(h);
+      return `${hour % 12 || 12}:${m} ${hour >= 12 ? 'PM' : 'AM'}`;
+    }
+  }
+  if (val instanceof Date && !isNaN(val.getTime())) {
+    return val.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  }
+  return '';
+}
+
+function safeDate(val: any): string {
+  if (!val) return '';
+  const d = new Date(val);
+  if (!isNaN(d.getTime())) return d.toLocaleDateString();
+  if (typeof val === 'string' && val.length >= 10) {
+    const parts = val.substring(0, 10).split('-');
+    if (parts.length === 3) return `${parts[1]}/${parts[2]}/${parts[0]}`;
+  }
+  return '';
+}
+
+function safeDateTime(val: any): string {
+  if (!val) return '';
+  const d = new Date(val);
+  if (!isNaN(d.getTime())) return d.toLocaleString();
+  return '';
+}
+
 export default function EmployeeDashboard() {
-  const { user } = useAuth();
+  const { user, setUser } = useAuth();
   const queryClient = useQueryClient();
   const [taskDesc, setTaskDesc] = useState('');
   const [issueDesc, setIssueDesc] = useState('');
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [profForm, setProfForm] = useState({ firstName: '', lastName: '', email: '', phone: '' });
+  const [profPicFile, setProfPicFile] = useState<File | null>(null);
+  const [savingProf, setSavingProf] = useState(false);
+  const [pwForm2, setPwForm2] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
+  const [changingPw2, setChangingPw2] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   const { data: profileData, isLoading: profileLoading } = useQuery({
     queryKey: ['user-profile'],
@@ -33,6 +76,11 @@ export default function EmployeeDashboard() {
   const { data: notifsData, isLoading: notifLoading } = useQuery({
     queryKey: ['my-notifications'],
     queryFn: () => client.get('/notifications').then(r => r.data.data || r.data || []),
+  });
+
+  const { data: myShift } = useQuery({
+    queryKey: ['my-shift'],
+    queryFn: () => shiftsApi.myShift().then(r => r.data.data),
   });
 
   const checkInMutation = useMutation({
@@ -68,9 +116,9 @@ export default function EmployeeDashboard() {
   const notifs = Array.isArray(notifsData) ? notifsData : [];
   const activityList = Array.isArray(activities) ? activities : [];
 
-  const firstName = p.firstName || p.first_name || user?.firstName || '';
-  const lastName = p.lastName || p.last_name || user?.lastName || '';
-  const dept = p.departmentName || p.department_name || p.department || user?.departmentName || '';
+  const firstName = p.first_name || p.firstName || user?.firstName || '';
+  const lastName = p.last_name || p.lastName || user?.lastName || '';
+  const dept = p.department_name || p.departmentName || p.department || user?.departmentName || '';
   const position = p.position || '';
   const role = p.role || user?.role || '';
   const email = p.email || user?.email || '';
@@ -81,13 +129,21 @@ export default function EmployeeDashboard() {
 
   const isLoading = profileLoading || attLoading || notifLoading;
 
-  const checkInTime = todayAtt?.check_in ? new Date(todayAtt.check_in).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
-  const checkOutTime = todayAtt?.check_out ? new Date(todayAtt.check_out).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
-  const attDate = todayAtt?.date ? new Date(todayAtt.date + 'T00:00:00').toLocaleDateString() : new Date().toLocaleDateString();
-  const isCheckedIn = !!checkInTime;
-  const isCheckedOut = !!checkOutTime;
+  const checkInStr = safeTime(todayAtt?.check_in);
+  const checkOutStr = safeTime(todayAtt?.check_out);
+  const attDateStr = todayAtt?.date ? safeDate(todayAtt.date) : new Date().toLocaleDateString();
+  const isCheckedIn = !!checkInStr;
+  const isCheckedOut = !!checkOutStr;
   const canCheckIn = !isCheckedIn && !isCheckedOut;
   const canCheckOut = isCheckedIn && !isCheckedOut;
+
+  const shiftHasToday = myShift?.today;
+  const shiftFmt = (t: string) => {
+    if (!t) return '';
+    const [h, m] = t.split(':');
+    const hour = parseInt(h);
+    return `${hour % 12 || 12}:${m} ${hour >= 12 ? 'PM' : 'AM'}`;
+  };
 
   const greenGradient = 'linear-gradient(135deg, #059669, #10b981)';
 
@@ -116,6 +172,20 @@ export default function EmployeeDashboard() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Today's Shift Card */}
+        {shiftHasToday && (
+          <div className="card p-6">
+            <h3 className="text-base font-semibold flex items-center gap-2 mb-4">
+              <Clock size={18} className="text-green-600" /> Today's Shift
+            </h3>
+            <div className="text-sm text-gray-600 space-y-2">
+              <div><span className="font-medium text-gray-700">Department:</span> {myShift.department_name}</div>
+              <div><span className="font-medium text-gray-700">Shift:</span> {myShift.shift_name}</div>
+              <div><span className="font-medium text-gray-700">Time:</span> {shiftFmt(myShift.start_time)} - {shiftFmt(myShift.end_time)}</div>
+            </div>
+          </div>
+        )}
+
         {/* Attendance Card */}
         <div className="card p-6">
           <h3 className="text-base font-semibold flex items-center gap-2 mb-4">
@@ -124,10 +194,9 @@ export default function EmployeeDashboard() {
 
           <div className="text-center py-2">
             <div className="text-sm text-gray-500 mb-1">
-              <CalendarDays size={14} className="inline mr-1" />{attDate}
+              <CalendarDays size={14} className="inline mr-1" />{attDateStr}
             </div>
 
-            {/* Status */}
             <div className="mb-4">
               {canCheckIn && (
                 <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200">
@@ -146,15 +215,13 @@ export default function EmployeeDashboard() {
               )}
             </div>
 
-            {/* Times */}
             {isCheckedIn && (
               <div className="text-sm text-gray-600 space-y-1 mb-4">
-                <div><span className="font-medium text-gray-700">In:</span> {checkInTime}</div>
-                {isCheckedOut && <div><span className="font-medium text-gray-700">Out:</span> {checkOutTime}</div>}
+                <div><span className="font-medium text-gray-700">In:</span> {checkInStr}</div>
+                {isCheckedOut && <div><span className="font-medium text-gray-700">Out:</span> {checkOutStr}</div>}
               </div>
             )}
 
-            {/* Action Buttons */}
             <div className="flex justify-center gap-3">
               {canCheckIn && (
                 <button
@@ -215,6 +282,9 @@ export default function EmployeeDashboard() {
               <span className="font-medium text-gray-800">{role || 'N/A'}</span>
             </div>
           </div>
+          <button className="btn btn-sm w-full mt-4" onClick={() => { setProfForm({ firstName, lastName, email, phone }); setProfPicFile(null); setPwForm2({ currentPassword: '', newPassword: '', confirmPassword: '' }); setShowProfileModal(true); }}>
+            <Edit3 size={14} /> Edit Profile
+          </button>
         </div>
 
         {/* Notifications */}
@@ -230,9 +300,7 @@ export default function EmployeeDashboard() {
                 <div key={n.id} className="py-2.5 border-b border-gray-50 last:border-0">
                   <div className="text-sm text-gray-700">{n.title || n.message || n.subject}</div>
                   {n.created_at && (
-                    <div className="text-xs text-gray-400 mt-0.5">
-                      {new Date(n.created_at).toLocaleDateString()}
-                    </div>
+                    <div className="text-xs text-gray-400 mt-0.5">{safeDate(n.created_at)}</div>
                   )}
                 </div>
               ))
@@ -302,13 +370,103 @@ export default function EmployeeDashboard() {
                       </div>
                     )}
                     <p className="text-xs text-gray-400 mt-1">
-                      {a.date ? new Date(a.date + 'T00:00:00').toLocaleDateString() : ''}
-                      {a.created_at ? ' ' + new Date(a.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
+                      {a.date ? safeDate(a.date) : ''}{a.created_at ? ' ' + safeTime(a.created_at) : ''}
                     </p>
                   </div>
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {showProfileModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }} onClick={() => setShowProfileModal(false)}>
+          <div className="card" style={{ width: 480, maxHeight: '90vh', overflowY: 'auto', padding: 24 }} onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+              <h3 style={{ fontSize: '1.1rem', fontWeight: 700 }}>Edit Profile</h3>
+              <button onClick={() => setShowProfileModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)' }}><X size={20} /></button>
+            </div>
+
+            <div className="form-group">
+              <label>Profile Photo</label>
+              <div className="setting-upload-row">
+                {(profPicFile ? URL.createObjectURL(profPicFile) : photo) ? <img src={profPicFile ? URL.createObjectURL(profPicFile) : photo || ''} alt="" style={{ width: 60, height: 60, borderRadius: '50%', objectFit: 'cover' }} /> : null}
+                <input ref={fileRef} type="file" accept="image/*" onChange={(e) => setProfPicFile(e.target.files?.[0] || null)} />
+              </div>
+            </div>
+            <div className="form-row">
+              <div className="form-group" style={{ flex: 1 }}>
+                <label>First Name</label>
+                <input className="form-input" value={profForm.firstName} onChange={e => setProfForm({ ...profForm, firstName: e.target.value })} />
+              </div>
+              <div className="form-group" style={{ flex: 1 }}>
+                <label>Last Name</label>
+                <input className="form-input" value={profForm.lastName} onChange={e => setProfForm({ ...profForm, lastName: e.target.value })} />
+              </div>
+            </div>
+            <div className="form-group">
+              <label>Email</label>
+              <input className="form-input" type="email" value={profForm.email} onChange={e => setProfForm({ ...profForm, email: e.target.value })} />
+            </div>
+            <div className="form-group">
+              <label>Phone</label>
+              <input className="form-input" value={profForm.phone} onChange={e => setProfForm({ ...profForm, phone: e.target.value })} />
+            </div>
+            <button className="btn btn-primary w-full" disabled={savingProf} onClick={async () => {
+              setSavingProf(true);
+              try {
+                let photoUrl = undefined;
+                if (profPicFile) {
+                  const upRes = await uploadApi.upload(profPicFile);
+                  photoUrl = upRes.data.data.url;
+                }
+                const payload: any = { ...profForm };
+                if (photoUrl) payload.photo = photoUrl;
+                const res = await authApi.updateProfile(payload);
+                const updated = res.data.data;
+                if (updated) {
+                  setUser(updated);
+                  const storage = localStorage.getItem('user') ? localStorage : sessionStorage;
+                  storage.setItem('user', JSON.stringify(updated));
+                }
+                queryClient.invalidateQueries({ queryKey: ['user-profile'] });
+                toast.success('Profile updated');
+                setShowProfileModal(false);
+              } catch (err: any) { toast.error(err.response?.data?.message || 'Failed to update'); }
+              finally { setSavingProf(false); }
+            }}>
+              <Save size={16} /> {savingProf ? 'Saving...' : 'Update Profile'}
+            </button>
+
+            <hr style={{ margin: '20px 0', border: 'none', borderTop: '1px solid var(--border)' }} />
+            <h4 style={{ fontSize: '0.95rem', fontWeight: 600, marginBottom: 12 }}><Lock size={14} /> Change Password</h4>
+            <div className="form-group">
+              <label>Current Password</label>
+              <input className="form-input" type="password" value={pwForm2.currentPassword} onChange={e => setPwForm2({ ...pwForm2, currentPassword: e.target.value })} />
+            </div>
+            <div className="form-group">
+              <label>New Password</label>
+              <input className="form-input" type="password" value={pwForm2.newPassword} onChange={e => setPwForm2({ ...pwForm2, newPassword: e.target.value })} />
+            </div>
+            <div className="form-group">
+              <label>Confirm New Password</label>
+              <input className="form-input" type="password" value={pwForm2.confirmPassword} onChange={e => setPwForm2({ ...pwForm2, confirmPassword: e.target.value })} />
+            </div>
+            <button className="btn btn-primary w-full" disabled={changingPw2} onClick={async () => {
+              if (!pwForm2.currentPassword) return toast.error('Enter current password');
+              if (pwForm2.newPassword.length < 6) return toast.error('New password must be at least 6 characters');
+              if (pwForm2.newPassword !== pwForm2.confirmPassword) return toast.error('Passwords do not match');
+              setChangingPw2(true);
+              try {
+                await authApi.changePassword({ currentPassword: pwForm2.currentPassword, newPassword: pwForm2.newPassword });
+                toast.success('Password changed');
+                setPwForm2({ currentPassword: '', newPassword: '', confirmPassword: '' });
+              } catch (err: any) { toast.error(err.response?.data?.message || 'Failed to change password'); }
+              finally { setChangingPw2(false); }
+            }}>
+              <Lock size={16} /> {changingPw2 ? 'Changing...' : 'Change Password'}
+            </button>
           </div>
         </div>
       )}

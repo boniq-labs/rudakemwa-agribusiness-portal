@@ -55,6 +55,7 @@ export default function TripsPage() {
     mutationFn: (data: any) => client.post('/logistics/trips', data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['logistics-trips'] });
+      queryClient.invalidateQueries({ queryKey: ['logistics-dashboard'] });
       closeModal();
       toast.success('Trip created');
     },
@@ -67,6 +68,7 @@ export default function TripsPage() {
     mutationFn: (data: any) => client.put(`/logistics/trips/${data.id}`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['logistics-trips'] });
+      queryClient.invalidateQueries({ queryKey: ['logistics-dashboard'] });
       closeModal();
       toast.success('Trip updated');
     },
@@ -79,6 +81,7 @@ export default function TripsPage() {
     mutationFn: (id: number) => client.delete(`/logistics/trips/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['logistics-trips'] });
+      queryClient.invalidateQueries({ queryKey: ['logistics-dashboard'] });
       toast.success('Trip deleted');
     },
     onError: () => toast.error('Failed to delete'),
@@ -153,15 +156,12 @@ export default function TripsPage() {
     { key: 'destination', label: 'Destination', render: (t: any) => t.destination || t.route || '-' },
     { key: 'purpose', label: 'Purpose', render: (t: any) => t.purpose || t.notes || '-' },
     {
-      key: 'vehicle', label: 'Vehicle',
-      render: (t: any) => (typeof t.vehicle === 'object' ? t.vehicle?.name || t.vehicle?.plate_number : t.vehicle) || '-',
+      key: 'vehicle_name', label: 'Vehicle',
+      render: (t: any) => t.vehicle_name || '-',
     },
     {
-      key: 'driver', label: 'Driver',
-      render: (t: any) => {
-        if (typeof t.driver === 'object') return t.driver?.name || `${t.driver?.first_name || ''} ${t.driver?.last_name || ''}`;
-        return t.driver || '-';
-      },
+      key: 'driver_name', label: 'Driver',
+      render: (t: any) => t.driver_name || '-',
     },
     { key: 'start_date', label: 'Start', render: (t: any) => t.start_date ? new Date(t.start_date).toLocaleDateString() : (t.start_time ? new Date(t.start_time).toLocaleDateString() : '-') },
     { key: 'end_date', label: 'End', render: (t: any) => t.end_date ? new Date(t.end_date).toLocaleDateString() : (t.end_time ? new Date(t.end_time).toLocaleDateString() : '-') },

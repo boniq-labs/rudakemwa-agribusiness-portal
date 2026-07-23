@@ -51,3 +51,12 @@ export const rejectTransportRequest = async (req: AuthRequest, res: Response) =>
     return success(res, null, 'Transport request rejected');
   } catch (err: any) { return error(res, err.message); }
 };
+
+export const deleteTransportRequest = async (req: AuthRequest, res: Response) => {
+  try {
+    const [old]: any = await pool.query('SELECT * FROM transport_requests WHERE id = ?', [req.params.id]);
+    if (old.length === 0) return error(res, 'Transport request not found', 404);
+    await pool.query('UPDATE transport_requests SET deleted_at = NOW() WHERE id = ?', [req.params.id]);
+    return success(res, null, 'Transport request deleted');
+  } catch (err: any) { return error(res, err.message); }
+};

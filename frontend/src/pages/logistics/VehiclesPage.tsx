@@ -48,6 +48,7 @@ export default function VehiclesPage() {
     mutationFn: (data: any) => client.post('/logistics/vehicles', data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['logistics-vehicles'] });
+      queryClient.invalidateQueries({ queryKey: ['logistics-dashboard'] });
       closeModal();
       toast.success('Vehicle created');
     },
@@ -60,6 +61,7 @@ export default function VehiclesPage() {
     mutationFn: (data: any) => client.put(`/logistics/vehicles/${data.id}`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['logistics-vehicles'] });
+      queryClient.invalidateQueries({ queryKey: ['logistics-dashboard'] });
       closeModal();
       toast.success('Vehicle updated');
     },
@@ -72,6 +74,7 @@ export default function VehiclesPage() {
     mutationFn: (id: number) => client.delete(`/logistics/vehicles/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['logistics-vehicles'] });
+      queryClient.invalidateQueries({ queryKey: ['logistics-dashboard'] });
       toast.success('Vehicle deleted');
     },
     onError: () => toast.error('Failed to delete'),
@@ -144,8 +147,8 @@ export default function VehiclesPage() {
     { key: 'vehicle_name', label: 'Name', render: (v: any) => v.vehicle_name || v.name || '-' },
     { key: 'plate_number', label: 'Plate No.', render: (v: any) => v.plate_number || '-' },
     {
-      key: 'type', label: 'Type',
-      render: (v: any) => (typeof v.type === 'object' ? v.type?.name : v.type) || '-',
+      key: 'type_name', label: 'Type',
+      render: (v: any) => v.type_name || '-',
     },
     { key: 'fuel_type', label: 'Fuel', render: (v: any) => v.fuel_type || '-' },
     { key: 'capacity', label: 'Capacity', render: (v: any) => v.capacity ? `${v.capacity}` : '-' },

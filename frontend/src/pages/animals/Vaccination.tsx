@@ -37,7 +37,7 @@ export default function Vaccination() {
 
   const { data: animalsData } = useQuery({
     queryKey: ['animals'],
-    queryFn: async () => (await client.get('/animals')).data?.data || [],
+    queryFn: async () => (await client.get('/animals/select')).data?.data || [],
   });
 
   const { data: usersData } = useQuery({

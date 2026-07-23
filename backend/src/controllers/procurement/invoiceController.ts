@@ -40,3 +40,25 @@ export const payProcurementInvoice = async (req: AuthRequest, res: Response) => 
     return success(res, null, 'Invoice paid');
   } catch (err: any) { return error(res, err.message); }
 };
+
+export const updateProcurementInvoice = async (req: AuthRequest, res: Response) => {
+  try {
+    const { supplier_id, po_id, amount, due_date, status } = req.body;
+    const [old]: any = await pool.query('SELECT * FROM supplier_invoices WHERE id = ?', [req.params.id]);
+    if (old.length === 0) return error(res, 'Invoice not found', 404);
+    await pool.query(
+      'UPDATE supplier_invoices SET supplier_id=?, po_id=?, amount=?, due_date=?, status=? WHERE id=?',
+      [supplier_id, po_id || null, amount, due_date || null, status || 'pending', req.params.id]
+    );
+    return success(res, null, 'Invoice updated');
+  } catch (err: any) { return error(res, err.message); }
+};
+
+export const deleteProcurementInvoice = async (req: AuthRequest, res: Response) => {
+  try {
+    const [old]: any = await pool.query('SELECT * FROM supplier_invoices WHERE id = ?', [req.params.id]);
+    if (old.length === 0) return error(res, 'Invoice not found', 404);
+    await pool.query('UPDATE supplier_invoices SET deleted_at = NOW() WHERE id = ?', [req.params.id]);
+    return success(res, null, 'Invoice deleted');
+  } catch (err: any) { return error(res, err.message); }
+};

@@ -24,9 +24,9 @@ export const getMilkCollections = async (req: AuthRequest, res: Response) => {
     const [[{ total }]]: any = await pool.query(countQuery, params);
 
     const dataQuery = `
-      SELECT mc.*, u.first_name as collector_name, b.name as branch_name
+      SELECT mc.*, COALESCE(mc.collector_name, u.first_name) as collector_name, b.name as branch_name
       FROM milk_collections mc
-      JOIN users u ON mc.collector_id = u.id
+      LEFT JOIN users u ON mc.collector_id = u.id
       LEFT JOIN branches b ON mc.branch_id = b.id
       WHERE mc.deleted_at IS NULL ${where} ${filters}
       ORDER BY mc.${pag.sort} ${pag.order} LIMIT ? OFFSET ?`;
@@ -38,14 +38,14 @@ export const getMilkCollections = async (req: AuthRequest, res: Response) => {
 
 export const createMilkCollection = async (req: AuthRequest, res: Response) => {
   try {
-    const { collection_date, time, collector_id, branch_id, quantity_liters, number_of_animals, notes } = req.body;
+    const { collection_date, time, collector_name, collector_id, branch_id, quantity_liters, number_of_animals, notes } = req.body;
 
     const [result]: any = await pool.query(
-      `INSERT INTO milk_collections (collection_date, time, collector_id, branch_id, quantity_liters, number_of_animals, notes) VALUES (?,?,?,?,?,?,?)`,
-      [collection_date, time, collector_id, branch_id, quantity_liters, number_of_animals, notes]
+      `INSERT INTO milk_collections (collection_date, time, collector_id, collector_name, branch_id, quantity_liters, number_of_animals, notes) VALUES (?,?,?,?,?,?,?,?)`,
+      [collection_date, time, collector_id || null, collector_name || null, branch_id, quantity_liters, number_of_animals, notes]
     );
 
-    await logAudit(req, createAuditEntry(req, 'Create Milk Collection', 'MilkCollections', `Collection of ${quantity_liters}L created`, { collection_date, time, collector_id, branch_id, quantity_liters }));
+    await logAudit(req, createAuditEntry(req, 'Create Milk Collection', 'MilkCollections', `Collection of ${quantity_liters}L created`, { collection_date, time, collector_name, collector_id, branch_id, quantity_liters }));
     try { await createNotification(req.user!.id, 'info', 'Milk Production', `${quantity_liters}L of milk collected (${time})`); } catch {}
     return created(res, { id: result.insertId }, 'Milk collection created');
   } catch (err: any) { return error(res, err.message); }
@@ -53,14 +53,14 @@ export const createMilkCollection = async (req: AuthRequest, res: Response) => {
 
 export const updateMilkCollection = async (req: AuthRequest, res: Response) => {
   try {
-    const { collection_date, time, collector_id, branch_id, quantity_liters, number_of_animals, notes } = req.body;
+    const { collection_date, time, collector_name, collector_id, branch_id, quantity_liters, number_of_animals, notes } = req.body;
 
     const [old]: any = await pool.query('SELECT * FROM milk_collections WHERE id = ?', [req.params.id]);
     if (old.length === 0) return error(res, 'Milk collection not found', 404);
 
     await pool.query(
-      `UPDATE milk_collections SET collection_date=?, time=?, collector_id=?, branch_id=?, quantity_liters=?, number_of_animals=?, notes=? WHERE id=?`,
-      [collection_date, time, collector_id, branch_id, quantity_liters, number_of_animals, notes, req.params.id]
+      `UPDATE milk_collections SET collection_date=?, time=?, collector_id=?, collector_name=?, branch_id=?, quantity_liters=?, number_of_animals=?, notes=? WHERE id=?`,
+      [collection_date, time, collector_id || null, collector_name || null, branch_id, quantity_liters, number_of_animals, notes, req.params.id]
     );
 
     await logAudit(req, createAuditEntry(req, 'Update Milk Collection', 'MilkCollections', `Updated collection ${req.params.id}`, req.body, old[0]));

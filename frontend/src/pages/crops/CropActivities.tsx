@@ -105,13 +105,20 @@ export default function CropActivities() {
     setShowModal(true);
   };
 
+  const toDateStr = (d: any) => {
+    if (!d) return '';
+    if (typeof d === 'string') return d.substring(0, 10);
+    if (d instanceof Date && !isNaN(d.getTime())) return d.toISOString().split('T')[0];
+    return '';
+  };
+
   const openEdit = (item: any) => {
     setEditing(item);
     setForm({
       crop_type_id: String(item.crop_type_id || ''),
       land_area_id: String(item.land_area_id || ''),
-      planting_date: item.planting_date ? item.planting_date.substring(0, 10) : '',
-      harvest_date: item.harvest_date ? item.harvest_date.substring(0, 10) : '',
+      planting_date: toDateStr(item.planting_date),
+      harvest_date: toDateStr(item.harvest_date),
       quantity_planted: String(item.quantity_planted || ''),
       quantity_harvested: String(item.quantity_harvested || ''),
       status: item.status || 'planted',

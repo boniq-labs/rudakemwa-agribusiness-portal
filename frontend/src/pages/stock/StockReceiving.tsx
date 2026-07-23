@@ -16,7 +16,7 @@ export default function StockReceiving() {
   const { data: suppliers } = useQuery({ queryKey: ['procurement-suppliers'], queryFn: () => procurementAPI.getSuppliers().then(r => r.data.data || []) });
   const { data: transactions, isLoading } = useQuery({
     queryKey: ['stock-transactions-receive'],
-    queryFn: () => stockAPI.getTransactions({ type: 'receive' }).then(r => r.data.data || []),
+    queryFn: () => stockAPI.getTransactions({ type: 'receive' }).then((r: any) => r.data.data || []),
   });
 
   const mutation = useMutation({

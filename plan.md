@@ -1,117 +1,100 @@
-# EFMS Role Restructuring & Dynamic Dashboard Implementation Plan
+# Plan: Replace Collector Dropdown with Collector Name Text Input
 
 ## Overview
-Restructure the system from admin/worker model to Farm Owner → Department Manager → Employee hierarchy. Use existing role slugs (`animal`, `milk`, `stock`, etc.) as department manager roles. Add employee dashboard and self-service features.
+Replace the broken Collector employee dropdown with a manual `collector_name` text input in Morning Production and Evening Production. Store `collector_name` directly in `milk_collections` table alongside existing `collector_id`.
 
----
+## Files to Modify
 
-## Phase 1: Backend Changes
+### Phase 1: Database Migration
+- **`backend/src/config/migrate.ts`** — Add `collector_name VARCHAR(255)` column to `milk_collections` table
 
-### 1.1 Seed file — Ensure worker permissions
-**File:** `D:\fast\efms\backend\src\config\seed.ts`
-- Ensure `worker` role has `attendance.view/create`, `tasks.view`, `profile.view/update`, `notifications.view` permissions
-- Make role labels descriptive (e.g., `animal` → `Animal Production Manager`)
+### Phase 2: Backend
+- **`backend/src/validators/modules.ts`** — `createMilkCollectionSchema`: replace `collector_id: z.number().int().positive()` with `collector_name: z.string().min(1, 'Collector name is required')`
+- **`backend/src/controllers/milk/milkCollectionController.ts`** — 
+  - `createMilkCollection`: INSERT `collector_name` (from req.body) + keep `collector_id` as nullable
+  - `updateMilkCollection`: UPDATE `collector_name` (from req.body) + keep `collector_id` as nullable
+  - `getMilkCollections`: Change JOIN `users u ON mc.collector_id = u.id` to use `COALESCE(mc.collector_name, u.first_name)` so old records (with `collector_id` but no `collector_name`) still show names
+- **`backend/src/routes/index.ts`** — Remove `GET /milk/collectors` route (no longer needed; remove entire block lines 522-540)
 
-### 1.2 Add `getManagers` endpoint
-**File:** `D:\fast\efms\backend\src\controllers\userController.ts`
-- Add `getManagers` function: queries users with department role slugs (`hr`, `animal`, `milk`, `stock`, `procurement`, `logistics`, `accountant`, `sales`, `veterinarian`)
-- Return: id, name, role, department, status, employee_code, position
+### Phase 3: Frontend — MorningProduction.tsx
+- Remove `useQuery` for `['milk-collectors']`
+- Remove `collectorList` variable
+- Change form state: `collector_id` → `collector_name`
+- Change `<select>` dropdown → `<input type="text" placeholder="Enter collector name" required>`
+- Change `handleSubmit`: send `collector_name` instead of `collector_id`
+- Change `openEdit`: read `c.collector_name` instead of `c.collector_id`
+- Keep table column `collector_name` render (already uses `c.collector_name`)
 
-### 1.3 Add route
-**File:** `D:\fast\efms\backend\src\routes\index.ts`
-- `router.get('/users/managers', authenticate, hasRole('owner'), getManagers);`
+### Phase 4: Frontend — EveningProduction.tsx
+- Same changes as MorningProduction.tsx
 
-### 1.4 Enhance employee dashboard data
-**File:** `D:\fast\efms\backend\src\controllers\dashboardController.ts`
-- Enhance `getDefaultDashboard` (worker fallback) to return: today's attendance status, unread notifications, tasks, user profile summary
+### Phase 5: Reports / Dashboard
+- **`MilkReports.tsx`**: No changes needed — it aggregates by date/time, not by collector
+- **`MilkDashboard.tsx`**: No changes needed — it shows totals, not collector info
+- **`backend/src/routes/index.ts` `/milk/reports`**: No changes needed — aggregates by date
+- **Backend dashboard controller**: No changes needed — uses SUM/AVG only
 
----
+## Detailed Changes
 
-## Phase 2: Frontend Constants & Login
+### migrate.ts — Add column
+After the CREATE TABLE for `milk_collections`, add ALTER TABLE in the `alterQueries` array:
+```sql
+ALTER TABLE milk_collections ADD COLUMN IF NOT EXISTS collector_name VARCHAR(255) AFTER collector_id
+```
 
-### 2.1 Update constants
-**File:** `D:\fast\efms\frontend\src\utils\constants.ts`
-- Update `ROLE_LABELS` with manager-friendly names
-- Add `DEPARTMENT_ROLES = ['hr','animal','milk','stock','procurement','logistics','accountant','sales','veterinarian']`
-- Add `DEPARTMENT_ROLE_ROUTES` map
+### Schema — Validation
+Replace:
+```ts
+collector_id: z.number().int().positive(),
+```
+With:
+```ts
+collector_name: z.string().min(1, 'Collector name is required'),
+```
 
-### 2.2 Update login redirect
-**File:** `D:\fast\efms\frontend\src\pages\auth\LoginPage.tsx`
-- Change `worker: '/dashboard'` → `worker: '/employee/dashboard'`
+### Controller — createMilkCollection
+Change INSERT to include `collector_name`:
+```ts
+const { collection_date, time, collector_name, branch_id, quantity_liters, number_of_animals, notes } = req.body;
+// INSERT now: collection_date, time, collector_name, branch_id, quantity_liters, number_of_animals, notes
+// collector_id stays NULL for new records
+```
 
----
+### Controller — updateMilkCollection
+Change UPDATE to include `collector_name`:
+```ts
+const { collection_date, time, collector_name, branch_id, quantity_liters, number_of_animals, notes } = req.body;
+// UPDATE now: SET collection_date=?, time=?, collector_name=?, branch_id=?, quantity_liters=?, number_of_animals=?, notes=?
+// collector_id unchanged for existing records
+```
 
-## Phase 3: New Employee Dashboard
+### Controller — getMilkCollections
+Change the SELECT query to use COALESCE for backward compatibility:
+```ts
+SELECT mc.*, COALESCE(mc.collector_name, u.first_name) as collector_name, b.name as branch_name
+FROM milk_collections mc
+LEFT JOIN users u ON mc.collector_id = u.id
+LEFT JOIN branches b ON mc.branch_id = b.id
+```
+Note: Changed to LEFT JOIN for users since new records won't have collector_id.
 
-### 3.1 Create employee dashboard page
-**File:** `D:\fast\efms\frontend\src\pages\employee\EmployeeDashboard.tsx` (NEW)
-- Sections: Profile card, Today's Attendance (check-in/out), My Tasks, Notifications, Quick Links
-- Uses: `dashboardApi.get()`, `attendanceAPI` for check-in/out
+### Frontend Changes (MorningProduction.tsx)
 
-### 3.2 Add routes
-**File:** `D:\fast\efms\frontend\src\App.tsx`
-- Lazy import `EmployeeDashboard`
-- Add route: `<Route element={<ProtectedRoute roles={['owner', 'admin', 'worker']} />}>` → `/employee/dashboard`
+1. Remove the collector fetch: delete lines 26-29 (the `useQuery` for `['milk-collectors']`)
+2. Remove: `const collectorList = Array.isArray(collectors) ? collectors : [];`
+3. Change initialForm: `collector_id: ''` → `collector_name: ''`
+4. Change handleSubmit payload: `collector_id: ...` → `collector_name: form.collector_name`
+5. Change openEdit: `collector_id: String(c.collector_id || '')` → `collector_name: c.collector_name || ''`
+6. Replace the `<select>` dropdown with `<input type="text">`
 
----
-
-## Phase 4: Sidebar Updates
-
-### 4.1 Add employee nav
-**File:** `D:\fast\efms\frontend\src\layouts\Sidebar.tsx`
-- Add `Employee` nav group for `worker` role with: Dashboard, Profile, Notifications
-
-### 4.2 Verify department manager nav
-- Existing role filtering already scopes correctly (e.g., `animal` sees only Dashboard + Animal Production)
-
----
-
-## Phase 5: HR Employee Creation Fix
-
-### 5.1 Fix role dropdown
-**File:** `D:\fast\efms\frontend\src\pages\hr\EmployeesPage.tsx`
-- Replace hardcoded `['admin', 'hr', 'manager', 'employee']` with import from constants (filter out `owner`, `admin`)
-
----
-
-## Phase 6: Farm Owner Dashboard — Department Managers
-
-### 6.1 Add managers section
-**File:** `D:\fast\efms\frontend\src\pages\dashboard\DashboardPage.tsx`
-- Add "Department Managers" section (owner-only) showing managers grouped by department
-- "Add Manager" button opens a modal
-- Modal fields: Full Name, Phone, Email, Username (auto), Password (auto), Position, Department, Status
-- Uses `usersApi.create()` with the selected department's role slug
-
-### 6.2 Add managers API
-**File:** `D:\fast\efms\frontend\src\api\endpoints.ts`
-- Add `getManagers` API call
-
----
-
-## Files Summary
-
-| Action | File |
-|--------|------|
-| Modify | `backend/src/config/seed.ts` |
-| Modify | `backend/src/controllers/userController.ts` |
-| Modify | `backend/src/routes/index.ts` |
-| Modify | `backend/src/controllers/dashboardController.ts` |
-| Modify | `frontend/src/utils/constants.ts` |
-| Modify | `frontend/src/pages/auth/LoginPage.tsx` |
-| **New** | `frontend/src/pages/employee/EmployeeDashboard.tsx` |
-| **New** | `frontend/src/pages/employee/index.ts` |
-| Modify | `frontend/src/App.tsx` |
-| Modify | `frontend/src/layouts/Sidebar.tsx` |
-| Modify | `frontend/src/pages/hr/EmployeesPage.tsx` |
-| Modify | `frontend/src/pages/dashboard/DashboardPage.tsx` |
-| Modify | `frontend/src/api/endpoints.ts` |
-
----
+### Frontend Changes (EveningProduction.tsx)
+Identical to MorningProduction.tsx changes.
 
 ## Verification
-1. Login as `owner/admin123` → Farm Owner Dashboard → see Department Managers section + all KPIs unchanged
-2. Create a Department Manager (Animal Production) → login as new manager → redirected to `/animals/dashboard` → sidebar shows only Dashboard + Animal Production
-3. Login as `admin/rdkmw@` → can still access everything (backward compat)
-4. HR creates Employee with role `worker` → login as employee → redirected to `/employee/dashboard` → see profile, attendance, tasks, notifications
-5. Employee can check-in/check-out from dashboard
+1. Frontend `npx vite build` — zero errors
+2. Backend `npx tsc --noEmit` — zero errors
+3. Verify Morning Production: Create, Edit (shows saved name), Delete
+4. Verify Evening Production: Create, Edit (shows saved name), Delete
+5. Verify table displays collector_name for new AND old records
+6. Verify reports unaffected
+7. Verify dashboard unaffected

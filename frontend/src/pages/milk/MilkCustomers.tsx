@@ -23,6 +23,7 @@ interface FormData {
   email: string;
   customer_type: string;
   address: string;
+  initial_payment: string;
 }
 
 const INITIAL_FORM: FormData = {
@@ -31,6 +32,7 @@ const INITIAL_FORM: FormData = {
   email: '',
   customer_type: 'individual',
   address: '',
+  initial_payment: '',
 };
 
 export default function MilkCustomers() {
@@ -49,15 +51,20 @@ export default function MilkCustomers() {
 
   const customers: Customer[] = data || [];
 
+  const invalidateAll = () => {
+    queryClient.invalidateQueries({ queryKey: ['sales-customers'] });
+    queryClient.invalidateQueries({ queryKey: ['milk-dashboard-stats'] });
+  };
+
   const createMutation = useMutation({
     mutationFn: (data: any) => salesAPI.createCustomer(data),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['sales-customers'] }); closeModal(); },
+    onSuccess: () => { invalidateAll(); closeModal(); },
     onError: () => toast.error('Failed to create customer'),
   });
 
   const updateMutation = useMutation({
     mutationFn: (data: any) => salesAPI.updateCustomer(data.id, data),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['sales-customers'] }); closeModal(); toast.success('Customer updated'); },
+    onSuccess: () => { invalidateAll(); closeModal(); toast.success('Customer updated'); },
     onError: () => toast.error('Failed to update customer'),
   });
 
@@ -70,14 +77,22 @@ export default function MilkCustomers() {
   const closeModal = () => { setShowModal(false); setEditingId(null); setForm(INITIAL_FORM); };
 
   const openEdit = (c: any) => {
-    setForm({ name: c.name || '', phone: c.phone || '', email: c.email || '', customer_type: c.customer_type || 'individual', address: c.address || '' });
+    setForm({
+      name: c.name || '',
+      phone: c.phone || '',
+      email: c.email || '',
+      customer_type: c.customer_type || 'individual',
+      address: c.address || '',
+      initial_payment: '',
+    });
     setEditingId(c.id);
     setShowModal(true);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const payload = {
+    const initialPayment = form.initial_payment ? Number(form.initial_payment) : undefined;
+    const payload: any = {
       name: form.name,
       phone: form.phone || undefined,
       email: form.email || undefined,
@@ -85,8 +100,10 @@ export default function MilkCustomers() {
       address: form.address || undefined,
     };
     if (editingId) {
+      if (initialPayment !== undefined) payload.balance = initialPayment;
       updateMutation.mutate({ id: editingId, ...payload });
     } else {
+      if (initialPayment !== undefined) payload.initial_payment = initialPayment;
       createMutation.mutate(payload);
     }
   };
@@ -98,7 +115,7 @@ export default function MilkCustomers() {
       key: 'customer_type', label: 'Type',
       render: (c) => c.customer_type ? <StatusBadge status={c.customer_type} /> : '-',
     },
-    { key: 'balance', label: 'Balance', render: (c) => `$${(Number(c.balance) || 0).toFixed(2)}` },
+    { key: 'balance', label: 'Balance', render: (c) => `$${(Number(c.balance) || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` },
     {
       key: 'status', label: 'Status',
       render: (c) => c.status ? <StatusBadge status={c.status} /> : '-',
@@ -157,6 +174,10 @@ export default function MilkCustomers() {
                   <option value="business">Business</option>
                   <option value="wholesale">Wholesale</option>
                 </select>
+              </div>
+              <div className="form-group">
+                <label className="form-label">{editingId ? 'Balance' : 'Initial Payment'}</label>
+                <input type="number" min="0" step="0.01" className="form-input" placeholder="0.00" value={form.initial_payment} onChange={(e) => setForm({ ...form, initial_payment: e.target.value })} />
               </div>
               <div className="form-group">
                 <label className="form-label">Address</label>

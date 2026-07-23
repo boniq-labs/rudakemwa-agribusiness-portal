@@ -35,6 +35,7 @@ export default function CustomersPage() {
     mutationFn: (d: any) => client.post('/sales/customers', d),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sales-customers'] });
+      queryClient.invalidateQueries({ queryKey: ['sales-dashboard'] });
       toast.success('Customer created');
       setShowModal(false);
       setForm(initialForm);
@@ -46,6 +47,7 @@ export default function CustomersPage() {
     mutationFn: ({ id, data }: { id: number; data: any }) => client.put(`/sales/customers/${id}`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sales-customers'] });
+      queryClient.invalidateQueries({ queryKey: ['sales-dashboard'] });
       toast.success('Customer updated');
       setShowModal(false);
       setForm(initialForm);
@@ -58,6 +60,7 @@ export default function CustomersPage() {
     mutationFn: (id: number) => client.delete(`/sales/customers/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sales-customers'] });
+      queryClient.invalidateQueries({ queryKey: ['sales-dashboard'] });
       toast.success('Customer deleted');
     },
     onError: (err: any) => toast.error(err.response?.data?.message || 'Failed to delete'),

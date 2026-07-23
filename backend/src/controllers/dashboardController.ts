@@ -130,23 +130,16 @@ async function getHrDashboard() {
 }
 
 async function getAccountantDashboard() {
-  const [[{ todayIncome }]]: any = await pool.query("SELECT COALESCE(SUM(total),0) as todayIncome FROM receipts WHERE DATE(created_at)=CURDATE()");
-  const [[{ todayExpense }]]: any = await pool.query("SELECT COALESCE(SUM(total),0) as todayExpense FROM supplier_invoices WHERE status='paid' AND DATE(created_at)=CURDATE()");
-  const [[{ monthIncome }]]: any = await pool.query("SELECT COALESCE(SUM(total),0) as monthIncome FROM receipts WHERE MONTH(created_at)=MONTH(CURDATE())");
-  const [[{ monthExpense }]]: any = await pool.query("SELECT COALESCE(SUM(amount),0) as monthExpense FROM expense_records WHERE MONTH(date)=MONTH(CURDATE())");
-  const [[{ pendingInvoices }]]: any = await pool.query("SELECT COUNT(*) as pendingInvoices FROM supplier_invoices WHERE status='pending'");
-  const [[{ outstanding }]]: any = await pool.query("SELECT COALESCE(SUM(total),0) as outstanding FROM supplier_invoices WHERE status='pending' OR status='partial'");
-  const [[{ cashBalance }]]: any = await pool.query("SELECT COALESCE(SUM(r.total),0) - COALESCE(SUM(e.amount),0) as cashBalance FROM (SELECT 1 as id) d LEFT JOIN (SELECT SUM(total) as total FROM receipts WHERE MONTH(created_at)=MONTH(CURDATE())) r ON 1=1 LEFT JOIN (SELECT SUM(amount) as amount FROM expense_records WHERE MONTH(date)=MONTH(CURDATE())) e ON 1=1");
-  const [recentTransactions]: any = await pool.query(
-    "SELECT 'income' as type, description, total as amount, created_at as date FROM receipts WHERE deleted_at IS NULL UNION ALL SELECT 'expense' as type, description, amount, date FROM expense_records WHERE deleted_at IS NULL ORDER BY date DESC LIMIT 10"
-  );
+  const [[{ totalMonthlyIncome }]]: any = await pool.query("SELECT COALESCE(SUM(amount),0) as totalMonthlyIncome FROM income_records WHERE MONTH(date)=MONTH(CURDATE()) AND YEAR(date)=YEAR(CURDATE())");
+  const [[{ totalMonthlyExpenses }]]: any = await pool.query("SELECT COALESCE(SUM(amount),0) as totalMonthlyExpenses FROM expense_records WHERE MONTH(date)=MONTH(CURDATE()) AND YEAR(date)=YEAR(CURDATE())");
+  const [[{ totalInvoices }]]: any = await pool.query("SELECT COUNT(*) as totalInvoices FROM invoices");
   const [incomeVsExpenses]: any = await pool.query(
-    "SELECT DATE_FORMAT(m.date,'%b') as month, COALESCE(SUM(r.total),0) as income, COALESCE(SUM(e.amount),0) as expenses FROM (SELECT DISTINCT LAST_DAY(DATE_ADD(CURDATE(), INTERVAL -n MONTH)) as date FROM (SELECT 0 n UNION SELECT 1 UNION SELECT 2 UNION SELECT 3 UNION SELECT 4 UNION SELECT 5) d) m LEFT JOIN receipts r ON MONTH(r.created_at)=MONTH(m.date) AND YEAR(r.created_at)=YEAR(m.date) LEFT JOIN expense_records e ON MONTH(e.date)=MONTH(m.date) AND YEAR(e.date)=YEAR(m.date) GROUP BY m.date ORDER BY m.date"
+    "SELECT DATE_FORMAT(m.date,'%b') as month, COALESCE(SUM(i.amount),0) as income, COALESCE(SUM(e.amount),0) as expenses FROM (SELECT DISTINCT LAST_DAY(DATE_ADD(CURDATE(), INTERVAL -n MONTH)) as date FROM (SELECT 0 n UNION SELECT 1 UNION SELECT 2 UNION SELECT 3 UNION SELECT 4 UNION SELECT 5) d) m LEFT JOIN income_records i ON MONTH(i.date)=MONTH(m.date) AND YEAR(i.date)=YEAR(m.date) LEFT JOIN expense_records e ON MONTH(e.date)=MONTH(m.date) AND YEAR(e.date)=YEAR(m.date) GROUP BY m.date ORDER BY m.date"
   );
   const [expenseByCategory]: any = await pool.query(
-    "SELECT ec.name, COALESCE(SUM(e.amount),0) as value FROM expense_categories ec LEFT JOIN expense_records e ON e.category_id = ec.id AND MONTH(e.date)=MONTH(CURDATE()) AND YEAR(e.date)=YEAR(CURDATE()) WHERE ec.deleted_at IS NULL GROUP BY ec.id, ec.name"
+    "SELECT ec.name, COALESCE(SUM(e.amount),0) as value FROM expense_categories ec LEFT JOIN expense_records e ON e.category_id = ec.id AND MONTH(e.date)=MONTH(CURDATE()) AND YEAR(e.date)=YEAR(CURDATE()) GROUP BY ec.id, ec.name"
   );
-  return { incomeToday: todayIncome, expenseToday: todayExpense, monthlyIncome: monthIncome, monthlyExpenses: monthExpense, profit: monthIncome - monthExpense, pendingInvoices, outstanding, cashBalance, recentTransactions, incomeVsExpenses, expenseByCategory };
+  return { totalMonthlyIncome, totalMonthlyExpenses, totalInvoices, profit: totalMonthlyIncome - totalMonthlyExpenses, incomeVsExpenses, expenseByCategory };
 }
 
 async function getAnimalDashboard() {
@@ -173,31 +166,37 @@ async function getMilkDashboard() {
 }
 
 async function getStockDashboard() {
-  const [[{ totalItems }]]: any = await pool.query("SELECT COUNT(*) as totalItems FROM inventory_items WHERE deleted_at IS NULL");
-  const [[{ lowStock }]]: any = await pool.query("SELECT COUNT(*) as lowStock FROM inventory_items WHERE quantity <= min_stock_level AND deleted_at IS NULL");
-  const [recentTransactions]: any = await pool.query("SELECT * FROM stock_transactions ORDER BY created_at DESC LIMIT 10");
-  return { totalItems, lowStockItems: lowStock, recentTransactions };
+  const [[{ totalFeed }]]: any = await pool.query("SELECT COUNT(*) as totalFeed FROM feed_items WHERE deleted_at IS NULL");
+  const [[{ totalMedicine }]]: any = await pool.query("SELECT COUNT(*) as totalMedicine FROM medicine_items WHERE deleted_at IS NULL");
+  const [[{ totalEquipment }]]: any = await pool.query("SELECT COUNT(*) as totalEquipment FROM equipment WHERE deleted_at IS NULL");
+  const [[{ lowFeed }]]: any = await pool.query("SELECT COUNT(*) as lowFeed FROM feed_items WHERE deleted_at IS NULL AND quantity <= COALESCE(min_stock_level,0)");
+  const [[{ lowMedicine }]]: any = await pool.query("SELECT COUNT(*) as lowMedicine FROM medicine_items WHERE deleted_at IS NULL AND quantity <= COALESCE(reorder_level,0)");
+  const [[{ lowEquipment }]]: any = await pool.query("SELECT COUNT(*) as lowEquipment FROM equipment WHERE deleted_at IS NULL AND quantity <= COALESCE(min_stock_level,0)");
+  const [recentFeed]: any = await pool.query("SELECT id, name, quantity, 'feed' as type, created_at FROM feed_items WHERE deleted_at IS NULL ORDER BY created_at DESC LIMIT 5");
+  const [recentMedicine]: any = await pool.query("SELECT id, name, quantity, 'medicine' as type, created_at FROM medicine_items WHERE deleted_at IS NULL ORDER BY created_at DESC LIMIT 5");
+  const [recentEquipment]: any = await pool.query("SELECT id, name, quantity, 'equipment' as type, created_at FROM equipment WHERE deleted_at IS NULL ORDER BY created_at DESC LIMIT 5");
+  const totalStockItems = totalFeed + totalMedicine + totalEquipment;
+  const lowStockItems = lowFeed + lowMedicine + lowEquipment;
+  return { totalFeedItems: totalFeed, totalMedicineItems: totalMedicine, totalEquipmentItems: totalEquipment, totalStockItems, lowStockItems, recentFeed, recentMedicine, recentEquipment };
 }
 
 async function getLogisticsDashboard() {
-  const [[{ active_transports }]]: any = await pool.query("SELECT COUNT(*) as active_transports FROM transport_requests WHERE status='approved'");
-  const [[{ available_vehicles }]]: any = await pool.query("SELECT COUNT(*) as available_vehicles FROM vehicles WHERE status='available'");
-  const [[{ active_drivers }]]: any = await pool.query("SELECT COUNT(*) as active_drivers FROM drivers WHERE status='available'");
-  const [[{ pending_maintenance }]]: any = await pool.query("SELECT COUNT(*) as pending_maintenance FROM vehicle_maintenance WHERE next_service_date IS NOT NULL AND next_service_date <= DATE_ADD(CURDATE(), INTERVAL 7 DAY)");
-  const [[{ trips_today }]]: any = await pool.query("SELECT COUNT(*) as trips_today FROM trips WHERE DATE(start_time)=CURDATE()");
-  return { active_transports, available_vehicles, active_drivers, pending_maintenance, trips_today };
+  const [[{ total_vehicles }]]: any = await pool.query("SELECT COUNT(*) as total_vehicles FROM vehicles WHERE deleted_at IS NULL");
+  const [[{ total_drivers }]]: any = await pool.query("SELECT COUNT(*) as total_drivers FROM drivers WHERE deleted_at IS NULL");
+  const [[{ total_requests }]]: any = await pool.query("SELECT COUNT(*) as total_requests FROM transport_requests WHERE deleted_at IS NULL");
+  const [[{ total_trips }]]: any = await pool.query("SELECT COUNT(*) as total_trips FROM trips WHERE deleted_at IS NULL");
+  const [[{ total_maintenance }]]: any = await pool.query("SELECT COUNT(*) as total_maintenance FROM vehicle_maintenance WHERE deleted_at IS NULL");
+  const [[{ total_deliveries }]]: any = await pool.query("SELECT COUNT(*) as total_deliveries FROM deliveries WHERE deleted_at IS NULL");
+  return { total_vehicles, total_drivers, total_requests, total_trips, total_maintenance, total_deliveries };
 }
 
 async function getProcurementDashboard() {
-  const [[{ pending_requests }]]: any = await pool.query("SELECT COUNT(*) as pending_requests FROM purchase_requests WHERE status='pending'");
-  const [[{ active_orders }]]: any = await pool.query("SELECT COUNT(*) as active_orders FROM purchase_orders WHERE status='sent' OR status='confirmed'");
-  const [[{ total_suppliers }]]: any = await pool.query("SELECT COUNT(*) as total_suppliers FROM suppliers WHERE deleted_at IS NULL");
-  const [[{ total_spent }]]: any = await pool.query("SELECT COALESCE(SUM(amount),0) as total_spent FROM supplier_invoices WHERE status='paid'");
+  const [[{ total_purchase_requests }]]: any = await pool.query("SELECT COUNT(*) as total_purchase_requests FROM purchase_requests WHERE deleted_at IS NULL");
   const [[{ total_purchase_orders }]]: any = await pool.query("SELECT COUNT(*) as total_purchase_orders FROM purchase_orders WHERE deleted_at IS NULL");
-  const [[{ completed_orders }]]: any = await pool.query("SELECT COUNT(*) as completed_orders FROM purchase_orders WHERE status='received'");
-  const [[{ monthly_purchases }]]: any = await pool.query("SELECT COALESCE(SUM(amount),0) as monthly_purchases FROM supplier_invoices WHERE status='paid' AND MONTH(created_at)=MONTH(CURDATE())");
+  const [[{ total_contracts }]]: any = await pool.query("SELECT COUNT(*) as total_contracts FROM supplier_contracts WHERE deleted_at IS NULL");
+  const [[{ total_invoices }]]: any = await pool.query("SELECT COUNT(*) as total_invoices FROM supplier_invoices WHERE deleted_at IS NULL");
   const [recent_orders]: any = await pool.query("SELECT po.*, s.supplier_name FROM purchase_orders po LEFT JOIN suppliers s ON po.supplier_id = s.id WHERE po.deleted_at IS NULL ORDER BY po.created_at DESC LIMIT 5");
-  return { pending_requests, active_orders, total_suppliers, total_spent, total_purchase_orders, completed_orders, monthly_purchases, recent_orders };
+  return { total_purchase_requests, total_purchase_orders, total_contracts, total_invoices, recent_orders };
 }
 
 async function getSalesDashboard() {

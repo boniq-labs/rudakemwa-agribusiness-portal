@@ -101,8 +101,19 @@ export default function HRReports() {
   const performanceData = r.performance || [];
   const tasksData = Array.isArray(tasks) ? tasks : [];
 
-  const handleExport = (format: string) => {
-    toast.success(`${format} export coming soon`);
+  const exportCSV = (data: any[], filename: string, keys: string[], labels: string[]) => {
+    if (!data.length) { toast.error('No data to export'); return; }
+    const header = labels.join(',');
+    const rows = data.map((row: any) => keys.map(k => {
+      const val = typeof row[k] === 'object' ? row[k]?.name || row[k]?.id || '' : row[k] ?? '';
+      return `"${String(val).replace(/"/g, '""')}"`;
+    }).join(','));
+    const blob = new Blob([header + '\n' + rows.join('\n')], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `${filename}.csv`;
+    a.click(); URL.revokeObjectURL(url);
+    toast.success(`${filename} exported`);
   };
 
   return (
@@ -129,16 +140,15 @@ export default function HRReports() {
       </div>
 
       <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
-        <button className="btn btn-sm" style={{ background: 'var(--primary-light)', color: 'var(--primary)', border: 'none' }} onClick={() => handleExport('PDF')}><FileText size={14} /> PDF</button>
-        <button className="btn btn-sm" style={{ background: 'var(--primary-light)', color: 'var(--primary)', border: 'none' }} onClick={() => handleExport('Excel')}><FileSpreadsheet size={14} /> Excel</button>
-        <button className="btn btn-sm" style={{ background: 'var(--primary-light)', color: 'var(--primary)', border: 'none' }} onClick={() => handleExport('Print')}><Printer size={14} /> Print</button>
+        <button className="btn btn-sm" style={{ background: 'var(--primary-light)', color: 'var(--primary)', border: 'none' }} onClick={() => exportCSV(attData, 'attendance-report', ['date', 'present', 'absent', 'late'], ['Date', 'Present', 'Absent', 'Late'])}><FileText size={14} /> Attendance CSV</button>
+        <button className="btn btn-sm" style={{ background: 'var(--primary-light)', color: 'var(--primary)', border: 'none' }} onClick={() => exportCSV(deptStats(), 'employee-report', ['department', 'count'], ['Department', 'Employee Count'])}><FileSpreadsheet size={14} /> Employee CSV</button>
       </div>
 
       <div style={{ display: 'grid', gap: 20 }}>
         <div className="card">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
             <h3>Employee Report</h3>
-            <button className="btn btn-sm" style={{ background: 'var(--primary-light)', color: 'var(--primary)', border: 'none' }} onClick={() => handleExport('Employee PDF')}>
+            <button className="btn btn-sm" style={{ background: 'var(--primary-light)', color: 'var(--primary)', border: 'none' }} onClick={() => exportCSV(deptStats(), 'employee-report', ['department', 'count'], ['Department', 'Employee Count'])}>
               <Download size={14} /> Export
             </button>
           </div>
@@ -148,7 +158,7 @@ export default function HRReports() {
         <div className="card">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
             <h3>Attendance Report</h3>
-            <button className="btn btn-sm" style={{ background: 'var(--primary-light)', color: 'var(--primary)', border: 'none' }} onClick={() => handleExport('Attendance PDF')}>
+            <button className="btn btn-sm" style={{ background: 'var(--primary-light)', color: 'var(--primary)', border: 'none' }} onClick={() => exportCSV(attData, 'attendance-report', ['date', 'present', 'absent', 'late'], ['Date', 'Present', 'Absent', 'Late'])}>
               <Download size={14} /> Export
             </button>
           </div>
@@ -158,7 +168,7 @@ export default function HRReports() {
         <div className="card">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
             <h3>Recruitment Report</h3>
-            <button className="btn btn-sm" style={{ background: 'var(--primary-light)', color: 'var(--primary)', border: 'none' }} onClick={() => handleExport('Recruitment PDF')}>
+            <button className="btn btn-sm" style={{ background: 'var(--primary-light)', color: 'var(--primary)', border: 'none' }} onClick={() => exportCSV(recruitmentData, 'recruitment-report', ['title', 'applicants_count', 'status'], ['Job Title', 'Applicants', 'Status'])}>
               <Download size={14} /> Export
             </button>
           </div>
@@ -168,7 +178,7 @@ export default function HRReports() {
         <div className="card">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
             <h3>Training Report</h3>
-            <button className="btn btn-sm" style={{ background: 'var(--primary-light)', color: 'var(--primary)', border: 'none' }} onClick={() => handleExport('Training PDF')}>
+            <button className="btn btn-sm" style={{ background: 'var(--primary-light)', color: 'var(--primary)', border: 'none' }} onClick={() => exportCSV(trainingData, 'training-report', ['title', 'participants_count', 'start_date', 'status'], ['Training', 'Participants', 'Start', 'Status'])}>
               <Download size={14} /> Export
             </button>
           </div>
@@ -178,7 +188,7 @@ export default function HRReports() {
         <div className="card">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
             <h3>Performance Report</h3>
-            <button className="btn btn-sm" style={{ background: 'var(--primary-light)', color: 'var(--primary)', border: 'none' }} onClick={() => handleExport('Performance PDF')}>
+            <button className="btn btn-sm" style={{ background: 'var(--primary-light)', color: 'var(--primary)', border: 'none' }} onClick={() => exportCSV(performanceData, 'performance-report', ['user_name', 'rating', 'review_date'], ['Employee', 'Rating', 'Date'])}>
               <Download size={14} /> Export
             </button>
           </div>
@@ -188,7 +198,7 @@ export default function HRReports() {
         <div className="card">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
             <h3>Tasks Report</h3>
-            <button className="btn btn-sm" style={{ background: 'var(--primary-light)', color: 'var(--primary)', border: 'none' }} onClick={() => handleExport('Tasks PDF')}>
+            <button className="btn btn-sm" style={{ background: 'var(--primary-light)', color: 'var(--primary)', border: 'none' }} onClick={() => exportCSV(tasksData, 'tasks-report', ['title', 'assigned_to', 'due_date', 'status', 'priority'], ['Task', 'Assigned To', 'Due Date', 'Status', 'Priority'])}>
               <Download size={14} /> Export
             </button>
           </div>
@@ -198,7 +208,7 @@ export default function HRReports() {
         <div className="card">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
             <h3>Contract Report</h3>
-            <button className="btn btn-sm" style={{ background: 'var(--primary-light)', color: 'var(--primary)', border: 'none' }} onClick={() => handleExport('Contract PDF')}>
+            <button className="btn btn-sm" style={{ background: 'var(--primary-light)', color: 'var(--primary)', border: 'none' }} onClick={() => exportCSV(contractData, 'contract-report', ['user_name', 'type', 'start_date', 'end_date', 'status'], ['Employee', 'Type', 'Start', 'End', 'Status'])}>
               <Download size={14} /> Export
             </button>
           </div>

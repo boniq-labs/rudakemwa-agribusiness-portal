@@ -82,106 +82,6 @@ export const getAllStockItems = async (req: AuthRequest, res: Response) => {
   } catch (err: any) { return error(res, err.message); }
 };
 
-export const issueStock = async (req: AuthRequest, res: Response) => {
-  try {
-    const { item_id, source_type, source_id, quantity, issued_to, department_id, notes } = req.body;
-    const actualSourceType = source_type || 'inventory';
-    const actualSourceId = source_id || item_id;
-
-    const item = await findItem(actualSourceType, actualSourceId);
-    if (!item) return error(res, 'Stock item not found', 404);
-
-    if (Number(item.quantity) < Number(quantity)) {
-      return error(res, `Insufficient stock for item ${item.name}`, 400);
-    }
-
-    const newQty = Number(item.quantity) - Number(quantity);
-    const connection = await pool.getConnection();
-    try {
-      await connection.beginTransaction();
-      const invItemId = item.inventory_item_id || actualSourceId;
-      await updateItemQuantity(actualSourceType, actualSourceId, newQty, connection, actualSourceType !== 'inventory' ? invItemId : undefined);
-      const issueNotes = [notes, issued_to ? `Issued to: ${issued_to}` : ''].filter(Boolean).join(' | ');
-      const [result]: any = await connection.query(
-        `INSERT INTO stock_transactions (item_id, \`type\`, quantity, department_id, notes, reference_type, reference_id) VALUES (?, 'issue', ?, ?, ?, ?, ?)`,
-        [invItemId, quantity, department_id, issueNotes || null, actualSourceType, actualSourceId]
-      );
-      await connection.commit();
-      await logAudit(req, createAuditEntry(req, 'Issue Stock', 'StockTransactions', `Issued ${quantity} of ${item.name}`, { source_type: actualSourceType, source_id: actualSourceId, quantity, department_id }));
-      return created(res, { id: result.insertId }, 'Stock issued successfully');
-    } catch (err) {
-      await connection.rollback();
-      throw err;
-    } finally {
-      connection.release();
-    }
-  } catch (err: any) { return error(res, err.message); }
-};
-
-export const transferStock = async (req: AuthRequest, res: Response) => {
-  try {
-    const { item_id, source_type, source_id, from_location, to_location, quantity, notes } = req.body;
-    const actualSourceType = source_type || 'inventory';
-    const actualSourceId = source_id || item_id;
-
-    const item = await findItem(actualSourceType, actualSourceId);
-    if (!item) return error(res, 'Stock item not found', 404);
-
-    if (Number(item.quantity) < Number(quantity)) return error(res, 'Insufficient stock for transfer', 400);
-
-    const connection = await pool.getConnection();
-    try {
-      await connection.beginTransaction();
-      const invItemId = item.inventory_item_id || actualSourceId;
-      const [result]: any = await connection.query(
-        `INSERT INTO stock_transactions (item_id, \`type\`, quantity, notes, from_location_id, to_location_id, reference_type, reference_id) VALUES (?, 'transfer', ?, ?, ?, ?, ?, ?)`,
-        [invItemId, quantity, notes, from_location, to_location, actualSourceType, actualSourceId]
-      );
-      await connection.commit();
-      await logAudit(req, createAuditEntry(req, 'Transfer Stock', 'StockTransactions', `Transferred ${quantity} of ${item.name} from ${from_location} to ${to_location}`, { source_type: actualSourceType, source_id: actualSourceId, from_location, to_location, quantity }));
-      return success(res, { id: result.insertId }, 'Stock transferred successfully');
-    } catch (err) {
-      await connection.rollback();
-      throw err;
-    } finally {
-      connection.release();
-    }
-  } catch (err: any) { return error(res, err.message); }
-};
-
-export const adjustStock = async (req: AuthRequest, res: Response) => {
-  try {
-    const { item_id, source_type, source_id, new_quantity, reason, notes } = req.body;
-    const actualSourceType = source_type || 'inventory';
-    const actualSourceId = source_id || item_id;
-
-    const item = await findItem(actualSourceType, actualSourceId);
-    if (!item) return error(res, 'Stock item not found', 404);
-
-    const oldQuantity = Number(item.quantity);
-    const diff = Number(new_quantity) - oldQuantity;
-
-    const connection = await pool.getConnection();
-    try {
-      await connection.beginTransaction();
-      const invItemId = item.inventory_item_id || actualSourceId;
-      await updateItemQuantity(actualSourceType, actualSourceId, Number(new_quantity), connection, actualSourceType !== 'inventory' ? invItemId : undefined);
-      const [result]: any = await connection.query(
-        `INSERT INTO stock_transactions (item_id, \`type\`, quantity, notes, reference_type, reference_id) VALUES (?, 'adjustment', ?, ?, ?, ?)`,
-        [invItemId, diff, notes || `${reason} (old: ${oldQuantity}, new: ${new_quantity})`, actualSourceType, actualSourceId]
-      );
-      await connection.commit();
-      await logAudit(req, createAuditEntry(req, 'Adjust Stock', 'StockTransactions', `Adjusted ${item.name} from ${oldQuantity} to ${new_quantity}`, { source_type: actualSourceType, source_id: actualSourceId, oldQuantity, new_quantity, reason }));
-      return success(res, { id: result.insertId, old_quantity: oldQuantity, new_quantity: new_quantity, difference: diff }, 'Stock adjusted successfully');
-    } catch (err) {
-      await connection.rollback();
-      throw err;
-    } finally {
-      connection.release();
-    }
-  } catch (err: any) { return error(res, err.message); }
-};
-
 export const getStockMovements = async (req: AuthRequest, res: Response) => {
   try {
     const pag = getPagination(req);
@@ -198,12 +98,37 @@ export const getStockMovements = async (req: AuthRequest, res: Response) => {
     const [[{ total }]]: any = await pool.query(countQuery, params);
 
     const dataQuery = `
-      SELECT st.*, ii.name as item_name, ii.code as item_code
+      SELECT st.*,
+        COALESCE(sl_from.name, st.from_location_id) as from_location,
+        COALESCE(sl_to.name, st.to_location_id) as to_location,
+        ii.name as item_name, ii.code as item_code
       FROM stock_transactions st
       JOIN inventory_items ii ON st.item_id = ii.id
+      LEFT JOIN stock_locations sl_from ON st.from_location_id = sl_from.id
+      LEFT JOIN stock_locations sl_to ON st.to_location_id = sl_to.id
       ${whereClause}
       ORDER BY st.${pag.sort} ${pag.order} LIMIT ? OFFSET ?`;
     const [rows]: any = await pool.query(dataQuery, [...params, pag.limit, pag.offset]);
+
+    // Parse adjustment notes for structured data
+    for (const row of rows) {
+      if (row.type === 'adjustment' && row.notes) {
+        try {
+          const parsed = JSON.parse(row.notes);
+          row.previous_quantity = parsed.previous_quantity;
+          row.new_quantity = parsed.new_quantity;
+          row.reason = parsed.reason;
+          row.notes = parsed.notes || '';
+        } catch {
+          const m = row.notes.match(/\(old:\s*([\d.]+),\s*new:\s*([\d.]+)\)/);
+          if (m) {
+            row.previous_quantity = Number(m[1]);
+            row.new_quantity = Number(m[2]);
+            row.reason = row.notes.replace(/\s*\(old:.*$/, '');
+          }
+        }
+      }
+    }
 
     return paginated(res, rows, total, pag.page, pag.limit);
   } catch (err: any) { return error(res, err.message); }

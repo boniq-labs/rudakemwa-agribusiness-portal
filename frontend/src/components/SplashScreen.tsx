@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import api from '../api/client';
 
 interface SplashScreenProps {
   onComplete: () => void;
@@ -7,6 +8,15 @@ interface SplashScreenProps {
 
 export default function SplashScreen({ onComplete }: SplashScreenProps) {
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [settings, setSettings] = useState<any>({});
+
+  useEffect(() => {
+    api.get('/settings').then((r) => setSettings(r.data.data || {})).catch(() => {});
+  }, []);
+
+  const systemName = settings.system_name || 'Rudakemwa Agribusiness Portal';
+  const farmName = settings.farm_name || 'Rudakemwa Agribusiness Portal';
+  const farmLogo = settings.farm_logo || '/assets/logo.png';
 
   useEffect(() => {
     if (!imageLoaded) return;
@@ -75,8 +85,8 @@ export default function SplashScreen({ onComplete }: SplashScreenProps) {
               style={{ background: 'radial-gradient(ellipse, rgba(255,255,255,0.25) 0%, transparent 70%)' }} />
 
             <motion.img
-              src="/assets/logo.png"
-              alt="Rudakemwa Agribusiness Portal"
+              src={farmLogo}
+              alt={farmName}
               onLoad={() => setImageLoaded(true)}
               className="relative z-10 w-[72%] h-[72%] object-contain"
             />
@@ -91,7 +101,7 @@ export default function SplashScreen({ onComplete }: SplashScreenProps) {
           className="text-center mb-14"
         >
           <h1 className="text-3xl sm:text-[44px] font-extrabold text-white tracking-tight leading-[1.15] drop-shadow-2xl">
-            Rudakemwa Agribusiness Portal
+            {systemName}
           </h1>
           <div className="flex items-center justify-center gap-2 mt-5 mb-3">
             <span className="block w-6 h-px bg-gradient-to-r from-transparent to-green-400/40 rounded-full" />
@@ -99,7 +109,7 @@ export default function SplashScreen({ onComplete }: SplashScreenProps) {
             <span className="block w-6 h-px bg-gradient-to-l from-transparent to-green-400/40 rounded-full" />
           </div>
           <p className="text-green-400/65 font-semibold text-sm sm:text-base tracking-[0.12em] uppercase">
-            Rudakemwa Agribusiness Portal
+            {farmName}
           </p>
         </motion.div>
 

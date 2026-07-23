@@ -121,38 +121,4 @@ export const convertQuotationToOrder = async (req: AuthRequest, res: Response) =
   } catch (err: any) { return error(res, err.message); }
 };
 
-export const getSalesReturns = async (req: AuthRequest, res: Response) => {
-  try {
-    const { order_id } = req.query;
-    let where = 'WHERE 1=1';
-    const params: any[] = [];
-    if (order_id) { where += ' AND sr.order_id = ?'; params.push(order_id); }
-    const [rows]: any = await pool.query(
-      `SELECT sr.*, so.order_number
-       FROM sales_returns sr LEFT JOIN sales_orders so ON sr.order_id = so.id
-       ${where} ORDER BY sr.created_at DESC`, params
-    );
-    return success(res, rows);
-  } catch (err: any) { return error(res, err.message); }
-};
 
-export const createSalesReturn = async (req: AuthRequest, res: Response) => {
-  try {
-    const { order_id, items, reason } = req.body;
-    const [order]: any = await pool.query('SELECT * FROM sales_orders WHERE id = ?', [order_id]);
-    if (order.length === 0) return error(res, 'Order not found', 404);
-    const [result]: any = await pool.query(
-      `INSERT INTO sales_returns (return_number, order_id, reason, return_date) VALUES (?,?,?,CURDATE())`,
-      [`RET-${Date.now()}`, order_id, reason || null]
-    );
-    for (const item of items || []) {
-      await pool.query(
-        `INSERT INTO sales_return_items (return_id, product_id, quantity, reason) VALUES (?,?,?,?)`,
-        [result.insertId, item.product_id, item.quantity, item.reason || reason]
-      );
-      await pool.query('UPDATE products SET quantity_available = quantity_available + ? WHERE id = ?', [item.quantity, item.product_id]);
-    }
-    await logAudit(req, createAuditEntry(req, 'Create Sales Return', 'Sales', `Sales return created for order #${order_id}`, req.body));
-    return created(res, { id: result.insertId }, 'Sales return created');
-  } catch (err: any) { return error(res, err.message); }
-};

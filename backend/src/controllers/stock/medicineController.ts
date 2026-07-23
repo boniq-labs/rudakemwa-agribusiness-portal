@@ -53,6 +53,16 @@ export const getExpiringMedicines = async (req: AuthRequest, res: Response) => {
   } catch (err: any) { return error(res, err.message); }
 };
 
+export const deleteMedicine = async (req: AuthRequest, res: Response) => {
+  try {
+    const [old]: any = await pool.query('SELECT * FROM medicine_items WHERE id = ?', [req.params.id]);
+    if (old.length === 0) return error(res, 'Medicine not found', 404);
+    await pool.query('UPDATE medicine_items SET deleted_at = NOW() WHERE id = ?', [req.params.id]);
+    await logAudit(req, createAuditEntry(req, 'Delete Medicine', 'Medicines', `Deleted medicine ${old[0].name}`, null, old[0]));
+    return success(res, null, 'Medicine deleted');
+  } catch (err: any) { return error(res, err.message); }
+};
+
 export const getExpiredMedicines = async (req: AuthRequest, res: Response) => {
   try {
     const [rows]: any = await pool.query(

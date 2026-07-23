@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { authApi } from '../api';
+import { authApi, uploadApi } from '../api';
 import { ROLE_LABELS } from '../utils/constants';
-import { User, Mail, Phone, KeyRound, Save } from 'lucide-react';
+import { User, Mail, Phone, KeyRound, Save, Camera } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 export default function ProfilePage() {
   const { user, setUser } = useAuth();
@@ -16,6 +17,7 @@ export default function ProfilePage() {
   const [msg, setMsg] = useState('');
   const [err, setErr] = useState('');
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   const saveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,6 +47,23 @@ export default function ProfilePage() {
     }
   };
 
+  const handlePhotoUpload = async (file: File | null) => {
+    if (!file) return;
+    setUploading(true);
+    try {
+      const res = await uploadApi.upload(file);
+      const photoUrl = res.data.data.url;
+      const updateRes = await authApi.updateProfile({ photo: photoUrl });
+      const d = updateRes.data.data;
+      const s = localStorage.getItem('token') ? localStorage : sessionStorage;
+      s.setItem('user', JSON.stringify(d));
+      setUser(d);
+      setForm((prev) => ({ ...prev }));
+      toast.success('Profile photo updated');
+    } catch { toast.error('Failed to upload photo'); }
+    finally { setUploading(false); }
+  };
+
   return (
     <div className="page profile-page">
       <h2>My Profile</h2>
@@ -55,7 +74,18 @@ export default function ProfilePage() {
         <form className="card form-card" onSubmit={saveProfile}>
           <h3>Personal Information</h3>
           <div className="profile-id">
-            <div className="profile-avatar-lg">{user?.firstName?.charAt(0)}{user?.lastName?.charAt(0)}</div>
+            <div className="profile-avatar-lg" style={{ position: 'relative' }}>
+              {user?.photo ? (
+                <img src={user.photo} alt="profile" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+              ) : (
+                <>{user?.firstName?.charAt(0)}{user?.lastName?.charAt(0)}</>
+              )}
+              <label htmlFor="photo-upload" className="photo-upload-btn" style={{ position: 'absolute', bottom: 0, right: 0, cursor: 'pointer' }}>
+                <Camera size={16} />
+              </label>
+              <input id="photo-upload" type="file" accept="image/*" style={{ display: 'none' }}
+                onChange={(e) => handlePhotoUpload(e.target.files?.[0] || null)} disabled={uploading} />
+            </div>
             <div>
               <div className="profile-id-name">{user?.firstName} {user?.lastName}</div>
               <div className="badge badge-info">{ROLE_LABELS[user?.role || ''] || user?.role}</div>

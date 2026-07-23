@@ -30,27 +30,29 @@ export default function FeedStock() {
   const { data: feed, isLoading } = useQuery({ queryKey: ['stock-feed'], queryFn: () => stockAPI.getFeed().then(r => r.data.data || []) });
   const { data: consumption } = useQuery({ queryKey: ['stock-feed-consumption'], queryFn: () => stockAPI.getFeedConsumption().then(r => r.data.data || []) });
 
+  const invalidateDashboard = () => queryClient.invalidateQueries({ queryKey: ['stock-dashboard-stats'] });
+
   const createMutation = useMutation({
     mutationFn: (data: any) => stockAPI.createFeed(data),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['stock-feed'] }); closeModal(); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['stock-feed'] }); invalidateDashboard(); closeModal(); },
     onError: (err: any) => { setErrors({ submit: err.response?.data?.message || 'Failed to create feed' }); },
   });
 
   const updateMutation = useMutation({
     mutationFn: (data: any) => stockAPI.updateFeed(data.id, data),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['stock-feed'] }); closeModal(); toast.success('Feed updated'); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['stock-feed'] }); invalidateDashboard(); closeModal(); toast.success('Feed updated'); },
     onError: (err: any) => { setErrors({ submit: err.response?.data?.message || 'Failed to update feed' }); },
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id: number) => stockAPI.deleteFeed(id),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['stock-feed'] }); toast.success('Feed deleted'); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['stock-feed'] }); invalidateDashboard(); toast.success('Feed deleted'); },
     onError: () => toast.error('Failed to delete feed'),
   });
 
   const consumeMutation = useMutation({
     mutationFn: (data: any) => stockAPI.recordConsumption(data),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['stock-feed-consumption'] }); queryClient.invalidateQueries({ queryKey: ['stock-feed'] }); setShowConsume(false); setConsumeForm(initialConsume); setErrors({}); toast.success('Consumption recorded'); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['stock-feed-consumption'] }); queryClient.invalidateQueries({ queryKey: ['stock-feed'] }); invalidateDashboard(); setShowConsume(false); setConsumeForm(initialConsume); setErrors({}); toast.success('Consumption recorded'); },
     onError: (err: any) => { setErrors({ consume: err.response?.data?.message || 'Failed to record consumption' }); toast.error('Failed to record consumption'); },
   });
 

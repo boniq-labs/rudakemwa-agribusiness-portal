@@ -79,6 +79,17 @@ export const getSalaryRecords = async (req: AuthRequest, res: Response) => {
   } catch (err: any) { return error(res, err.message); }
 };
 
+export const deletePayrollRecord = async (req: AuthRequest, res: Response) => {
+  try {
+    const [old]: any = await pool.query('SELECT * FROM payroll_records WHERE id = ?', [req.params.id]);
+    if (old.length === 0) return error(res, 'Payroll record not found', 404);
+    await pool.query('DELETE FROM payroll_items WHERE payroll_id = ?', [req.params.id]);
+    await pool.query('DELETE FROM payroll_records WHERE id = ?', [req.params.id]);
+    await logAudit(req, createAuditEntry(req, 'Delete Payroll', 'Accounting', `Payroll #${req.params.id} deleted`, null, old[0]));
+    return success(res, null, 'Payroll record deleted');
+  } catch (err: any) { return error(res, err.message); }
+};
+
 export const createSalaryRecord = async (req: AuthRequest, res: Response) => {
   try {
     const { employee_id, basic_salary, allowances, deductions, net_salary, month } = req.body;

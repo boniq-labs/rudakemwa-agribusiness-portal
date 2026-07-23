@@ -35,13 +35,14 @@ export default function Prescriptions() {
 
   const { data: animals } = useQuery({
     queryKey: ['animals-select'],
-    queryFn: () => client.get('/animals').then(r => r.data.data || []),
+    queryFn: () => client.get('/animals/select').then(r => r.data.data || []),
   });
 
   const createMutation = useMutation({
     mutationFn: (d: any) => client.post('/veterinary/prescriptions', d),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['vet-prescriptions'] });
+      queryClient.invalidateQueries({ queryKey: ['vet-dashboard'] });
       toast.success('Prescription created');
       setShowModal(false);
       setForm(initialForm);
@@ -53,6 +54,7 @@ export default function Prescriptions() {
     mutationFn: ({ id, data }: { id: number; data: any }) => client.put(`/veterinary/prescriptions/${id}`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['vet-prescriptions'] });
+      queryClient.invalidateQueries({ queryKey: ['vet-dashboard'] });
       toast.success('Prescription updated');
       setShowModal(false);
       setForm(initialForm);
@@ -65,6 +67,7 @@ export default function Prescriptions() {
     mutationFn: (id: number) => client.delete(`/veterinary/prescriptions/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['vet-prescriptions'] });
+      queryClient.invalidateQueries({ queryKey: ['vet-dashboard'] });
       toast.success('Prescription deleted');
     },
     onError: (err: any) => toast.error(err.response?.data?.message || 'Failed to delete'),
@@ -144,7 +147,7 @@ export default function Prescriptions() {
             <select className="form-input" value={form.animal_id} onChange={e => setForm(p => ({ ...p, animal_id: e.target.value }))} required>
               <option value="">Select animal</option>
               {animalList.map((a: any) => (
-                <option key={a.id} value={a.id}>{a.tag_number || a.name || `Animal #${a.id}`}</option>
+                <option key={a.id} value={a.id}>{a.breed || 'N/A'} - {a.species || 'N/A'} - {a.tag_number}</option>
               ))}
             </select>
           </FormField>

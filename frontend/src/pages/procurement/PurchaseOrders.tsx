@@ -49,19 +49,19 @@ export default function PurchaseOrders() {
 
   const createMutation = useMutation({
     mutationFn: (data: any) => client.post('/procurement/orders', data),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['procurement-orders'] }); closeModal(); toast.success('Order created'); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['procurement-orders'] }); queryClient.invalidateQueries({ queryKey: ['procurement-dashboard'] }); closeModal(); toast.success('Order created'); },
     onError: (err: any) => setErrors({ submit: err.response?.data?.message || 'Failed to create order' }),
   });
 
   const updateMutation = useMutation({
     mutationFn: (data: any) => client.put(`/procurement/orders/${data.id}`, data),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['procurement-orders'] }); closeModal(); toast.success('Order updated'); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['procurement-orders'] }); queryClient.invalidateQueries({ queryKey: ['procurement-dashboard'] }); closeModal(); toast.success('Order updated'); },
     onError: (err: any) => setErrors({ submit: err.response?.data?.message || 'Failed to update order' }),
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id: number) => client.delete(`/procurement/orders/${id}`),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['procurement-orders'] }); toast.success('Order deleted'); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['procurement-orders'] }); queryClient.invalidateQueries({ queryKey: ['procurement-dashboard'] }); toast.success('Order deleted'); },
     onError: () => toast.error('Failed to delete'),
   });
 

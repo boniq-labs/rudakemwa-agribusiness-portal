@@ -32,21 +32,23 @@ export default function MedicineStock() {
   const { data: expiring } = useQuery({ queryKey: ['stock-medicines-expiring'], queryFn: () => client.get('/stock/medicines/expiring').then(r => r.data.data || []) });
   const { data: expired } = useQuery({ queryKey: ['stock-medicines-expired'], queryFn: () => client.get('/stock/medicines/expired').then(r => r.data.data || []) });
 
+  const invalidateDashboard = () => queryClient.invalidateQueries({ queryKey: ['stock-dashboard-stats'] });
+
   const createMutation = useMutation({
     mutationFn: (data: any) => client.post('/stock/medicines', data),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['stock-medicines'] }); closeModal(); toast.success('Medicine created'); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['stock-medicines'] }); invalidateDashboard(); closeModal(); toast.success('Medicine created'); },
     onError: (err: any) => { setErrors({ submit: err.response?.data?.message || 'Failed to create medicine' }); },
   });
 
   const updateMutation = useMutation({
     mutationFn: (data: any) => client.put(`/stock/medicines/${data.id}`, data),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['stock-medicines'] }); closeModal(); toast.success('Medicine updated'); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['stock-medicines'] }); invalidateDashboard(); closeModal(); toast.success('Medicine updated'); },
     onError: (err: any) => { setErrors({ submit: err.response?.data?.message || 'Failed to update medicine' }); },
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id: number) => client.delete(`/stock/medicines/${id}`),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['stock-medicines'] }); toast.success('Medicine deleted'); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['stock-medicines'] }); invalidateDashboard(); toast.success('Medicine deleted'); },
     onError: () => toast.error('Failed to delete'),
   });
 
@@ -59,12 +61,17 @@ export default function MedicineStock() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setErrors({});
+    const selectedCategory = (categories || []).find((c: any) => c.id === Number(form.category_id));
     const payload = {
-      ...form,
-      category_id: form.category_id ? Number(form.category_id) : undefined,
-      quantity: form.quantity ? Number(form.quantity) : 0,
+      name: form.name,
+      brand: form.brand,
+      category: selectedCategory?.name || form.category_id,
+      unit: form.unit,
+      quantity: Number(form.quantity) || 0,
       unit_price: form.unit_price ? Number(form.unit_price) : undefined,
       reorder_level: form.reorder_level ? Number(form.reorder_level) : undefined,
+      expiry_date: form.expiry_date,
+      notes: form.notes,
     };
     if (editingId) {
       updateMutation.mutate({ id: editingId, ...payload });

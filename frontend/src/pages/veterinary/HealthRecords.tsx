@@ -39,13 +39,14 @@ export default function HealthRecords() {
 
   const { data: animals } = useQuery({
     queryKey: ['animals-select'],
-    queryFn: () => client.get('/animals').then(r => r.data.data || []),
+    queryFn: () => client.get('/animals/select').then(r => r.data.data || []),
   });
 
   const createMutation = useMutation({
     mutationFn: (d: any) => client.post('/veterinary/health-records', d),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['vet-health-records'] });
+      queryClient.invalidateQueries({ queryKey: ['vet-dashboard'] });
       toast.success('Health record created');
       setShowModal(false);
       setForm(initialForm);
@@ -57,6 +58,7 @@ export default function HealthRecords() {
     mutationFn: ({ id, data }: { id: number; data: any }) => client.put(`/veterinary/health-records/${id}`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['vet-health-records'] });
+      queryClient.invalidateQueries({ queryKey: ['vet-dashboard'] });
       toast.success('Health record updated');
       setShowModal(false);
       setForm(initialForm);
@@ -69,6 +71,7 @@ export default function HealthRecords() {
     mutationFn: (id: number) => client.delete(`/veterinary/health-records/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['vet-health-records'] });
+      queryClient.invalidateQueries({ queryKey: ['vet-dashboard'] });
       toast.success('Health record deleted');
     },
     onError: (err: any) => toast.error(err.response?.data?.message || 'Failed to delete'),
@@ -154,7 +157,7 @@ export default function HealthRecords() {
             <select className="form-input" value={form.animal_id} onChange={e => setForm(p => ({ ...p, animal_id: e.target.value }))} required>
               <option value="">Select animal</option>
               {animalList.map((a: any) => (
-                <option key={a.id} value={a.id}>{a.tag_number || a.name || `Animal #${a.id}`}</option>
+                <option key={a.id} value={a.id}>{a.breed || 'N/A'} - {a.species || 'N/A'} - {a.tag_number}</option>
               ))}
             </select>
           </FormField>

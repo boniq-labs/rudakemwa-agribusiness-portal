@@ -47,6 +47,7 @@ export default function DeliveriesPage() {
     mutationFn: (data: any) => client.post('/logistics/deliveries', data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['logistics-deliveries'] });
+      queryClient.invalidateQueries({ queryKey: ['logistics-dashboard'] });
       closeModal();
       toast.success('Delivery created');
     },
@@ -59,6 +60,7 @@ export default function DeliveriesPage() {
     mutationFn: (data: any) => client.put(`/logistics/deliveries/${data.id}`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['logistics-deliveries'] });
+      queryClient.invalidateQueries({ queryKey: ['logistics-dashboard'] });
       closeModal();
       toast.success('Delivery updated');
     },
@@ -71,6 +73,7 @@ export default function DeliveriesPage() {
     mutationFn: (id: number) => client.delete(`/logistics/deliveries/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['logistics-deliveries'] });
+      queryClient.invalidateQueries({ queryKey: ['logistics-dashboard'] });
       toast.success('Delivery deleted');
     },
     onError: () => toast.error('Failed to delete'),
@@ -144,11 +147,8 @@ export default function DeliveriesPage() {
     { key: 'quantity', label: 'Qty', render: (d: any) => d.quantity ?? '-' },
     { key: 'recipient', label: 'Recipient', render: (d: any) => d.recipient || '-' },
     {
-      key: 'trip', label: 'Trip',
-      render: (d: any) => {
-        if (typeof d.trip === 'object') return `#${d.trip.id}${d.trip.destination ? ` - ${d.trip.destination}` : ''}`;
-        return d.trip || '-';
-      },
+      key: 'trip_number', label: 'Trip',
+      render: (d: any) => d.trip_number ? `#${d.trip_number}${d.trip_destination ? ` - ${d.trip_destination}` : ''}` : d.trip_number || '-',
     },
     { key: 'status', label: 'Status', render: (d: any) => statusBadge(d.status) },
     {

@@ -183,11 +183,24 @@ export const getTreatments = async (req: AuthRequest, res: Response) => {
 
 export const createTreatment = async (req: AuthRequest, res: Response) => {
   try {
-    const { animal_id, disease_id, medicine, treatment_description, treatment_date, dosage, duration, veterinarian, cost, notes } = req.body;
+    const b = req.body;
+    const animal_id = b.animal_id;
+    const disease_id = b.disease_id || null;
+    const medicine = b.medicine || '';
+    const treatment_description = b.treatment_description || b.treatment || null;
+    const treatment_date = b.treatment_date || b.date || null;
+    const diagnosis = b.diagnosis || null;
+    const follow_up_date = b.follow_up_date || null;
+    const dosage = b.dosage || null;
+    const duration = b.duration || null;
+    const veterinarian = b.veterinarian || null;
+    const veterinarian_name = typeof b.veterinarian === 'string' && isNaN(Number(b.veterinarian)) ? b.veterinarian : null;
+    const cost = b.cost || null;
+    const notes = b.notes || null;
 
     const [result]: any = await pool.query(
-      `INSERT INTO treatments (animal_id, disease_id, medicine, treatment_description, treatment_date, dosage, duration, veterinarian, cost, notes) VALUES (?,?,?,?,?,?,?,?,?,?)`,
-      [animal_id, disease_id || null, medicine || '', treatment_description || null, treatment_date || null, dosage, duration, veterinarian, cost, notes]
+      `INSERT INTO treatments (animal_id, disease_id, medicine, treatment_description, treatment_date, diagnosis, follow_up_date, dosage, duration, veterinarian, veterinarian_name, cost, notes) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+      [animal_id, disease_id, medicine, treatment_description, treatment_date, diagnosis, follow_up_date, dosage, duration, veterinarian, veterinarian_name, cost, notes]
     );
 
     await logAudit(req, createAuditEntry(req, 'Create Treatment', 'Treatments', `Treatment ${medicine} for animal ${animal_id}`, { animal_id, disease_id, medicine, dosage }));
@@ -199,11 +212,33 @@ export const updateTreatment = async (req: AuthRequest, res: Response) => {
   try {
     const [old]: any = await pool.query('SELECT * FROM treatments WHERE id = ?', [req.params.id]);
     if (old.length === 0) return error(res, 'Treatment not found', 404);
+    const b = req.body;
     const fields: string[] = [];
     const values: any[] = [];
-    const allowed = ['animal_id', 'disease_id', 'medicine', 'treatment_description', 'treatment_date', 'dosage', 'duration', 'veterinarian', 'cost', 'notes'];
-    for (const key of allowed)
-      if (req.body[key] !== undefined) { fields.push(`${key}=?`); values.push(req.body[key]); }
+    const fieldMap: Record<string, string> = {
+      animal_id: 'animal_id', disease_id: 'disease_id', medicine: 'medicine',
+      treatment_description: 'treatment_description', treatment: 'treatment_description',
+      treatment_date: 'treatment_date', date: 'treatment_date',
+      diagnosis: 'diagnosis', follow_up_date: 'follow_up_date',
+      dosage: 'dosage', duration: 'duration', cost: 'cost', notes: 'notes',
+      veterinarian_name: 'veterinarian_name',
+    };
+    for (const [bodyKey, col] of Object.entries(fieldMap)) {
+      if (b[bodyKey] !== undefined && !fields.includes(`${col}=?`)) {
+        fields.push(`${col}=?`);
+        values.push(b[bodyKey]);
+      }
+    }
+    if (b.veterinarian !== undefined) {
+      const vet = b.veterinarian;
+      if (typeof vet === 'string' && isNaN(Number(vet)) && !fields.includes('veterinarian_name=?')) {
+        fields.push('veterinarian_name=?');
+        values.push(vet);
+      } else if (!fields.includes('veterinarian=?')) {
+        fields.push('veterinarian=?');
+        values.push(vet);
+      }
+    }
     if (fields.length === 0) return error(res, 'No fields to update', 400);
     values.push(req.params.id);
     await pool.query(`UPDATE treatments SET ${fields.join(', ')} WHERE id=?`, values);

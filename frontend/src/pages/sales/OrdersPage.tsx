@@ -52,6 +52,7 @@ export default function OrdersPage() {
     mutationFn: (d: any) => client.post('/sales/orders', d),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sales-orders'] });
+      queryClient.invalidateQueries({ queryKey: ['sales-dashboard'] });
       toast.success('Order created');
       setShowModal(false);
       setForm(initialForm);
@@ -63,6 +64,7 @@ export default function OrdersPage() {
     mutationFn: ({ id, data }: { id: number; data: any }) => client.put(`/sales/orders/${id}`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sales-orders'] });
+      queryClient.invalidateQueries({ queryKey: ['sales-dashboard'] });
       toast.success('Order updated');
       setShowModal(false);
       setForm(initialForm);
@@ -75,6 +77,7 @@ export default function OrdersPage() {
     mutationFn: (id: number) => client.delete(`/sales/orders/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sales-orders'] });
+      queryClient.invalidateQueries({ queryKey: ['sales-dashboard'] });
       toast.success('Order deleted');
     },
     onError: (err: any) => toast.error(err.response?.data?.message || 'Failed to delete'),

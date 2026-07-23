@@ -27,11 +27,18 @@ export const createCustomer = async (req: AuthRequest, res: Response) => {
     const customer_type = b.customer_type || b.type || 'individual';
     const customer_code = b.customer_code || `CUST-${Date.now()}`;
     const { company_name, phone, email, address, credit_limit, payment_terms } = b;
+    const initial_payment = Math.max(0, Number(b.initial_payment) || 0);
     const [result]: any = await pool.query(
-      `INSERT INTO customers (first_name, last_name, company_name, phone, email, address, customer_type, credit_limit, payment_terms, customer_code)
-       VALUES (?,?,?,?,?,?,?,?,?,?)`,
-      [first_name, last_name, company_name || null, phone || null, email || null, address || null, customer_type, credit_limit || null, payment_terms || null, customer_code]
+      `INSERT INTO customers (first_name, last_name, company_name, phone, email, address, customer_type, credit_limit, payment_terms, customer_code, balance)
+       VALUES (?,?,?,?,?,?,?,?,?,?,?)`,
+      [first_name, last_name, company_name || null, phone || null, email || null, address || null, customer_type, credit_limit || null, payment_terms || null, customer_code, initial_payment]
     );
+    if (initial_payment > 0) {
+      await pool.query(
+        `INSERT INTO customer_payments (customer_id, amount, payment_method) VALUES (?, ?, ?)`,
+        [result.insertId, initial_payment, 'initial']
+      );
+    }
     await logAudit(req, createAuditEntry(req, 'Create Customer', 'Sales', `Customer ${first_name} ${last_name} created`, req.body));
     return created(res, { id: result.insertId }, 'Customer created');
   } catch (err: any) { return error(res, err.message); }
@@ -48,10 +55,18 @@ export const updateCustomer = async (req: AuthRequest, res: Response) => {
     const last_name = b.last_name || nameParts.slice(1).join(' ') || old[0].last_name;
     const customer_type = b.customer_type || b.type || old[0].customer_type;
     const { company_name, phone, email, address, credit_limit, payment_terms, status } = b;
+    const balance = b.balance !== undefined ? Math.max(0, Number(b.balance) || 0) : old[0].balance;
     await pool.query(
-      `UPDATE customers SET first_name=?, last_name=?, company_name=?, phone=?, email=?, address=?, customer_type=?, credit_limit=?, payment_terms=?, status=? WHERE id=?`,
-      [first_name, last_name, company_name || null, phone || null, email || null, address || null, customer_type, credit_limit || null, payment_terms || null, status || old[0].status, req.params.id]
+      `UPDATE customers SET first_name=?, last_name=?, company_name=?, phone=?, email=?, address=?, customer_type=?, credit_limit=?, payment_terms=?, status=?, balance=? WHERE id=?`,
+      [first_name, last_name, company_name || null, phone || null, email || null, address || null, customer_type, credit_limit || null, payment_terms || null, status || old[0].status, balance, req.params.id]
     );
+    if (b.balance !== undefined && balance > old[0].balance) {
+      const diff = balance - old[0].balance;
+      await pool.query(
+        `INSERT INTO customer_payments (customer_id, invoice_id, amount, payment_method) VALUES (?, NULL, ?, ?)`,
+        [req.params.id, diff, 'payment']
+      );
+    }
     await logAudit(req, createAuditEntry(req, 'Update Customer', 'Sales', `Customer #${req.params.id} updated`, req.body, old[0]));
     return success(res, null, 'Customer updated');
   } catch (err: any) { return error(res, err.message); }

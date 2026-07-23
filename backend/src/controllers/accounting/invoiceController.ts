@@ -43,6 +43,40 @@ export const createInvoice = async (req: AuthRequest, res: Response) => {
   } catch (err: any) { return error(res, err.message); }
 };
 
+export const updateInvoice = async (req: AuthRequest, res: Response) => {
+  try {
+    const [old]: any = await pool.query('SELECT * FROM invoices WHERE id = ?', [req.params.id]);
+    if (old.length === 0) return error(res, 'Invoice not found', 404);
+    const { invoice_number, customer_id, type, total_amount, tax, due_date, notes, status } = req.body;
+    await pool.query(
+      `UPDATE invoices SET invoice_number=?, customer_id=?, type=?, total_amount=?, tax=?, due_date=?, notes=?, status=? WHERE id=?`,
+      [invoice_number || old[0].invoice_number, customer_id ?? old[0].customer_id, type || old[0].type, total_amount ?? old[0].total_amount, tax ?? old[0].tax, due_date || old[0].due_date, notes ?? old[0].notes, status || old[0].status, req.params.id]
+    );
+    if (req.body.items) {
+      await pool.query('DELETE FROM invoice_items WHERE invoice_id = ?', [req.params.id]);
+      for (const item of req.body.items) {
+        await pool.query(
+          `INSERT INTO invoice_items (invoice_id, description, quantity, unit_price, total_price) VALUES (?,?,?,?,?)`,
+          [req.params.id, item.description, item.quantity, item.unit_price, item.quantity * item.unit_price]
+        );
+      }
+    }
+    await logAudit(req, createAuditEntry(req, 'Update Invoice', 'Accounting', `Invoice #${req.params.id} updated`, req.body, old[0]));
+    return success(res, null, 'Invoice updated');
+  } catch (err: any) { return error(res, err.message); }
+};
+
+export const deleteInvoice = async (req: AuthRequest, res: Response) => {
+  try {
+    const [old]: any = await pool.query('SELECT * FROM invoices WHERE id = ?', [req.params.id]);
+    if (old.length === 0) return error(res, 'Invoice not found', 404);
+    await pool.query('DELETE FROM invoice_items WHERE invoice_id = ?', [req.params.id]);
+    await pool.query('DELETE FROM invoices WHERE id = ?', [req.params.id]);
+    await logAudit(req, createAuditEntry(req, 'Delete Invoice', 'Accounting', `Invoice #${req.params.id} deleted`, null, old[0]));
+    return success(res, null, 'Invoice deleted');
+  } catch (err: any) { return error(res, err.message); }
+};
+
 export const updateInvoiceStatus = async (req: AuthRequest, res: Response) => {
   try {
     const { status } = req.body;

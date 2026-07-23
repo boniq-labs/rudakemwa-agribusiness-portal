@@ -5,7 +5,7 @@ import DataTable from '../../components/DataTable';
 import FormField from '../../components/FormField';
 import { logisticsAPI } from '../../api/endpoints';
 import client from '../../api/client';
-import { Plus, X, AlertTriangle, Calendar, Trash2 } from 'lucide-react';
+import { Plus, X, AlertTriangle, Calendar, Edit2, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import type { Column } from '../../components/DataTable';
 
@@ -22,6 +22,7 @@ const initialForm: FormData = {
 export default function MaintenancePage() {
   const queryClient = useQueryClient();
   const [showModal, setShowModal] = useState(false);
+  const [editing, setEditing] = useState<any>(null);
   const [form, setForm] = useState<FormData>(initialForm);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -45,6 +46,7 @@ export default function MaintenancePage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['logistics', 'maintenance'] });
       queryClient.invalidateQueries({ queryKey: ['logistics', 'maintenance', 'due'] });
+      queryClient.invalidateQueries({ queryKey: ['logistics-dashboard'] });
       setShowModal(false);
       setForm(initialForm);
       setErrors({});
@@ -54,11 +56,26 @@ export default function MaintenancePage() {
     },
   });
 
-  const deleteMutation = useMutation({
-    mutationFn: (id: number) => client.delete(`/logistics/maintenance/${id}`),
+  const updateMutation = useMutation({
+    mutationFn: (data: any) => logisticsAPI.updateMaintenance(data.id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['logistics', 'maintenance'] });
       queryClient.invalidateQueries({ queryKey: ['logistics', 'maintenance', 'due'] });
+      queryClient.invalidateQueries({ queryKey: ['logistics-dashboard'] });
+      closeModal();
+      toast.success('Maintenance record updated');
+    },
+    onError: (err: any) => {
+      setErrors(err.response?.data?.errors || { submit: err.response?.data?.message || 'Failed to update' });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: number) => logisticsAPI.deleteMaintenance(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['logistics', 'maintenance'] });
+      queryClient.invalidateQueries({ queryKey: ['logistics', 'maintenance', 'due'] });
+      queryClient.invalidateQueries({ queryKey: ['logistics-dashboard'] });
       toast.success('Maintenance record deleted');
     },
     onError: (err: any) => {
@@ -70,6 +87,42 @@ export default function MaintenancePage() {
     setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
+  const closeModal = () => {
+    setShowModal(false);
+    setEditing(null);
+    setForm(initialForm);
+    setErrors({});
+  };
+
+  const openAdd = () => {
+    setEditing(null);
+    setForm(initialForm);
+    setErrors({});
+    setShowModal(true);
+  };
+
+  const toDateStr = (d: any) => {
+    if (!d) return '';
+    if (typeof d === 'string') return d.substring(0, 10);
+    if (d instanceof Date && !isNaN(d.getTime())) return d.toISOString().split('T')[0];
+    return '';
+  };
+
+  const openEdit = (item: any) => {
+    setEditing(item);
+    setForm({
+      vehicle_id: String(item.vehicle_id || ''),
+      maintenance_type: item.maintenance_type || '',
+      description: item.description || '',
+      date: toDateStr(item.date) || new Date().toISOString().split('T')[0],
+      cost: String(item.cost || ''),
+      service_provider: item.service_provider || '',
+      next_service_date: toDateStr(item.next_service_date),
+    });
+    setErrors({});
+    setShowModal(true);
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const payload = {
@@ -77,13 +130,17 @@ export default function MaintenancePage() {
       vehicle_id: form.vehicle_id ? Number(form.vehicle_id) : undefined,
       cost: form.cost ? Number(form.cost) : undefined,
     };
-    createMutation.mutate(payload);
+    if (editing) {
+      updateMutation.mutate({ id: editing.id, ...payload });
+    } else {
+      createMutation.mutate(payload);
+    }
   };
 
   const columns: Column<any>[] = [
     {
-      key: 'vehicle', label: 'Vehicle',
-      render: (m: any) => (typeof m.vehicle === 'object' ? m.vehicle?.vehicle_name || m.vehicle?.plate_number : m.vehicle) || '-',
+      key: 'vehicle_name', label: 'Vehicle',
+      render: (m: any) => m.vehicle_name || '-',
     },
     { key: 'maintenance_type', label: 'Type', render: (m: any) => m.maintenance_type || '-' },
     { key: 'description', label: 'Description', render: (m: any) => m.description || '-' },
@@ -104,11 +161,16 @@ export default function MaintenancePage() {
       },
     },
     {
-      key: 'actions', label: '',
+      key: 'actions', label: 'Actions',
       render: (m: any) => (
-        <div className="actions">
-          <button className="btn btn-sm btn-danger" onClick={(e) => { e.stopPropagation(); if (confirm('Delete this maintenance record?')) deleteMutation.mutate(m.id); }}>
-            <Trash2 size={14} /> Delete
+        <div style={{ display: 'flex', gap: 4 }}>
+          <button className="btn btn-sm" style={{ background: '#dbeafe', color: '#1e40af', border: 'none' }}
+            onClick={e => { e.stopPropagation(); openEdit(m); }}>
+            <Edit2 size={14} />
+          </button>
+          <button className="btn btn-sm" style={{ background: '#fef2f2', color: '#991b1b', border: 'none' }}
+            onClick={e => { e.stopPropagation(); if (confirm('Delete this maintenance record?')) deleteMutation.mutate(m.id); }}>
+            <Trash2 size={14} />
           </button>
         </div>
       ),
@@ -120,7 +182,7 @@ export default function MaintenancePage() {
       title="Maintenance"
       subtitle="Vehicle maintenance records and scheduling"
       actions={
-        <button className="btn btn-primary" onClick={() => setShowModal(true)}>
+        <button className="btn btn-primary" onClick={openAdd}>
           <Plus size={16} /> New Maintenance
         </button>
       }
@@ -146,7 +208,7 @@ export default function MaintenancePage() {
                 <AlertTriangle size={16} style={{ color: 'var(--warning)', flexShrink: 0 }} />
                 <div style={{ flex: 1 }}>
                   <span style={{ fontWeight: 500 }}>
-                    {typeof m.vehicle === 'object' ? m.vehicle?.vehicle_name || m.vehicle?.plate_number : m.vehicle}
+                    {m.vehicle_name || '-'}
                   </span>
                   <span style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginLeft: 8 }}>
                     {m.maintenance_type} &mdash; {m.next_service_date ? new Date(m.next_service_date).toLocaleDateString() : 'No date'}
@@ -161,10 +223,10 @@ export default function MaintenancePage() {
       <DataTable columns={columns} data={maintenance || []} loading={isLoading} emptyMessage="No maintenance records found" />
 
       {showModal && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }} onClick={() => setShowModal(false)}>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }} onClick={closeModal}>
           <div style={{ background: 'var(--card-bg)', borderRadius: 'var(--radius)', padding: 24, width: 640, maxHeight: '90vh', overflow: 'auto' }} onClick={e => e.stopPropagation()}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-              <h2 style={{ fontSize: '1.2rem', fontWeight: 700 }}>New Maintenance Record</h2>
+              <h2 style={{ fontSize: '1.2rem', fontWeight: 700 }}>{editing ? 'Edit Maintenance Record' : 'New Maintenance Record'}</h2>
               <button onClick={() => setShowModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)' }}><X size={20} /></button>
             </div>
             <form onSubmit={handleSubmit}>
@@ -210,9 +272,9 @@ export default function MaintenancePage() {
               </FormField>
               {errors.submit && <div className="alert alert-error">{errors.submit}</div>}
               <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 20 }}>
-                <button type="button" className="btn" style={{ background: 'var(--card-bg)', border: '1px solid var(--border)', color: 'var(--text)' }} onClick={() => setShowModal(false)}>Cancel</button>
-                <button type="submit" className="btn btn-primary" disabled={createMutation.isPending}>
-                  {createMutation.isPending ? 'Saving...' : 'Save Record'}
+                <button type="button" className="btn" style={{ background: 'var(--card-bg)', border: '1px solid var(--border)', color: 'var(--text)' }} onClick={closeModal}>Cancel</button>
+                <button type="submit" className="btn btn-primary" disabled={createMutation.isPending || updateMutation.isPending}>
+                  {createMutation.isPending || updateMutation.isPending ? 'Saving...' : editing ? 'Update' : 'Save Record'}
                 </button>
               </div>
             </form>

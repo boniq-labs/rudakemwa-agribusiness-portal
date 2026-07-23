@@ -40,19 +40,19 @@ export default function SuppliersPage() {
 
   const createMutation = useMutation({
     mutationFn: (data: any) => client.post('/procurement/suppliers', data),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['procurement-suppliers'] }); closeModal(); toast.success('Supplier created'); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['procurement-suppliers'] }); queryClient.invalidateQueries({ queryKey: ['procurement-dashboard'] }); closeModal(); toast.success('Supplier created'); },
     onError: (err: any) => setErrors({ submit: err.response?.data?.message || 'Failed to create supplier' }),
   });
 
   const updateMutation = useMutation({
     mutationFn: (data: any) => client.put(`/procurement/suppliers/${data.id}`, data),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['procurement-suppliers'] }); closeModal(); toast.success('Supplier updated'); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['procurement-suppliers'] }); queryClient.invalidateQueries({ queryKey: ['procurement-dashboard'] }); closeModal(); toast.success('Supplier updated'); },
     onError: (err: any) => setErrors({ submit: err.response?.data?.message || 'Failed to update supplier' }),
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id: number) => client.delete(`/procurement/suppliers/${id}`),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['procurement-suppliers'] }); toast.success('Supplier deleted'); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['procurement-suppliers'] }); queryClient.invalidateQueries({ queryKey: ['procurement-dashboard'] }); toast.success('Supplier deleted'); },
     onError: () => toast.error('Failed to delete'),
   });
 

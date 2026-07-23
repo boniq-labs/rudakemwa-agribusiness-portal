@@ -8,7 +8,7 @@ import StatsCard from '../../components/StatsCard';
 import type { Column } from '../../components/DataTable';
 import { Plus, Moon, Edit2 } from 'lucide-react';
 
-const initialForm = { collection_date: new Date().toISOString().split('T')[0], collector_id: '', quantity_liters: '', number_of_animals: '', notes: '' };
+const initialForm = { collection_date: new Date().toISOString().split('T')[0], collector_name: '', quantity_liters: '', number_of_animals: '', notes: '' };
 
 export default function EveningProduction() {
   const queryClient = useQueryClient();
@@ -21,13 +21,7 @@ export default function EveningProduction() {
     queryFn: () => client.get('/milk/collections', { params: { time: 'evening', limit: 100 } }).then(r => r.data.data || []),
   });
 
-  const { data: collectors } = useQuery({
-    queryKey: ['users-collectors'],
-    queryFn: () => client.get('/users', { params: { is_active: 1 } }).then(r => r.data.data || []),
-  });
-
   const collections = Array.isArray(data) ? data : [];
-  const collectorList = Array.isArray(collectors) ? collectors : [];
 
   const totalLiters = collections.reduce((s: number, c: any) => s + Number(c.quantity_liters || 0), 0);
 
@@ -39,7 +33,7 @@ export default function EveningProduction() {
       setForm(initialForm);
       toast.success('Evening production recorded');
     },
-    onError: () => toast.error('Failed to record evening production'),
+    onError: (err: any) => toast.error(err?.response?.data?.message || 'Failed to record evening production'),
   });
 
   const updateMutation = useMutation({
@@ -51,7 +45,7 @@ export default function EveningProduction() {
       setForm(initialForm);
       toast.success('Record updated');
     },
-    onError: () => toast.error('Failed to update record'),
+    onError: (err: any) => toast.error(err?.response?.data?.message || 'Failed to update record'),
   });
 
   const deleteMutation = useMutation({
@@ -60,7 +54,7 @@ export default function EveningProduction() {
       queryClient.invalidateQueries({ queryKey: ['milk-evening'] });
       toast.success('Record deleted');
     },
-    onError: () => toast.error('Failed to delete record'),
+    onError: (err: any) => toast.error(err?.response?.data?.message || 'Failed to delete record'),
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -68,7 +62,7 @@ export default function EveningProduction() {
     const payload = {
       collection_date: form.collection_date,
       time: 'evening',
-      collector_id: form.collector_id ? Number(form.collector_id) : undefined,
+      collector_name: form.collector_name,
       quantity_liters: Number(form.quantity_liters),
       number_of_animals: form.number_of_animals ? Number(form.number_of_animals) : undefined,
       notes: form.notes || undefined,
@@ -81,7 +75,7 @@ export default function EveningProduction() {
   };
 
   const openEdit = (c: any) => {
-    setForm({ collection_date: c.collection_date || new Date().toISOString().split('T')[0], collector_id: String(c.collector_id || c.collector?.id || ''), quantity_liters: String(c.quantity_liters || ''), number_of_animals: String(c.number_of_animals || ''), notes: c.notes || '' });
+    setForm({ collection_date: c.collection_date || new Date().toISOString().split('T')[0], collector_name: c.collector_name || '', quantity_liters: String(c.quantity_liters || ''), number_of_animals: String(c.number_of_animals || ''), notes: c.notes || '' });
     setEditingId(c.id);
     setShowModal(true);
   };
@@ -125,13 +119,8 @@ export default function EveningProduction() {
                 <input className="form-input" type="date" value={form.collection_date} onChange={e => setForm(p => ({ ...p, collection_date: e.target.value }))} required />
               </div>
               <div className="form-group">
-                <label className="form-label">Collector *</label>
-                <select className="form-select" value={form.collector_id} onChange={e => setForm(p => ({ ...p, collector_id: e.target.value }))} required>
-                  <option value="">Select collector...</option>
-                  {collectorList.map((u: any) => (
-                    <option key={u.id} value={u.id}>{u.first_name} {u.last_name}</option>
-                  ))}
-                </select>
+                <label className="form-label">Collector Name *</label>
+                <input className="form-input" type="text" value={form.collector_name} onChange={e => setForm(p => ({ ...p, collector_name: e.target.value }))} placeholder="Enter collector name" required />
               </div>
               <div className="form-group">
                 <label className="form-label">Litres *</label>

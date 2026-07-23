@@ -44,19 +44,19 @@ export default function PurchaseRequests() {
 
   const createMutation = useMutation({
     mutationFn: (data: any) => client.post('/procurement/requests', data),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['procurement-requests'] }); closeModal(); toast.success('Request created'); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['procurement-requests'] }); queryClient.invalidateQueries({ queryKey: ['procurement-dashboard'] }); closeModal(); toast.success('Request created'); },
     onError: (err: any) => setErrors({ submit: err.response?.data?.message || 'Failed to create request' }),
   });
 
   const updateMutation = useMutation({
     mutationFn: (data: any) => client.put(`/procurement/requests/${data.id}`, data),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['procurement-requests'] }); closeModal(); toast.success('Request updated'); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['procurement-requests'] }); queryClient.invalidateQueries({ queryKey: ['procurement-dashboard'] }); closeModal(); toast.success('Request updated'); },
     onError: (err: any) => setErrors({ submit: err.response?.data?.message || 'Failed to update request' }),
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id: number) => client.delete(`/procurement/requests/${id}`),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['procurement-requests'] }); toast.success('Request deleted'); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['procurement-requests'] }); queryClient.invalidateQueries({ queryKey: ['procurement-dashboard'] }); toast.success('Request deleted'); },
     onError: () => toast.error('Failed to delete'),
   });
 
@@ -76,6 +76,7 @@ export default function PurchaseRequests() {
       estimated_cost: form.estimated_cost ? Number(form.estimated_cost) : undefined,
       department_id: form.department_id ? Number(form.department_id) : undefined,
       requested_by: form.requested_by,
+      status: form.status || 'pending',
       notes: form.notes,
     };
     if (editingId) {

@@ -21,7 +21,7 @@ api.interceptors.response.use(
   (res) => res,
   async (err) => {
     const original = err.config;
-    if (err.response?.status === 401 && !original._retry) {
+    if (err.response?.status === 401 && !original._retry && !original.url?.includes('/auth/login')) {
       original._retry = true;
       const refreshToken = getToken('refreshToken');
       if (refreshToken) {

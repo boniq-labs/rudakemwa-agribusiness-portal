@@ -31,3 +31,25 @@ export const notificationsApi = {
   markRead: (id: number) => api.put(`/notifications/${id}/read`),
   markAllRead: () => api.put('/notifications/read-all'),
 };
+
+export const settingsApi = {
+  get: () => api.get('/settings'),
+  update: (data: any) => api.put('/settings', data),
+};
+
+export const uploadApi = {
+  upload: (file: File) => {
+    const fd = new FormData();
+    fd.append('file', file);
+    return api.post('/upload', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+  },
+};
+
+export const shiftsApi = {
+  getEmployees: () => api.get('/shifts/employees'),
+  list: () => api.get('/shifts'),
+  myShift: () => api.get('/shifts/my-shift'),
+  create: (data: any) => api.post('/shifts', data),
+  update: (id: number, data: any) => api.put(`/shifts/${id}`, data),
+  delete: (id: number) => api.delete(`/shifts/${id}`),
+};

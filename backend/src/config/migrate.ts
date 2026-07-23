@@ -2,7 +2,7 @@ import mysql from 'mysql2/promise';
 import dotenv from 'dotenv';
 dotenv.config();
 
-async function migrate() {
+export async function migrate() {
   const conn = await mysql.createConnection({
     host: process.env.DB_HOST || 'localhost',
     user: process.env.DB_USER || 'root',
@@ -1268,6 +1268,16 @@ async function migrate() {
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
       deleted_at TIMESTAMP NULL
     )`,
+    `CREATE TABLE IF NOT EXISTS customer_payments (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      customer_id INT,
+      invoice_id INT,
+      amount DECIMAL(12,2) NOT NULL,
+      payment_method VARCHAR(50),
+      reference_number VARCHAR(100),
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE SET NULL
+    )`,
     `CREATE TABLE IF NOT EXISTS income_records (
       id INT AUTO_INCREMENT PRIMARY KEY,
       income_number VARCHAR(50) UNIQUE NOT NULL,
@@ -1531,6 +1541,38 @@ async function migrate() {
       FOREIGN KEY (return_id) REFERENCES sales_returns(id) ON DELETE CASCADE,
       FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE SET NULL
     )`,
+    `CREATE TABLE IF NOT EXISTS sales_invoices (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      invoice_number VARCHAR(50) UNIQUE NOT NULL,
+      customer_id INT,
+      order_id INT,
+      subtotal DECIMAL(12,2),
+      tax DECIMAL(12,2) DEFAULT 0.00,
+      total_amount DECIMAL(12,2),
+      invoice_date DATE NOT NULL,
+      due_date DATE,
+      status VARCHAR(50) DEFAULT 'pending',
+      notes TEXT,
+      created_by INT,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      deleted_at TIMESTAMP NULL,
+      FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE SET NULL,
+      FOREIGN KEY (order_id) REFERENCES sales_orders(id) ON DELETE SET NULL,
+      FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL
+    )`,
+    `CREATE TABLE IF NOT EXISTS sales_invoice_items (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      invoice_id INT NOT NULL,
+      product_id INT,
+      description VARCHAR(500),
+      quantity DECIMAL(10,2) NOT NULL,
+      unit_price DECIMAL(12,2) NOT NULL,
+      total_price DECIMAL(12,2) NOT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (invoice_id) REFERENCES sales_invoices(id) ON DELETE CASCADE,
+      FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE SET NULL
+    )`,
 
     // ---- VETERINARY TABLES ----
 
@@ -1619,11 +1661,64 @@ async function migrate() {
       FOREIGN KEY (crop_type_id) REFERENCES crop_types(id) ON DELETE CASCADE,
       FOREIGN KEY (land_area_id) REFERENCES land_areas(id) ON DELETE CASCADE
     )`,
+    // -- Dynamic app settings (key-value store)
+    `CREATE TABLE IF NOT EXISTS app_settings (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      setting_key VARCHAR(100) UNIQUE NOT NULL,
+      setting_value LONGTEXT,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    )`,
+    // -- Employee shift management
+    `CREATE TABLE IF NOT EXISTS employee_shifts (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      employee_id INT NOT NULL,
+      department_id INT NOT NULL,
+      shift_name VARCHAR(100) NOT NULL,
+      start_time TIME NOT NULL,
+      end_time TIME NOT NULL,
+      working_days TEXT,
+      assigned_by INT NOT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      FOREIGN KEY (employee_id) REFERENCES users(id) ON DELETE CASCADE,
+      FOREIGN KEY (department_id) REFERENCES departments(id) ON DELETE CASCADE,
+      FOREIGN KEY (assigned_by) REFERENCES users(id) ON DELETE CASCADE
+    )`,
+    // -- Employee daily activities
+    `CREATE TABLE IF NOT EXISTS employee_activities (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      employee_id INT NOT NULL,
+      date DATE NOT NULL,
+      task_description TEXT,
+      issue_description TEXT,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE CASCADE
+    )`,
   ];
 
   for (const q of queries) {
     try { await conn.query(q); } catch (e: any) { console.error('Migration error:', e.message); }
   }
+
+  // Seed default settings
+  try {
+    const defaultSettings = [
+      { key: 'system_name', value: 'EFMS' },
+      { key: 'farm_name', value: 'Rudakemwa Farm' },
+      { key: 'farm_address', value: '' },
+      { key: 'phone_number', value: '' },
+      { key: 'email', value: '' },
+      { key: 'system_info', value: '' },
+    ];
+    for (const s of defaultSettings) {
+      await conn.query(
+        `INSERT IGNORE INTO app_settings (setting_key, setting_value) VALUES (?, ?)`,
+        [s.key, s.value]
+      );
+    }
+  } catch (e: any) { console.error('Seed settings error:', e.message); }
 
   // Fix animal_transfers column types - frontend sends location names as strings
   const alterQueries = [
@@ -1696,6 +1791,42 @@ async function migrate() {
     `ALTER TABLE vaccination_records ADD COLUMN deleted_at TIMESTAMP NULL AFTER created_at`,
     `ALTER TABLE vaccination_records ADD COLUMN vaccine_name VARCHAR(200) AFTER animal_id`,
     `ALTER TABLE vaccination_records MODIFY veterinarian VARCHAR(100)`,
+    // -- milk_collections missing collector_name for manual text input
+    `ALTER TABLE milk_collections ADD COLUMN collector_name VARCHAR(255) AFTER collector_id`,
+    `ALTER TABLE milk_collections ADD COLUMN deleted_at TIMESTAMP NULL AFTER notes`,
+    // -- customer_payments missing customer_id for tracking
+    `ALTER TABLE customer_payments ADD COLUMN customer_id INT AFTER id`,
+    // -- attendance missing user_id, total_hours columns for employee dashboard
+    `ALTER TABLE attendance ADD COLUMN user_id INT AFTER employee_id`,
+    `ALTER TABLE attendance ADD COLUMN total_hours DECIMAL(5,2) AFTER overtime_minutes`,
+    `ALTER TABLE attendance MODIFY check_in DATETIME`,
+    `ALTER TABLE attendance MODIFY check_out DATETIME`,
+    // -- logistics missing columns
+    `ALTER TABLE trips ADD COLUMN destination TEXT AFTER notes`,
+    `ALTER TABLE trips ADD COLUMN purpose TEXT AFTER destination`,
+    `ALTER TABLE trips ADD COLUMN fuel_used DECIMAL(10,2) AFTER distance_km`,
+    `ALTER TABLE trips ADD COLUMN deleted_at TIMESTAMP NULL AFTER updated_at`,
+    `ALTER TABLE deliveries ADD COLUMN item VARCHAR(200) AFTER delivery_number`,
+    `ALTER TABLE deliveries ADD COLUMN quantity DECIMAL(10,2) AFTER item`,
+    `ALTER TABLE deliveries ADD COLUMN recipient VARCHAR(200) AFTER quantity`,
+    `ALTER TABLE deliveries ADD COLUMN deleted_at TIMESTAMP NULL AFTER updated_at`,
+    `ALTER TABLE transport_requests ADD COLUMN rejection_reason TEXT AFTER status`,
+    `ALTER TABLE transport_requests ADD COLUMN approved_by INT AFTER rejection_reason`,
+    `ALTER TABLE transport_requests ADD COLUMN approved_at TIMESTAMP NULL AFTER approved_by`,
+    `ALTER TABLE transport_requests ADD COLUMN deleted_at TIMESTAMP NULL AFTER updated_at`,
+    `ALTER TABLE fuel_records ADD COLUMN deleted_at TIMESTAMP NULL AFTER created_at`,
+    `ALTER TABLE vehicle_maintenance ADD COLUMN deleted_at TIMESTAMP NULL AFTER updated_at`,
+    `ALTER TABLE equipment ADD COLUMN min_stock_level DECIMAL(10,2) DEFAULT 0 AFTER quantity`,
+    `ALTER TABLE sales_invoices ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP NULL AFTER updated_at`,
+    `ALTER TABLE sales_invoices ADD COLUMN IF NOT EXISTS invoice_date DATE AFTER total_amount`,
+    `ALTER TABLE invoices ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP NULL AFTER updated_at`,
+    `ALTER TABLE income_records ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP NULL AFTER created_at`,
+    `ALTER TABLE expense_records ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP NULL AFTER created_at`,
+    `ALTER TABLE treatments ADD COLUMN IF NOT EXISTS diagnosis TEXT AFTER animal_id`,
+    `ALTER TABLE treatments ADD COLUMN IF NOT EXISTS treatment_description TEXT AFTER medicine`,
+    `ALTER TABLE treatments ADD COLUMN IF NOT EXISTS treatment_date DATE AFTER treatment_description`,
+    `ALTER TABLE treatments ADD COLUMN IF NOT EXISTS follow_up_date DATE AFTER treatment_date`,
+    `ALTER TABLE treatments ADD COLUMN IF NOT EXISTS veterinarian_name VARCHAR(200) AFTER dosage`,
   ];
   for (const q of alterQueries) {
     try { await conn.query(q); } catch (e: any) { console.error('Migration error:', e.message); }
@@ -1705,4 +1836,6 @@ async function migrate() {
   await conn.end();
 }
 
-migrate();
+// Auto-run when called directly (npm run db:push); export for programmatic use
+const isDirect = process.argv[1] && (process.argv[1].includes('migrate'));
+if (isDirect) { migrate(); }

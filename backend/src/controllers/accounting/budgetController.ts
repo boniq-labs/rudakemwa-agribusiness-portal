@@ -39,6 +39,41 @@ export const createBudget = async (req: AuthRequest, res: Response) => {
   } catch (err: any) { return error(res, err.message); }
 };
 
+export const updateBudget = async (req: AuthRequest, res: Response) => {
+  try {
+    const [old]: any = await pool.query('SELECT * FROM budgets WHERE id = ?', [req.params.id]);
+    if (old.length === 0) return error(res, 'Budget not found', 404);
+    const { name, department_id, fiscal_year, total_amount, status } = req.body;
+    await pool.query(
+      `UPDATE budgets SET name=?, department_id=?, fiscal_year=?, total_amount=?, status=? WHERE id=?`,
+      [name || old[0].name, department_id ?? old[0].department_id, fiscal_year || old[0].fiscal_year, total_amount ?? old[0].total_amount, status || old[0].status, req.params.id]
+    );
+    if (req.body.items) {
+      await pool.query('DELETE FROM budget_items WHERE budget_id = ?', [req.params.id]);
+      for (const item of req.body.items) {
+        const catId = item.category_id || item.expense_category_id;
+        await pool.query(
+          `INSERT INTO budget_items (budget_id, category_id, planned_amount) VALUES (?,?,?)`,
+          [req.params.id, catId, item.planned_amount]
+        );
+      }
+    }
+    await logAudit(req, createAuditEntry(req, 'Update Budget', 'Accounting', `Budget #${req.params.id} updated`, req.body, old[0]));
+    return success(res, null, 'Budget updated');
+  } catch (err: any) { return error(res, err.message); }
+};
+
+export const deleteBudget = async (req: AuthRequest, res: Response) => {
+  try {
+    const [old]: any = await pool.query('SELECT * FROM budgets WHERE id = ?', [req.params.id]);
+    if (old.length === 0) return error(res, 'Budget not found', 404);
+    await pool.query('DELETE FROM budget_items WHERE budget_id = ?', [req.params.id]);
+    await pool.query('DELETE FROM budgets WHERE id = ?', [req.params.id]);
+    await logAudit(req, createAuditEntry(req, 'Delete Budget', 'Accounting', `Budget #${req.params.id} deleted`, null, old[0]));
+    return success(res, null, 'Budget deleted');
+  } catch (err: any) { return error(res, err.message); }
+};
+
 export const updateBudgetStatus = async (req: AuthRequest, res: Response) => {
   try {
     const { status } = req.body;

@@ -11,14 +11,13 @@ export default function SalesReports() {
     queryFn: () => client.get('/sales/reports').then(r => r.data.data),
   });
 
-  const r = (report as any) || { monthSales: 0, topProducts: [], customerStats: { total: 0, active: 0 } };
+  const r = (report as any) || { monthSales: 0, topProducts: [], activeCustomers: 0 };
 
   return (
     <ModulePage title="Sales Reports" subtitle="Sales analytics and reports">
       <div className="stats-grid">
         <StatsCard title="Month Sales" value={formatAmount(r.monthSales)} icon={TrendingUp} color="var(--primary)" />
-        <StatsCard title="Total Customers" value={r.customerStats?.total || 0} icon={Users} color="var(--info)" />
-        <StatsCard title="Active Customers" value={r.customerStats?.active || 0} icon={Users} color="var(--success)" />
+        <StatsCard title="Active Customers" value={r.activeCustomers} icon={Users} color="var(--success)" />
       </div>
 
       <div className="dashboard-grid">
@@ -41,15 +40,11 @@ export default function SalesReports() {
         </div>
 
         <div className="card">
-          <h3>Customer Stats</h3>
+          <h3>Summary</h3>
           <div style={{ padding: '8px 0' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid var(--border)' }}>
-              <span className="text-secondary">Total Customers</span>
-              <span style={{ fontWeight: 600 }}>{r.customerStats?.total || 0}</span>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid var(--border)' }}>
               <span className="text-secondary">Active Customers</span>
-              <span style={{ fontWeight: 600, color: 'var(--success)' }}>{r.customerStats?.active || 0}</span>
+              <span style={{ fontWeight: 600, color: 'var(--success)' }}>{r.activeCustomers}</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0' }}>
               <span className="text-secondary">Month Sales</span>

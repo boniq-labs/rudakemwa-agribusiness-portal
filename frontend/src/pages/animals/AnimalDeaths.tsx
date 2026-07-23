@@ -27,7 +27,7 @@ export default function AnimalDeaths() {
 
   const { data: animalsData } = useQuery({
     queryKey: ['animals'],
-    queryFn: async () => (await client.get('/animals')).data.data || [],
+    queryFn: async () => (await client.get('/animals/select')).data.data || [],
   });
 
   const deaths = Array.isArray(data) ? data : [];

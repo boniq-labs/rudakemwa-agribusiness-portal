@@ -52,6 +52,7 @@ const AnimalSales = lazy(() => import('./pages/animals/AnimalSales'));
 const AnimalDeaths = lazy(() => import('./pages/animals/AnimalDeaths'));
 const AnimalReports = lazy(() => import('./pages/animals/AnimalReports'));
 const AnimalProfile = lazy(() => import('./pages/animals/AnimalProfile'));
+const ShiftManagement = lazy(() => import('./pages/animals/ShiftManagement'));
 
 // Milk
 const MilkDashboard = lazy(() => import('./pages/milk/MilkDashboard'));
@@ -66,9 +67,6 @@ const StockDashboard = lazy(() => import('./pages/stock/StockDashboard'));
 const FeedStock = lazy(() => import('./pages/stock/FeedStock'));
 const MedicineStock = lazy(() => import('./pages/stock/MedicineStock'));
 const EquipmentPage = lazy(() => import('./pages/stock/EquipmentPage'));
-const StockIssue = lazy(() => import('./pages/stock/StockIssue'));
-const StockTransfer = lazy(() => import('./pages/stock/StockTransfer'));
-const StockAdjustment = lazy(() => import('./pages/stock/StockAdjustment'));
 const StockReports = lazy(() => import('./pages/stock/StockReports'));
 const StockCategories = lazy(() => import('./pages/stock/StockCategories'));
 
@@ -77,7 +75,6 @@ const ProcurementDashboard = lazy(() => import('./pages/procurement/ProcurementD
 const SuppliersPage = lazy(() => import('./pages/procurement/SuppliersPage'));
 const PurchaseRequests = lazy(() => import('./pages/procurement/PurchaseRequests'));
 const PurchaseOrders = lazy(() => import('./pages/procurement/PurchaseOrders'));
-const GoodsReceiving = lazy(() => import('./pages/procurement/GoodsReceiving'));
 const ProcurementInvoices = lazy(() => import('./pages/procurement/ProcurementInvoices'));
 const ProcurementContracts = lazy(() => import('./pages/procurement/ProcurementContracts'));
 const ProcurementReports = lazy(() => import('./pages/procurement/ProcurementReports'));
@@ -109,7 +106,6 @@ const CustomersPage = lazy(() => import('./pages/sales/CustomersPage'));
 const ProductsPage = lazy(() => import('./pages/sales/ProductsPage'));
 const OrdersPage = lazy(() => import('./pages/sales/OrdersPage'));
 const SalesInvoices = lazy(() => import('./pages/sales/SalesInvoices'));
-const SalesReturns = lazy(() => import('./pages/sales/SalesReturns'));
 const SalesReports = lazy(() => import('./pages/sales/SalesReports'));
 
 // Veterinary
@@ -200,6 +196,7 @@ function AppRoutes() {
             <Route path="animals/treatments" element={<Treatment />} />
             <Route path="animals/sales" element={<AnimalSales />} />
             <Route path="animals/deaths" element={<AnimalDeaths />} />
+            <Route path="animals/shifts" element={<ShiftManagement />} />
             <Route path="animals/reports" element={<AnimalReports />} />
             <Route path="animals/profile/:id" element={<AnimalProfile />} />
           </Route>
@@ -229,9 +226,6 @@ function AppRoutes() {
             <Route path="stock/feed" element={<FeedStock />} />
             <Route path="stock/medicines" element={<MedicineStock />} />
             <Route path="stock/equipment" element={<EquipmentPage />} />
-            <Route path="stock/issue" element={<StockIssue />} />
-            <Route path="stock/transfer" element={<StockTransfer />} />
-            <Route path="stock/adjustment" element={<StockAdjustment />} />
             <Route path="stock/reports" element={<StockReports />} />
             <Route path="stock/categories" element={<StockCategories />} />
 
@@ -243,8 +237,7 @@ function AppRoutes() {
             <Route path="procurement/suppliers" element={<SuppliersPage />} />
             <Route path="procurement/requests" element={<PurchaseRequests />} />
             <Route path="procurement/orders" element={<PurchaseOrders />} />
-            <Route path="procurement/receiving" element={<GoodsReceiving />} />
-            <Route path="procurement/invoices" element={<ProcurementInvoices />} />
+                        <Route path="procurement/invoices" element={<ProcurementInvoices />} />
             <Route path="procurement/contracts" element={<ProcurementContracts />} />
             <Route path="procurement/reports" element={<ProcurementReports />} />
 
@@ -283,7 +276,6 @@ function AppRoutes() {
             <Route path="sales/quotations" element={<Navigate to="/sales/orders" />} />
             <Route path="sales/invoices" element={<SalesInvoices />} />
             <Route path="sales/deliveries" element={<DeliveriesPage />} />
-            <Route path="sales/returns" element={<SalesReturns />} />
             <Route path="sales/reports" element={<SalesReports />} />
           </Route>
 
@@ -296,8 +288,8 @@ function AppRoutes() {
             <Route path="veterinary/prescriptions" element={<Prescriptions />} />
           </Route>
 
-          {/* Employee */}
-          <Route element={<ProtectedRoute roles={['owner', 'admin', 'worker']} />}>
+          {/* Employee — accessible to all department roles */}
+          <Route element={<ProtectedRoute roles={['owner', 'admin', 'worker', 'hr', 'animal', 'veterinarian', 'milk', 'procurement', 'logistics', 'stock', 'sales', 'accountant', 'crops']} />}>
             <Route path="employee/dashboard" element={<EmployeeDashboard />} />
             <Route path="employee/reports" element={<DailyReportPage />} />
           </Route>

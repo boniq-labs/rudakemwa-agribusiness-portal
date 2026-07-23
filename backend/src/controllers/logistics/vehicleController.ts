@@ -7,7 +7,7 @@ import { getPagination, buildWhereClause } from '../../utils/pagination';
 
 export const getVehicleTypes = async (req: AuthRequest, res: Response) => {
   try {
-    const [rows]: any = await pool.query('SELECT * FROM vehicle_types WHERE deleted_at IS NULL');
+    const [rows]: any = await pool.query('SELECT * FROM vehicle_types ORDER BY name');
     return success(res, rows);
   } catch (err: any) { return error(res, err.message); }
 };

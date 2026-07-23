@@ -4,9 +4,9 @@ import ModulePage from '../../components/ModulePage';
 import DataTable from '../../components/DataTable';
 import StatusBadge from '../../components/StatusBadge';
 import FormField from '../../components/FormField';
-import { procurementAPI } from '../../api/endpoints';
 import client from '../../api/client';
 import { Plus, X, AlertTriangle, Edit2, Trash2 } from 'lucide-react';
+import { procurementAPI } from '../../api/endpoints';
 import toast from 'react-hot-toast';
 import type { Column } from '../../components/DataTable';
 
@@ -40,6 +40,7 @@ export default function ProcurementContracts() {
     mutationFn: (data: any) => procurementAPI.createContract(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['procurement', 'contracts'] });
+      queryClient.invalidateQueries({ queryKey: ['procurement-dashboard'] });
       closeModal();
     },
     onError: (err: any) => {
@@ -51,6 +52,7 @@ export default function ProcurementContracts() {
     mutationFn: ({ id, data }: { id: number; data: any }) => procurementAPI.updateContract(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['procurement', 'contracts'] });
+      queryClient.invalidateQueries({ queryKey: ['procurement-dashboard'] });
       closeModal();
     },
     onError: (err: any) => {
@@ -59,9 +61,10 @@ export default function ProcurementContracts() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id: number) => client.delete(`/procurement/contracts/${id}`),
+    mutationFn: (id: number) => procurementAPI.deleteContract(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['procurement', 'contracts'] });
+      queryClient.invalidateQueries({ queryKey: ['procurement-dashboard'] });
       toast.success('Contract deleted');
     },
     onError: (err: any) => {
@@ -76,13 +79,20 @@ export default function ProcurementContracts() {
     setErrors({});
   };
 
+  const toDateStr = (d: any) => {
+    if (!d) return '';
+    if (typeof d === 'string') return d.substring(0, 10);
+    if (d instanceof Date && !isNaN(d.getTime())) return d.toISOString().split('T')[0];
+    return '';
+  };
+
   const openEdit = (contract: any) => {
     setEditingId(contract.id);
     setForm({
       contract_number: contract.contract_number || '',
       supplier_id: String(typeof contract.supplier === 'object' ? contract.supplier?.id : contract.supplier_id || ''),
-      start_date: contract.start_date ? contract.start_date.split('T')[0] : '',
-      end_date: contract.end_date ? contract.end_date.split('T')[0] : '',
+      start_date: toDateStr(contract.start_date),
+      end_date: toDateStr(contract.end_date),
       terms: contract.terms || '',
       total_value: String(contract.total_value || ''),
     });

@@ -67,7 +67,7 @@ export const getHRReports = async (req: AuthRequest, res: Response) => {
 export const getTasks = async (req: AuthRequest, res: Response) => {
   try {
     const { start_date, end_date } = req.query;
-    let query = "SELECT * FROM tasks";
+    let query = "SELECT * FROM tasks WHERE 1=1";
     const params: any[] = [];
     if (start_date) { query += " AND created_at >= ?"; params.push(start_date); }
     if (end_date) { query += " AND created_at <= ?"; params.push(end_date); }

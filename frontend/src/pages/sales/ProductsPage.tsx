@@ -11,14 +11,14 @@ import { Plus, Search } from 'lucide-react';
 
 interface ProductForm {
   name: string;
-  category: string;
+  category_id: string;
   price: string;
   unit: string;
-  quantity: string;
+  quantity_available: string;
   description: string;
 }
 
-const initialForm: ProductForm = { name: '', category: '', price: '', unit: '', quantity: '', description: '' };
+const initialForm: ProductForm = { name: '', category_id: '', price: '', unit: '', quantity_available: '', description: '' };
 
 export default function ProductsPage() {
   const queryClient = useQueryClient();
@@ -32,10 +32,18 @@ export default function ProductsPage() {
     queryFn: () => client.get('/sales/products').then(r => r.data.data || []),
   });
 
+  const { data: categories } = useQuery({
+    queryKey: ['sales-product-categories'],
+    queryFn: () => client.get('/sales/product-categories').then(r => r.data.data || []),
+  });
+
+  const categoryList = Array.isArray(categories) ? categories : [];
+
   const createMutation = useMutation({
     mutationFn: (d: any) => client.post('/sales/products', d),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sales-products'] });
+      queryClient.invalidateQueries({ queryKey: ['sales-dashboard'] });
       toast.success('Product created');
       setShowModal(false);
       setForm(initialForm);
@@ -47,6 +55,7 @@ export default function ProductsPage() {
     mutationFn: ({ id, data }: { id: number; data: any }) => client.put(`/sales/products/${id}`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sales-products'] });
+      queryClient.invalidateQueries({ queryKey: ['sales-dashboard'] });
       toast.success('Product updated');
       setShowModal(false);
       setForm(initialForm);
@@ -59,6 +68,7 @@ export default function ProductsPage() {
     mutationFn: (id: number) => client.delete(`/sales/products/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sales-products'] });
+      queryClient.invalidateQueries({ queryKey: ['sales-dashboard'] });
       toast.success('Product deleted');
     },
     onError: (err: any) => toast.error(err.response?.data?.message || 'Failed to delete'),
@@ -66,12 +76,19 @@ export default function ProductsPage() {
 
   const list = Array.isArray(data) ? data : [];
   const filtered = list.filter((p: any) =>
-    `${p.name || ''} ${p.category || ''}`.toLowerCase().includes(search.toLowerCase())
+    `${p.name || ''} ${p.category_name || ''}`.toLowerCase().includes(search.toLowerCase())
   );
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
-    const payload = { ...form, price: Number(form.price), quantity: Number(form.quantity) };
+    const payload: any = {
+      name: form.name,
+      category_id: form.category_id ? Number(form.category_id) : null,
+      price: Number(form.price),
+      unit: form.unit || null,
+      quantity_available: Number(form.quantity_available),
+      description: form.description || null,
+    };
     if (editId) updateMutation.mutate({ id: editId, data: payload });
     else createMutation.mutate(payload);
   };
@@ -79,10 +96,10 @@ export default function ProductsPage() {
   const handleEdit = (p: any) => {
     setForm({
       name: p.name || '',
-      category: p.category || '',
+      category_id: String(p.category_id || ''),
       price: String(p.price || ''),
       unit: p.unit || '',
-      quantity: String(p.quantity || ''),
+      quantity_available: String(p.quantity_available || p.quantity || ''),
       description: p.description || '',
     });
     setEditId(p.id);
@@ -95,10 +112,10 @@ export default function ProductsPage() {
 
   const columns: Column<any>[] = [
     { key: 'name', label: 'Name' },
-    { key: 'category', label: 'Category', render: (p: any) => p.category || '-' },
+    { key: 'category_name', label: 'Category', render: (p: any) => p.category_name || '-' },
     { key: 'price', label: 'Price', render: (p: any) => `$${Number(p.price).toFixed(2)}` },
     { key: 'unit', label: 'Unit', render: (p: any) => p.unit || '-' },
-    { key: 'quantity', label: 'Quantity', render: (p: any) => Number(p.quantity) ?? 0 },
+    { key: 'quantity_available', label: 'Qty', render: (p: any) => Number(p.quantity_available) ?? 0 },
     {
       key: 'actions', label: 'Actions',
       render: (p: any) => (
@@ -133,7 +150,12 @@ export default function ProductsPage() {
             <input className="form-input" value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} required />
           </FormField>
           <FormField label="Category">
-            <input className="form-input" value={form.category} onChange={e => setForm(p => ({ ...p, category: e.target.value }))} />
+            <select className="form-input" value={form.category_id} onChange={e => setForm(p => ({ ...p, category_id: e.target.value }))}>
+              <option value="">Select category</option>
+              {categoryList.map((c: any) => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </select>
           </FormField>
           <FormField label="Price" required>
             <input className="form-input" type="number" step="0.01" value={form.price} onChange={e => setForm(p => ({ ...p, price: e.target.value }))} required />
@@ -142,7 +164,7 @@ export default function ProductsPage() {
             <input className="form-input" value={form.unit} onChange={e => setForm(p => ({ ...p, unit: e.target.value }))} placeholder="e.g. pcs, kg, liter" />
           </FormField>
           <FormField label="Quantity" required>
-            <input className="form-input" type="number" value={form.quantity} onChange={e => setForm(p => ({ ...p, quantity: e.target.value }))} required />
+            <input className="form-input" type="number" value={form.quantity_available} onChange={e => setForm(p => ({ ...p, quantity_available: e.target.value }))} required />
           </FormField>
           <FormField label="Description">
             <textarea className="form-input" value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} rows={2} />

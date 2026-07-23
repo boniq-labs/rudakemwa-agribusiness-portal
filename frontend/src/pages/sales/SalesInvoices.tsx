@@ -48,6 +48,7 @@ export default function SalesInvoices() {
     mutationFn: (d: any) => client.post('/sales/invoices', d),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sales-invoices'] });
+      queryClient.invalidateQueries({ queryKey: ['sales-dashboard'] });
       toast.success('Invoice created');
       setShowModal(false);
       setForm(initialForm);
@@ -59,6 +60,7 @@ export default function SalesInvoices() {
     mutationFn: ({ id, data }: { id: number; data: any }) => client.put(`/sales/invoices/${id}`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sales-invoices'] });
+      queryClient.invalidateQueries({ queryKey: ['sales-dashboard'] });
       toast.success('Invoice updated');
       setShowModal(false);
       setForm(initialForm);
@@ -71,6 +73,7 @@ export default function SalesInvoices() {
     mutationFn: (id: number) => client.delete(`/sales/invoices/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sales-invoices'] });
+      queryClient.invalidateQueries({ queryKey: ['sales-dashboard'] });
       toast.success('Invoice deleted');
     },
     onError: (err: any) => toast.error(err.response?.data?.message || 'Failed to delete'),

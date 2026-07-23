@@ -2,12 +2,13 @@ import { useState, useRef, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { ROLE_LABELS } from '../utils/constants';
+import { settingsApi } from '../api';
 import { cn } from '../utils/cn';
 import {
   LayoutDashboard, Users, UserCircle, UserCheck, DollarSign, ShoppingCart,
   Truck, Package, PawPrint, Milk, Settings, LogOut, Menu, X,
   ChevronDown, ChevronRight,
-  Stethoscope,
+  Stethoscope, Clock,
   Sprout,
 } from 'lucide-react';
 
@@ -59,6 +60,7 @@ const navItems: NavItem[] = [
       { label: 'Treatment Records', path: '/animals/treatments' },
       { label: 'Animal Sale', path: '/animals/sales' },
       { label: 'Animal Death', path: '/animals/deaths' },
+      { label: 'Shift Management', path: '/animals/shifts' },
       { label: 'Reports', path: '/animals/reports' },
     ],
   },
@@ -88,9 +90,6 @@ const navItems: NavItem[] = [
       { label: 'Medicine Stock', path: '/stock/medicines' },
       { label: 'Equipment Stock', path: '/stock/equipment' },
       { label: 'Categories', path: '/stock/categories' },
-      { label: 'Stock Issue', path: '/stock/issue' },
-      { label: 'Stock Transfer', path: '/stock/transfer' },
-      { label: 'Stock Adjustment', path: '/stock/adjustment' },
       { label: 'Reports', path: '/stock/reports' },
     ],
   },
@@ -100,7 +99,6 @@ const navItems: NavItem[] = [
       { label: 'Suppliers', path: '/procurement/suppliers' },
       { label: 'Purchase Requests', path: '/procurement/requests' },
       { label: 'Purchase Orders', path: '/procurement/orders' },
-      { label: 'Goods Receiving', path: '/procurement/receiving' },
       { label: 'Invoices', path: '/procurement/invoices' },
       { label: 'Contracts', path: '/procurement/contracts' },
       { label: 'Reports', path: '/procurement/reports' },
@@ -139,7 +137,6 @@ const navItems: NavItem[] = [
       { label: 'Quotations', path: '/sales/quotations' },
       { label: 'Invoices', path: '/sales/invoices' },
       { label: 'Deliveries', path: '/sales/deliveries' },
-      { label: 'Returns', path: '/sales/returns' },
       { label: 'Reports', path: '/sales/reports' },
     ],
   },
@@ -153,7 +150,7 @@ const navItems: NavItem[] = [
     ],
   },
   {
-    label: 'Employee', icon: UserCircle, roles: ['owner', 'admin', 'worker'], children: [
+    label: 'Employee', icon: UserCircle, roles: ['owner', 'admin', 'worker', 'hr', 'animal', 'veterinarian', 'milk', 'procurement', 'logistics', 'stock', 'sales', 'accountant', 'crops'], children: [
       { label: 'My Dashboard', path: '/employee/dashboard' },
     ],
   },
@@ -166,6 +163,16 @@ export default function Sidebar() {
   const navigate = useNavigate();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [farmLogo, setFarmLogo] = useState('/assets/logo.png');
+  const [systemName, setSystemName] = useState('Portal');
+
+  useEffect(() => {
+    settingsApi.get().then((r) => {
+      const s = r.data.data || {};
+      if (s.farm_logo) setFarmLogo(s.farm_logo);
+      if (s.system_name) setSystemName(s.system_name);
+    }).catch(() => {});
+  }, []);
 
   const handleLogout = () => { logout(); navigate('/login'); };
 
@@ -194,8 +201,8 @@ export default function Sidebar() {
       <aside className={cn('sidebar', collapsed && 'collapsed', mobileOpen && 'open')}>
         <div className="sidebar-header">
           <div className="sidebar-brand">
-            <div className="sidebar-logo"><img src="/assets/logo.png" alt="Rudakemwa Agribusiness Portal" className="w-full h-full object-contain" /></div>
-            {!collapsed && <span className="sidebar-title">Portal</span>}
+            <div className="sidebar-logo"><img src={farmLogo} alt={systemName} className="w-full h-full object-contain" /></div>
+            {!collapsed && <span className="sidebar-title">{systemName}</span>}
           </div>
           <button className="sidebar-toggle" onClick={() => { setCollapsed(!collapsed); setMobileOpen(true); }}>
             {collapsed ? <Menu size={20} /> : <X size={20} />}

@@ -93,7 +93,7 @@ export default function MilkDashboard() {
         <StatsCard title="Morning" value={`${morningTotal} L`} icon={Sun} color="#eab308" />
         <StatsCard title="Evening" value={`${eveningTotal} L`} icon={Moon} color="#6366f1" />
         <StatsCard title="Avg / Animal" value={`${avgPerAnimal} L`} icon={TrendingUp} color="#22c55e" />
-        <StatsCard title="Today's Revenue" value={`$${revenue}`} icon={DollarSign} color="#10b981" />
+        <StatsCard title="Today's Revenue" value={`$${Number(revenue).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} icon={DollarSign} color="#10b981" />
         <StatsCard title="Products" value={products.length} icon={Package} color="#f59e0b" />
       </div>
 

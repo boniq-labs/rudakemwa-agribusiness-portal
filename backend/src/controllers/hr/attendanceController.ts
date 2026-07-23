@@ -6,12 +6,13 @@ import { logAudit, createAuditEntry } from '../../services/auditService';
 
 export const getAttendance = async (req: AuthRequest, res: Response) => {
   try {
-    const { employee_id, date_from, date_to } = req.query;
+    const { employee_id, date_from, date_to, date } = req.query;
     let query = `SELECT a.*, e.employee_code, CONCAT(u.first_name, ' ', u.last_name) as employee_name
                  FROM attendance a JOIN employees e ON a.employee_id = e.id
                  JOIN users u ON e.user_id = u.id WHERE 1=1`;
     const params: any[] = [];
 
+    if (date) { query += ` AND a.date = ?`; params.push(date); }
     if (employee_id) { query += ` AND a.employee_id = ?`; params.push(employee_id); }
     if (date_from) { query += ` AND a.date >= ?`; params.push(date_from); }
     if (date_to) { query += ` AND a.date <= ?`; params.push(date_to); }
@@ -108,7 +109,7 @@ export const employeeCheckOut = async (req: AuthRequest, res: Response) => {
     if (checkOutTime > scheduledEnd) overtime = Math.round((checkOutTime.getTime() - scheduledEnd.getTime()) / 60000);
 
     await pool.query(
-      'UPDATE attendance SET check_out=NOW(), total_hours=?, late_minutes=?, overtime=?, status=? WHERE id=?',
+      'UPDATE attendance SET check_out=NOW(), total_hours=?, late_minutes=?, overtime_minutes=?, status=? WHERE id=?',
       [Math.round(diffHours * 100) / 100, lateMinutes, overtime, 'present', record.id]
     );
     await logAudit(req, createAuditEntry(req, 'Check Out', 'HR', `Employee ${employeeId} checked out`));
@@ -161,7 +162,7 @@ export const checkOut = async (req: AuthRequest, res: Response) => {
     if (checkOut > scheduledEnd) overtime = Math.round((checkOut.getTime() - scheduledEnd.getTime()) / 60000);
 
     await pool.query(
-      `UPDATE attendance SET check_out=NOW(), total_hours=?, late_minutes=?, overtime=? WHERE id=?`,
+      `UPDATE attendance SET check_out=NOW(), total_hours=?, late_minutes=?, overtime_minutes=? WHERE id=?`,
       [Math.round(diffHours * 100) / 100, lateMinutes, overtime, req.params.id]
     );
     await logAudit(req, createAuditEntry(req, 'Check Out', 'HR', `Employee ${record[0].employee_id} checked out`));

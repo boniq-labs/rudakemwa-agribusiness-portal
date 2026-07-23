@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import client from '../../api/client';
 import ModulePage from '../../components/ModulePage';
 import StatsCard from '../../components/StatsCard';
-import { HeartPulse, Syringe, Stethoscope, Activity } from 'lucide-react';
+import { HeartPulse, Syringe, Stethoscope, Activity, FileText, AlertTriangle } from 'lucide-react';
 
 export default function VetDashboard() {
   const navigate = useNavigate();
@@ -13,7 +13,7 @@ export default function VetDashboard() {
     queryFn: () => client.get('/veterinary/dashboard').then(r => r.data.data),
   });
 
-  const d = (dashboard as any) || { openHealthRecords: 0, vaccinationsDue: 0, treatmentsPending: 0 };
+  const d = (dashboard as any) || { openHealthRecords: 0, vaccinationsDue: 0, treatmentsPending: 0, totalHealthRecords: 0, totalVaccinations: 0, totalPrescriptions: 0, sickAnimals: 0 };
 
   return (
     <ModulePage
@@ -34,9 +34,12 @@ export default function VetDashboard() {
       }
     >
       <div className="stats-grid">
-        <StatsCard title="Open Health Records" value={d.openHealthRecords} icon={HeartPulse} color="#2563eb" />
-        <StatsCard title="Vaccinations Due" value={d.vaccinationsDue} icon={Syringe} color="#d97706" />
-        <StatsCard title="Treatments Pending" value={d.treatmentsPending} icon={Stethoscope} color="#8b5cf6" />
+        <StatsCard title="Total Health Records" value={d.totalHealthRecords} icon={HeartPulse} color="#2563eb" />
+        <StatsCard title="Total Vaccinations" value={d.totalVaccinations} icon={Syringe} color="#16a34a" />
+        <StatsCard title="Total Treatment Records" value={d.treatmentsPending} icon={Stethoscope} color="#8b5cf6" />
+        <StatsCard title="Total Prescriptions" value={d.totalPrescriptions} icon={FileText} color="#d97706" />
+        <StatsCard title="Sick Animals" value={d.sickAnimals} icon={AlertTriangle} color="#dc2626" />
+        <StatsCard title="Vaccinations Due (7 days)" value={d.vaccinationsDue} icon={Activity} color="#0891b2" />
       </div>
 
       <div className="card" style={{ marginTop: 20 }}>

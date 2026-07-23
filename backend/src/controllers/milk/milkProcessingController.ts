@@ -63,11 +63,12 @@ export const getMilkProducts = async (req: AuthRequest, res: Response) => {
 
 export const createMilkProduct = async (req: AuthRequest, res: Response) => {
   try {
-    const { name, code, description, unit, price, category } = req.body;
+    const { name, code, description, unit, price, category, quantity } = req.body;
+    const productCode = code || `MP-${Date.now()}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
 
     const [result]: any = await pool.query(
-      `INSERT INTO milk_products (name, code, description, unit, price, category) VALUES (?,?,?,?,?,?)`,
-      [name, code, description, unit, price, category]
+      `INSERT INTO milk_products (name, code, description, unit, price, category, quantity) VALUES (?,?,?,?,?,?,?)`,
+      [name, productCode, description, unit, price, category, quantity || 0]
     );
 
     await logAudit(req, createAuditEntry(req, 'Create Milk Product', 'MilkProducts', `Product ${name} created`, { name, code, price }));
@@ -77,14 +78,15 @@ export const createMilkProduct = async (req: AuthRequest, res: Response) => {
 
 export const updateMilkProduct = async (req: AuthRequest, res: Response) => {
   try {
-    const { name, code, description, unit, price, category } = req.body;
+    const { name, code, description, unit, price, category, quantity } = req.body;
 
     const [old]: any = await pool.query('SELECT * FROM milk_products WHERE id = ?', [req.params.id]);
     if (old.length === 0) return error(res, 'Milk product not found', 404);
 
+    const productCode = code || old[0].code;
     await pool.query(
-      `UPDATE milk_products SET name=?, code=?, description=?, unit=?, price=?, category=? WHERE id=?`,
-      [name, code, description, unit, price, category, req.params.id]
+      `UPDATE milk_products SET name=?, code=?, description=?, unit=?, price=?, category=?, quantity=? WHERE id=?`,
+      [name, productCode, description, unit, price, category, quantity ?? old[0].quantity, req.params.id]
     );
 
     await logAudit(req, createAuditEntry(req, 'Update Milk Product', 'MilkProducts', `Updated product ${req.params.id}`, req.body, old[0]));

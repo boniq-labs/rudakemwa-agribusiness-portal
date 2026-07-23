@@ -208,12 +208,15 @@ export const createWeightRecordSchema = z.object({
 export const createMilkCollectionSchema = z.object({
   collection_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   time: z.enum(['morning', 'evening']),
-  collector_id: z.number().int().positive(),
+  collector_name: z.string().optional().nullable(),
+  collector_id: z.number().int().positive().optional().nullable(),
   branch_id: z.number().int().positive().optional().nullable(),
   quantity_liters: z.number().positive(),
   number_of_animals: z.number().int().positive().optional().nullable(),
   notes: z.string().optional().nullable(),
-}).passthrough();
+}).passthrough().refine(data => data.collector_name || data.collector_id, {
+  message: 'Either collector_name or collector_id is required',
+});
 
 export const createQualityTestSchema = z.object({
   collection_id: z.number().int().positive(),
@@ -263,13 +266,6 @@ export const receiveStockSchema = z.object({
   notes: z.string().optional().nullable(),
 }).passthrough();
 
-export const issueStockSchema = z.object({
-  item_id: z.number().int().positive(),
-  quantity: z.number().int().positive(),
-  issued_to: z.string().min(1, 'Issued to is required'),
-  issued_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-  notes: z.string().optional().nullable(),
-}).passthrough();
 
 export const createSupplierSchema = z.object({
   supplier_name: z.string().min(1, 'Supplier name is required'),
@@ -310,8 +306,8 @@ export const createPurchaseOrderSchema = z.object({
 }).passthrough();
 
 export const createVehicleSchema = z.object({
-  name: z.string().optional().nullable(),
-  vehicle_name: z.string().min(1, 'Vehicle name is required'),
+  name: z.string().min(1, 'Vehicle name is required'),
+  vehicle_name: z.string().optional().nullable(),
   plate_number: z.string().min(1, 'Plate number is required'),
   type: z.string().optional().nullable(),
   type_id: z.number().int().positive().optional().nullable(),
@@ -423,6 +419,7 @@ export const createCustomerSchema = z.object({
   address: z.string().optional().nullable(),
   company_name: z.string().optional().nullable(),
   type: z.string().optional().nullable(),
+  initial_payment: z.union([z.string(), z.number()]).optional(),
 }).passthrough();
 
 export const createProductSchema = z.object({

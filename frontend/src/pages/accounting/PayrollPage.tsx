@@ -24,6 +24,7 @@ export default function PayrollPage() {
     mutationFn: (data: any) => accountingAPI.createPayroll(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['accounting-payroll'] });
+      queryClient.invalidateQueries({ queryKey: ['accounting-dashboard'] });
     },
   });
 
@@ -31,6 +32,7 @@ export default function PayrollPage() {
     mutationFn: (data: any) => accountingAPI.processPayroll(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['accounting-payroll'] });
+      queryClient.invalidateQueries({ queryKey: ['accounting-dashboard'] });
     },
   });
 
@@ -38,6 +40,7 @@ export default function PayrollPage() {
     mutationFn: (id: number) => client.delete(`/accounting/payroll/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['accounting-payroll'] });
+      queryClient.invalidateQueries({ queryKey: ['accounting-dashboard'] });
       toast.success('Payroll record deleted');
     },
     onError: (err: any) => {

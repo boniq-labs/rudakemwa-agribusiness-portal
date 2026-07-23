@@ -8,6 +8,7 @@ import routes from './routes/index';
 import { errorHandler, notFound } from './middlewares/errorHandler';
 import { initSocket } from './services/socketService';
 import { initCronJobs } from './services/cronService';
+import { migrate } from './config/migrate';
 import logger from './utils/logger';
 
 dotenv.config();
@@ -27,7 +28,7 @@ app.use(cors({
 }));
 
 // Rate limiting
-const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 20, message: { success: false, message: 'Too many attempts, try again later' }, standardHeaders: true, legacyHeaders: false });
+const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 50, message: { success: false, message: 'Too many attempts, try again later' }, standardHeaders: true, legacyHeaders: false, skipSuccessfulRequests: true });
 const apiLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 300, standardHeaders: true, legacyHeaders: false });
 
 app.use(express.json({ limit: '10mb' }));
@@ -53,9 +54,23 @@ io.on('connection', (socket) => {
   logger.info(`Socket connected: ${socket.id}`);
 });
 
-httpServer.listen(PORT, () => {
-  logger.info(`EFMS API running on port ${PORT} (${isDev ? 'development' : 'production'} mode)`);
-  console.log(`EFMS API: http://localhost:${PORT}/api/health`);
+httpServer.on('error', (err: NodeJS.ErrnoException) => {
+  logger.error({ message: `Server failed to start: ${err.message}`, port: PORT, code: err.code });
+  if (err.code === 'EADDRINUSE') console.error(`Port ${PORT} is already in use. Kill the process using port ${PORT} and try again.`);
+  process.exit(1);
 });
+
+(async () => {
+  try {
+    await migrate();
+  } catch (err: any) {
+    logger.error({ message: 'Migration failed', error: err.message });
+    process.exit(1);
+  }
+  httpServer.listen(PORT, () => {
+    logger.info(`EFMS API running on port ${PORT} (${isDev ? 'development' : 'production'} mode)`);
+    console.log(`EFMS API: http://localhost:${PORT}/api/health`);
+  });
+})();
 
 export { app, httpServer, io };

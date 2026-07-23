@@ -55,6 +55,7 @@ export default function FuelPage() {
     mutationFn: (data: any) => client.post('/logistics/fuel', data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['logistics-fuel'] });
+      queryClient.invalidateQueries({ queryKey: ['logistics-dashboard'] });
       closeModal();
       toast.success('Fuel record created');
     },
@@ -67,6 +68,7 @@ export default function FuelPage() {
     mutationFn: (data: any) => client.put(`/logistics/fuel/${data.id}`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['logistics-fuel'] });
+      queryClient.invalidateQueries({ queryKey: ['logistics-dashboard'] });
       closeModal();
       toast.success('Fuel record updated');
     },
@@ -79,6 +81,7 @@ export default function FuelPage() {
     mutationFn: (id: number) => client.delete(`/logistics/fuel/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['logistics-fuel'] });
+      queryClient.invalidateQueries({ queryKey: ['logistics-dashboard'] });
       toast.success('Fuel record deleted');
     },
     onError: () => toast.error('Failed to delete'),
@@ -151,7 +154,7 @@ export default function FuelPage() {
   const columns: Column<any>[] = [
     {
       key: 'vehicle_name', label: 'Vehicle',
-      render: (f: any) => f.vehicle_name || (typeof f.vehicle === 'object' ? f.vehicle?.name || f.vehicle?.vehicle_name || f.vehicle?.plate_number : f.vehicle) || '-',
+      render: (f: any) => f.vehicle_name || '-',
     },
     { key: 'quantity', label: 'Liters', render: (f: any) => f.quantity ?? '-' },
     { key: 'cost', label: 'Cost', render: (f: any) => f.cost ? Number(f.cost).toLocaleString() : '-' },

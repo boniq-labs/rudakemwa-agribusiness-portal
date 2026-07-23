@@ -31,6 +31,28 @@ export const createMaintenanceRecord = async (req: AuthRequest, res: Response) =
   } catch (err: any) { return error(res, err.message); }
 };
 
+export const deleteMaintenanceRecord = async (req: AuthRequest, res: Response) => {
+  try {
+    const [old]: any = await pool.query('SELECT * FROM vehicle_maintenance WHERE id = ?', [req.params.id]);
+    if (old.length === 0) return error(res, 'Maintenance record not found', 404);
+    await pool.query('UPDATE vehicle_maintenance SET deleted_at = NOW() WHERE id = ?', [req.params.id]);
+    return success(res, null, 'Maintenance record deleted');
+  } catch (err: any) { return error(res, err.message); }
+};
+
+export const updateMaintenanceRecord = async (req: AuthRequest, res: Response) => {
+  try {
+    const { vehicle_id, date, maintenance_type, description, cost, service_provider, next_service_date } = req.body;
+    const [old]: any = await pool.query('SELECT * FROM vehicle_maintenance WHERE id = ?', [req.params.id]);
+    if (old.length === 0) return error(res, 'Maintenance record not found', 404);
+    await pool.query(
+      'UPDATE vehicle_maintenance SET vehicle_id=?, date=?, maintenance_type=?, description=?, cost=?, service_provider=?, next_service_date=? WHERE id=?',
+      [vehicle_id, date, maintenance_type, description, cost, service_provider || old[0].service_provider || null, next_service_date || null, req.params.id]
+    );
+    return success(res, null, 'Maintenance record updated');
+  } catch (err: any) { return error(res, err.message); }
+};
+
 export const getDueMaintenance = async (req: AuthRequest, res: Response) => {
   try {
     const [rows]: any = await pool.query(

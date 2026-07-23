@@ -41,6 +41,7 @@ export default function DriversPage() {
     mutationFn: (data: any) => client.post('/logistics/drivers', data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['logistics-drivers'] });
+      queryClient.invalidateQueries({ queryKey: ['logistics-dashboard'] });
       closeModal();
       toast.success('Driver created');
     },
@@ -53,6 +54,7 @@ export default function DriversPage() {
     mutationFn: (data: any) => client.put(`/logistics/drivers/${data.id}`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['logistics-drivers'] });
+      queryClient.invalidateQueries({ queryKey: ['logistics-dashboard'] });
       closeModal();
       toast.success('Driver updated');
     },
@@ -65,6 +67,7 @@ export default function DriversPage() {
     mutationFn: (id: number) => client.delete(`/logistics/drivers/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['logistics-drivers'] });
+      queryClient.invalidateQueries({ queryKey: ['logistics-dashboard'] });
       toast.success('Driver deleted');
     },
     onError: () => toast.error('Failed to delete'),

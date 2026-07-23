@@ -45,27 +45,29 @@ export default function EquipmentPage() {
 
   const { data: equipment, isLoading } = useQuery({ queryKey: ['stock-equipment'], queryFn: () => stockAPI.getEquipment().then(r => r.data.data || []) });
 
+  const invalidateDashboard = () => queryClient.invalidateQueries({ queryKey: ['stock-dashboard-stats'] });
+
   const createMutation = useMutation({
     mutationFn: (data: any) => stockAPI.createEquipment(data),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['stock-equipment'] }); setShowModal(false); setForm(initialForm); setErrors({}); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['stock-equipment'] }); invalidateDashboard(); setShowModal(false); setForm(initialForm); setErrors({}); },
     onError: (err: any) => { setErrors({ submit: err.response?.data?.message || 'Failed to create equipment' }); },
   });
 
   const maintMutation = useMutation({
     mutationFn: (data: any) => stockAPI.recordMaintenance(data),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['stock-equipment'] }); setShowMaint({ show: false }); setMaintForm(initialMaint); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['stock-equipment'] }); invalidateDashboard(); setShowMaint({ show: false }); setMaintForm(initialMaint); },
     onError: (err: any) => { setErrors({ maint: err.response?.data?.message || 'Failed to record maintenance' }); },
   });
 
   const updateMutation = useMutation({
     mutationFn: (data: any) => stockAPI.updateEquipment(data.id, data),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['stock-equipment'] }); closeModal(); toast.success('Equipment updated'); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['stock-equipment'] }); invalidateDashboard(); closeModal(); toast.success('Equipment updated'); },
     onError: (err: any) => { setErrors({ submit: err.response?.data?.message || 'Failed to update equipment' }); },
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id: number) => stockAPI.deleteEquipment(id),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['stock-equipment'] }); toast.success('Equipment deleted'); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['stock-equipment'] }); invalidateDashboard(); toast.success('Equipment deleted'); },
     onError: () => toast.error('Failed to delete equipment'),
   });
 

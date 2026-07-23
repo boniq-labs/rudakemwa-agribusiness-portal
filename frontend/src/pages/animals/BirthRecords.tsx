@@ -63,7 +63,7 @@ export default function BirthRecords() {
 
   const { data: animalsData } = useQuery({
     queryKey: ['animals'],
-    queryFn: async () => (await client.get('/animals')).data?.data || [],
+    queryFn: async () => (await client.get('/animals/select')).data?.data || [],
   });
 
   const births: BirthRecord[] = Array.isArray(birthsData) ? birthsData : [];

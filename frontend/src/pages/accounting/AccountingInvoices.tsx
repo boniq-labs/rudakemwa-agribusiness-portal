@@ -32,6 +32,7 @@ export default function AccountingInvoices() {
     mutationFn: (data: any) => accountingAPI.createInvoice(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['accounting-invoices'] });
+      queryClient.invalidateQueries({ queryKey: ['accounting-dashboard'] });
       closeModal();
     },
     onError: (err: any) => {
@@ -43,6 +44,7 @@ export default function AccountingInvoices() {
     mutationFn: ({ id, data }: { id: number; data: any }) => accountingAPI.updateInvoice(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['accounting-invoices'] });
+      queryClient.invalidateQueries({ queryKey: ['accounting-dashboard'] });
       closeModal();
     },
     onError: (err: any) => {
@@ -54,6 +56,7 @@ export default function AccountingInvoices() {
     mutationFn: (id: number) => accountingAPI.deleteInvoice(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['accounting-invoices'] });
+      queryClient.invalidateQueries({ queryKey: ['accounting-dashboard'] });
       toast.success('Invoice deleted');
     },
     onError: (err: any) => {
@@ -65,6 +68,7 @@ export default function AccountingInvoices() {
     mutationFn: (id: number) => accountingAPI.payInvoice(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['accounting-invoices'] });
+      queryClient.invalidateQueries({ queryKey: ['accounting-dashboard'] });
       setShowPaymentModal(null);
     },
   });

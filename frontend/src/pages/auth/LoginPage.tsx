@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useForm } from 'react-hook-form';
@@ -10,6 +10,7 @@ import {
   Sun, Moon, Tractor, Trees, Sprout, ChevronRight, ArrowRight
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import api from '../../api/client';
 
 const loginSchema = z.object({
   username: z.string().min(1, 'Username or Email is required'),
@@ -33,6 +34,15 @@ export default function LoginPage() {
   const [showPwd, setShowPwd] = useState(false);
   const [serverError, setServerError] = useState('');
   const [darkMode, setDarkMode] = useState(false);
+  const [settings, setSettings] = useState<any>({});
+
+  useEffect(() => {
+    api.get('/settings').then((r) => setSettings(r.data.data || {})).catch(() => {});
+  }, []);
+
+  const systemName = settings.system_name || 'RUDAKEMWA';
+  const farmName = settings.farm_name || 'Rudakemwa Agribusiness Portal';
+  const farmLogo = settings.farm_logo || '/assets/logo.png';
 
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
@@ -51,7 +61,7 @@ export default function LoginPage() {
       toast.success('Login successful', { duration: 2000 });
       navigate(ROLE_ROUTES[u?.role] || '/dashboard', { replace: true });
     } catch (err: any) {
-      const msg = err.response?.data?.error || err.response?.data?.message || 'Login failed';
+      const msg = err.response?.data?.error || err.response?.data?.message || err.message || 'Login failed';
       setServerError(msg);
       toast.error(msg === 'Invalid username or password' ? 'Invalid username or password' : msg, { duration: 3000 });
     }
@@ -123,8 +133,8 @@ export default function LoginPage() {
                   style={{ background: 'radial-gradient(ellipse, rgba(255,255,255,0.25) 0%, transparent 70%)' }} />
 
                 <img
-                  src="/assets/logo.png"
-                  alt="Rudakemwa Agribusiness Portal"
+                  src={farmLogo}
+                  alt={farmName}
                   className="relative z-10 w-[72%] h-[72%] object-contain"
                 />
               </div>
@@ -138,10 +148,10 @@ export default function LoginPage() {
               className="text-center"
             >
               <h1 className="text-[28px] sm:text-[34px] font-extrabold text-white tracking-tight leading-none drop-shadow-2xl">
-                RUDAKEMWA
+                {systemName}
               </h1>
               <p className="text-green-400/70 font-semibold text-xs sm:text-sm mt-3 tracking-[0.15em] uppercase">
-                Rudakemwa Agribusiness Portal
+                {farmName}
               </p>
 
               {/* Decorative divider */}
@@ -298,7 +308,7 @@ export default function LoginPage() {
                     <input
                       type="text"
                       {...register('username')}
-                      className={`w-full pl-[42px] pr-4 h-[50px] rounded-xl border-2 text-sm font-medium shadow-sm transition-all duration-200 focus:outline-none ${
+                      className={`w-full pl-[52px] pr-4 h-[50px] rounded-xl border-2 text-sm font-medium shadow-sm transition-all duration-200 focus:outline-none ${
                         darkMode
                           ? 'bg-gray-800/50 text-gray-100 border-gray-700 hover:border-gray-600 focus:border-[#16a34a] focus:shadow-[0_0_0_4px_rgba(22,163,74,0.08)] focus:bg-gray-800/80'
                           : 'bg-white text-gray-900 border-gray-200 hover:border-gray-300 focus:border-[#16a34a] focus:shadow-[0_0_0_4px_rgba(22,163,74,0.12)] focus:bg-white'
@@ -330,7 +340,7 @@ export default function LoginPage() {
                     <input
                       type={showPwd ? 'text' : 'password'}
                       {...register('password')}
-                      className={`w-full pl-[42px] pr-12 h-[50px] rounded-xl border-2 text-sm font-medium shadow-sm transition-all duration-200 focus:outline-none ${
+                      className={`w-full pl-[52px] pr-12 h-[50px] rounded-xl border-2 text-sm font-medium shadow-sm transition-all duration-200 focus:outline-none ${
                         darkMode
                           ? 'bg-gray-800/50 text-gray-100 border-gray-700 hover:border-gray-600 focus:border-[#16a34a] focus:shadow-[0_0_0_4px_rgba(22,163,74,0.08)] focus:bg-gray-800/80'
                           : 'bg-white text-gray-900 border-gray-200 hover:border-gray-300 focus:border-[#16a34a] focus:shadow-[0_0_0_4px_rgba(22,163,74,0.12)] focus:bg-white'

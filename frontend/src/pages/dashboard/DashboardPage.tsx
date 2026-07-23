@@ -28,16 +28,7 @@ const DEPARTMENTS: DeptDef[] = [
     stats: (o) => [
       { label: 'Employees', value: o?.hr?.employees ?? 0 },
       { label: 'Present', value: o?.hr?.presentToday ?? 0 },
-    ],
-  },
-  {
-    key: 'animals', label: 'Animal Production', icon: PawPrint, path: '/animals/dashboard', color: '#16a34a',
-    roles: ['owner', 'admin', 'animal', 'veterinarian'],
-    links: [{ label: 'Register', path: '/animals/registration' }, { label: 'Breeding', path: '/animals/breeding' }, { label: 'Health', path: '/animals/vaccinations' }, { label: 'Feeding', path: '/animals/feeding' }],
-    stats: (o) => [
-      { label: 'Active Animals', value: o?.animals?.total ?? 0 },
-      { label: 'Pregnant', value: o?.animals?.pregnant ?? 0 },
-      { label: 'Vacc. Due', value: o?.animals?.vaccinationsDue ?? 0 },
+      { label: 'Pending Leaves', value: o?.hr?.pendingLeaves ?? 0 },
     ],
   },
   {
@@ -58,63 +49,6 @@ const DEPARTMENTS: DeptDef[] = [
       { label: 'Today (L)', value: o?.milk?.today ?? 0 },
       { label: 'Morning (L)', value: o?.milk?.morning ?? 0 },
       { label: 'Evening (L)', value: o?.milk?.evening ?? 0 },
-    ],
-  },
-  {
-    key: 'stock', label: 'Stock Management', icon: Package, path: '/stock/dashboard', color: '#9333ea',
-    roles: ['owner', 'admin', 'stock'],
-    links: [{ label: 'Feed', path: '/stock/feed' }, { label: 'Medicines', path: '/stock/medicines' }, { label: 'Equipment', path: '/stock/equipment' }, { label: 'Categories', path: '/stock/categories' }],
-    stats: (o) => [
-      { label: 'Items', value: o?.stock?.totalItems ?? 0 },
-      { label: 'Low Stock', value: o?.stock?.lowStock ?? 0 },
-    ],
-  },
-  {
-    key: 'procurement', label: 'Procurement', icon: ShoppingCart, path: '/procurement/dashboard', color: '#0891b2',
-    roles: ['owner', 'admin', 'procurement'],
-    links: [{ label: 'Suppliers', path: '/procurement/suppliers' }, { label: 'Requests', path: '/procurement/requests' }, { label: 'Orders', path: '/procurement/orders' }, { label: 'Invoices', path: '/procurement/invoices' }],
-    stats: (o) => [
-      { label: 'Pending Req.', value: o?.procurement?.pendingRequests ?? 0 },
-      { label: 'Active Orders', value: o?.procurement?.activeOrders ?? 0 },
-      { label: 'Suppliers', value: o?.procurement?.suppliers ?? 0 },
-    ],
-  },
-  {
-    key: 'logistics', label: 'Logistics', icon: Truck, path: '/logistics/dashboard', color: '#ea580c',
-    roles: ['owner', 'admin', 'logistics'],
-    links: [{ label: 'Vehicles', path: '/logistics/vehicles' }, { label: 'Drivers', path: '/logistics/drivers' }, { label: 'Trips', path: '/logistics/trips' }, { label: 'Deliveries', path: '/logistics/deliveries' }],
-    stats: (o) => [
-      { label: 'Active Req.', value: o?.logistics?.activeRequests ?? 0 },
-      { label: 'Active Trips', value: o?.logistics?.activeTrips ?? 0 },
-      { label: 'Available', value: o?.logistics?.availableVehicles ?? 0 },
-    ],
-  },
-  {
-    key: 'accounting', label: 'Accounting', icon: DollarSign, path: '/accounting/dashboard', color: '#059669',
-    roles: ['owner', 'admin', 'accountant'],
-    links: [{ label: 'Income', path: '/accounting/income' }, { label: 'Expenses', path: '/accounting/expenses' }, { label: 'Reports', path: '/accounting/reports' }],
-    stats: (o) => [
-      { label: 'Income', value: formatAmount(Number(o?.accounting?.monthIncome ?? 0)) },
-      { label: 'Expense', value: formatAmount(Number(o?.accounting?.monthExpenses ?? 0)) },
-      { label: 'Profit', value: formatAmount(Number(o?.accounting?.profit ?? 0)) },
-    ],
-  },
-  {
-    key: 'sales', label: 'Sales', icon: ShoppingBag, path: '/sales/dashboard', color: '#db2777',
-    roles: ['owner', 'admin', 'sales'],
-    links: [{ label: 'Customers', path: '/sales/customers' }, { label: 'Products', path: '/sales/products' }, { label: 'Orders', path: '/sales/orders' }, { label: 'Invoices', path: '/sales/invoices' }],
-    stats: (o) => [
-      { label: 'Month Sales', value: formatAmount(Number(o?.sales?.monthSales ?? 0)) },
-      { label: 'Pending', value: o?.sales?.pendingOrders ?? 0 },
-    ],
-  },
-  {
-    key: 'veterinary', label: 'Veterinary', icon: Stethoscope, path: '/veterinary/dashboard', color: '#dc2626',
-    roles: ['owner', 'admin', 'veterinarian'],
-    links: [{ label: 'Health', path: '/veterinary/health-records' }, { label: 'Vaccinations', path: '/veterinary/vaccinations' }, { label: 'Treatments', path: '/veterinary/treatments' }, { label: 'Prescriptions', path: '/veterinary/prescriptions' }],
-    stats: (o) => [
-      { label: 'Open Cases', value: o?.veterinary?.openHealthRecords ?? 0 },
-      { label: 'Vacc. Due', value: o?.veterinary?.vaccinationsDue ?? 0 },
     ],
   },
 ];
@@ -141,6 +75,7 @@ export default function DashboardPage() {
   const { data: latestAnimals } = useQuery({
     queryKey: ['latest-animals'],
     queryFn: () => client.get('/dashboard/latest-animals').then(r => r.data.data || r.data),
+    enabled: role === 'owner' || role === 'admin',
   });
 
   const isLoading = mainLoading || ovLoading;
@@ -198,24 +133,12 @@ export default function DashboardPage() {
             <div className="stat-info"><div className="stat-value">{main?.milkToday ?? 0}L</div><div className="stat-label">Milk Today</div></div>
           </div>
           <div className="stat-card">
-            <div className="stat-icon" style={{ background: '#e0f2fe', color: '#0284c7' }}><Activity /></div>
-            <div className="stat-info"><div className="stat-value">{overview?.activeUsers ?? overview?.onlineEmployees ?? 0}</div><div className="stat-label">Online / Active</div></div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-icon" style={{ background: '#fef3c7', color: '#d97706' }}><ListTodo /></div>
-            <div className="stat-info"><div className="stat-value">{main?.tasks?.length ?? overview?.pendingTasks ?? 0}</div><div className="stat-label">Pending Tasks</div></div>
-          </div>
-          <div className="stat-card">
             <div className="stat-icon" style={{ background: '#dcfce7', color: '#16a34a' }}><TrendingUp /></div>
             <div className="stat-info"><div className="stat-value">{formatAmount(Number(main?.monthlyIncome ?? 0))}</div><div className="stat-label">Monthly Income</div></div>
           </div>
           <div className="stat-card">
             <div className="stat-icon" style={{ background: '#fef2f2', color: '#dc2626' }}><TrendingDown /></div>
             <div className="stat-info"><div className="stat-value">{formatAmount(Number(main?.monthlyExpenses ?? 0))}</div><div className="stat-label">Monthly Expenses</div></div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-icon" style={{ background: '#f3e8ff', color: '#9333ea' }}><TrendingUp /></div>
-            <div className="stat-info"><div className="stat-value">{formatAmount(Number(main?.profit ?? 0))}</div><div className="stat-label">Profit</div></div>
           </div>
         </div>
       )}
@@ -253,7 +176,7 @@ export default function DashboardPage() {
       <div className="dashboard-grid" style={{ marginTop: 24 }}>
         <div className="card">
           <h3>Revenue Summary</h3>
-          <div className="revenue-summary-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16, marginTop: 12 }}>
+          <div className="revenue-summary-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginTop: 12 }}>
             <div style={{ padding: 16, background: 'var(--bg)', borderRadius: 8, textAlign: 'center' }}>
               <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: 4 }}>Monthly Income</div>
               <div style={{ fontSize: '1.3rem', fontWeight: 700, color: '#10b981' }}>
@@ -266,13 +189,7 @@ export default function DashboardPage() {
                 {main?.monthlyExpenses != null ? formatAmount(main.monthlyExpenses) : '0'}
               </div>
             </div>
-            <div style={{ padding: 16, background: 'var(--bg)', borderRadius: 8, textAlign: 'center' }}>
-              <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: 4 }}>Profit</div>
-              <div style={{ fontSize: '1.3rem', fontWeight: 700, color: (main?.profit ?? 0) >= 0 ? '#10b981' : '#ef4444' }}>
-                {main?.profit != null ? formatAmount(main.profit) : '0'}
-              </div>
             </div>
-          </div>
         </div>
 
         <div className="dashboard-side">

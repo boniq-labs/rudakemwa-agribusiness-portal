@@ -38,6 +38,7 @@ export default function BudgetsPage() {
     mutationFn: (data: any) => accountingAPI.createBudget(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['accounting-budgets'] });
+      queryClient.invalidateQueries({ queryKey: ['accounting-dashboard'] });
       closeModal();
     },
     onError: (err: any) => {
@@ -49,6 +50,7 @@ export default function BudgetsPage() {
     mutationFn: ({ id, data }: { id: number; data: any }) => accountingAPI.updateBudget(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['accounting-budgets'] });
+      queryClient.invalidateQueries({ queryKey: ['accounting-dashboard'] });
       closeModal();
     },
     onError: (err: any) => {
@@ -60,6 +62,7 @@ export default function BudgetsPage() {
     mutationFn: (id: number) => accountingAPI.deleteBudget(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['accounting-budgets'] });
+      queryClient.invalidateQueries({ queryKey: ['accounting-dashboard'] });
       toast.success('Budget deleted');
     },
     onError: (err: any) => {

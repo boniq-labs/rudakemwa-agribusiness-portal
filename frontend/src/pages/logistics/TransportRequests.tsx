@@ -49,6 +49,7 @@ export default function TransportRequests() {
     mutationFn: (data: any) => logisticsAPI.createRequest(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['logistics', 'requests'] });
+      queryClient.invalidateQueries({ queryKey: ['logistics-dashboard'] });
       setShowModal(false);
       setForm(initialForm);
       setErrors({});
@@ -60,18 +61,33 @@ export default function TransportRequests() {
 
   const approveMutation = useMutation({
     mutationFn: (id: number) => logisticsAPI.approve(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['logistics', 'requests'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['logistics', 'requests'] });
+      queryClient.invalidateQueries({ queryKey: ['logistics-dashboard'] });
+      toast.success('Transport request approved');
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.message || 'Failed to approve request');
+    },
   });
 
   const rejectMutation = useMutation({
     mutationFn: (id: number) => logisticsAPI.reject(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['logistics', 'requests'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['logistics', 'requests'] });
+      queryClient.invalidateQueries({ queryKey: ['logistics-dashboard'] });
+      toast.success('Transport request rejected');
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.message || 'Failed to reject request');
+    },
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id: number) => client.delete(`/logistics/requests/${id}`),
+    mutationFn: (id: number) => logisticsAPI.deleteRequest(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['logistics', 'requests'] });
+      queryClient.invalidateQueries({ queryKey: ['logistics-dashboard'] });
       toast.success('Request deleted');
     },
     onError: (err: any) => {
@@ -105,8 +121,8 @@ export default function TransportRequests() {
   const columns: Column<any>[] = [
     { key: 'id', label: 'Request #', render: (r: any) => `#${r.id}` },
     {
-      key: 'department', label: 'Department',
-      render: (r: any) => (typeof r.department === 'object' ? r.department?.name : r.department) || '-',
+      key: 'department_name', label: 'Department',
+      render: (r: any) => r.department_name || '-',
     },
     {
       key: 'route', label: 'Pickup \u2192 Destination',
