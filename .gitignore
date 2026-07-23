@@ -30,3 +30,23 @@ backend/*.log
 
 # Uploads
 backend/uploads/
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Logs
+*.log
+logs/
+**/logs/
+
+# Runtime files
+*.pid
+*.tmp
+
+# Environment
+.env
+.env.*
+
+# Uploads
+uploads/
+**/uploads/
