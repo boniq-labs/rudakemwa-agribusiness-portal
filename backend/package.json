@@ -6,10 +6,11 @@
     "build": "tsc",
     "start": "node dist/server.js",
     "db:push": "tsx src/config/migrate.ts",
-    "db:seed": "tsx src/config/seed.ts"
+    "db:seed": "tsx src/config/seed.ts",
+    "migrate": "tsx src/config/migrate.ts",
+    "migrate:status": "tsx src/config/migrateStatus.ts"
   },
   "dependencies": {
-    "@esbuild/win32-x64": "^0.28.1",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",

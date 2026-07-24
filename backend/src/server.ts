@@ -9,6 +9,8 @@ import { errorHandler, notFound } from './middlewares/errorHandler';
 import { initSocket } from './services/socketService';
 import { initCronJobs } from './services/cronService';
 import { migrate } from './config/migrate';
+import { runMigrations } from './database/index';
+import pool from './config/database';
 import logger from './utils/logger';
 
 dotenv.config();
@@ -61,11 +63,18 @@ httpServer.on('error', (err: NodeJS.ErrnoException) => {
 });
 
 (async () => {
-  try {
-    await migrate();
-  } catch (err: any) {
-    logger.error({ message: 'Migration failed', error: err.message });
-    process.exit(1);
+  if (process.env.RUN_MIGRATIONS === 'true') {
+    try {
+      const conn = await pool.getConnection();
+      await runMigrations(conn);
+      conn.release();
+      logger.info('Migrations completed');
+    } catch (err: any) {
+      logger.error({ message: 'Migration failed', error: err.message });
+      process.exit(1);
+    }
+  } else {
+    logger.info('Migrations skipped (RUN_MIGRATIONS != true)');
   }
   httpServer.listen(PORT, () => {
     logger.info(`EFMS API running on port ${PORT} (${isDev ? 'development' : 'production'} mode)`);

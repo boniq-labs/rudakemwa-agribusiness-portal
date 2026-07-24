@@ -1,9 +1,9 @@
 import mysql from 'mysql2/promise';
 import dotenv from 'dotenv';
-import { runMigrations } from '../database/index';
+import { migrationStatus } from '../database/index';
 dotenv.config();
 
-export async function migrate() {
+(async () => {
   const conn = await mysql.createConnection({
     host: process.env.MYSQLHOST || process.env.DB_HOST || 'localhost',
     user: process.env.MYSQLUSER || process.env.DB_USER || 'root',
@@ -13,11 +13,8 @@ export async function migrate() {
     multipleStatements: true,
   });
 
-  await runMigrations(conn);
+  console.log('Migration status:');
+  await migrationStatus(conn);
 
-  console.log('Database migrated successfully');
   await conn.end();
-}
-
-const isDirect = process.argv[1] && (process.argv[1].includes('migrate'));
-if (isDirect) { migrate(); }
+})();
