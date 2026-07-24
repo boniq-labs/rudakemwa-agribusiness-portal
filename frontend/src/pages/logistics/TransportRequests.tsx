@@ -5,7 +5,6 @@ import DataTable from '../../components/DataTable';
 import StatusBadge from '../../components/StatusBadge';
 import FormField from '../../components/FormField';
 import { logisticsAPI, departmentsAPI } from '../../api/endpoints';
-import client from '../../api/client';
 import { Plus, X, CheckCircle, XCircle, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import type { Column } from '../../components/DataTable';

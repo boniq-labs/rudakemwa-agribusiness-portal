@@ -7,7 +7,7 @@ import { shiftsApi, authApi, uploadApi } from '../../api';
 import toast from 'react-hot-toast';
 import {
   Clock, LogIn, LogOut, Bell, User, CalendarDays, Briefcase, Building2, Shield,
-  CheckCircle2, Send, AlertCircle, Phone, Mail, Loader2, Edit3, Save, Lock, X
+  CheckCircle2, Send, AlertCircle, Loader2, Edit3, Save, Lock, X
 } from 'lucide-react';
 
 function safeTime(val: any): string {
@@ -38,13 +38,6 @@ function safeDate(val: any): string {
   return '';
 }
 
-function safeDateTime(val: any): string {
-  if (!val) return '';
-  const d = new Date(val);
-  if (!isNaN(d.getTime())) return d.toLocaleString();
-  return '';
-}
-
 export default function EmployeeDashboard() {
   const { user, setUser } = useAuth();
   const queryClient = useQueryClient();
@@ -58,22 +51,22 @@ export default function EmployeeDashboard() {
   const [changingPw2, setChangingPw2] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const { data: profileData, isLoading: profileLoading } = useQuery({
+  const { data: profileData, isLoading: _profileLoading } = useQuery({
     queryKey: ['user-profile'],
     queryFn: () => client.get('/users/me').then(r => r.data.data || r.data),
   });
 
-  const { data: todayAtt, isLoading: attLoading } = useQuery({
+  const { data: todayAtt, isLoading: _attLoading } = useQuery({
     queryKey: ['attendance-today'],
     queryFn: () => client.get('/attendance/today').then(r => r.data.data || r.data),
   });
 
-  const { data: activities, isLoading: actsLoading } = useQuery({
+  const { data: activities, isLoading: _actsLoading } = useQuery({
     queryKey: ['my-activities'],
     queryFn: () => activitiesAPI.getMy().then(r => r.data.data || r.data || []),
   });
 
-  const { data: notifsData, isLoading: notifLoading } = useQuery({
+  const { data: notifsData, isLoading: _notifLoading } = useQuery({
     queryKey: ['my-notifications'],
     queryFn: () => client.get('/notifications').then(r => r.data.data || r.data || []),
   });
@@ -126,8 +119,6 @@ export default function EmployeeDashboard() {
   const photo = p.photo || user?.photo || '';
 
   const initial = firstName?.[0] || lastName?.[0] || user?.firstName?.[0] || 'E';
-
-  const isLoading = profileLoading || attLoading || notifLoading;
 
   const checkInStr = safeTime(todayAtt?.check_in);
   const checkOutStr = safeTime(todayAtt?.check_out);

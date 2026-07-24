@@ -4,7 +4,7 @@ import DepartmentHeader from '../../components/DepartmentHeader';
 import ModulePage from '../../components/ModulePage';
 import StatsCard from '../../components/StatsCard';
 import client from '../../api/client';
-import { DollarSign, TrendingUp, TrendingDown, FileText, Plus, Receipt, ArrowRight } from 'lucide-react';
+import { TrendingUp, TrendingDown, FileText, Plus, Receipt } from 'lucide-react';
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
 import { formatAmount } from '../../services/currency';
 

@@ -6,7 +6,7 @@ import StatusBadge from '../../components/StatusBadge';
 import StatsCard from '../../components/StatsCard';
 import { usersAPI, contractsAPI } from '../../api/endpoints';
 import client from '../../api/client';
-import { Download, FileText, FileSpreadsheet, Printer, Users, ClipboardCheck, Briefcase, BookOpen, Star } from 'lucide-react';
+import { Download, FileText, FileSpreadsheet, Users, ClipboardCheck, Briefcase, BookOpen, Star } from 'lucide-react';
 import toast from 'react-hot-toast';
 import type { Column } from '../../components/DataTable';
 

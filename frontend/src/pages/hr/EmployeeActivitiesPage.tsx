@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { activitiesAPI, usersAPI, departmentsAPI } from '../../api/endpoints';
-import { Search, Filter, CalendarDays, CheckCircle2, AlertCircle, User, Building2 } from 'lucide-react';
+import { activitiesAPI, departmentsAPI } from '../../api/endpoints';
+import { Search, CalendarDays, CheckCircle2, AlertCircle, User, Building2 } from 'lucide-react';
 
 export default function EmployeeActivitiesPage() {
   const [search, setSearch] = useState('');

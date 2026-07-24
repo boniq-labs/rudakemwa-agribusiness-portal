@@ -1,5 +1,4 @@
 import { useQuery } from '@tanstack/react-query';
-import { useNavigate } from 'react-router-dom';
 import ModulePage from '../../components/ModulePage';
 import StatsCard from '../../components/StatsCard';
 import DataTable from '../../components/DataTable';
@@ -8,8 +7,6 @@ import { Truck, Users, ClipboardList, Route, Wrench, Package } from 'lucide-reac
 import type { Column } from '../../components/DataTable';
 
 export default function LogisticsDashboard() {
-  const navigate = useNavigate();
-
   const { data: dashboard } = useQuery({
     queryKey: ['logistics-dashboard'],
     queryFn: () => client.get('/dashboard/logistics').then(r => r.data.data),

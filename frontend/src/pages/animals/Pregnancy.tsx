@@ -6,7 +6,7 @@ import StatsCard from '../../components/StatsCard';
 import DataTable from '../../components/DataTable';
 import StatusBadge from '../../components/StatusBadge';
 import type { Column } from '../../components/DataTable';
-import { HeartPulse, CheckCircle, Clock, XCircle, AlertTriangle, Plus, Eye, Ban, Edit2, Trash2 } from 'lucide-react';
+import { HeartPulse, CheckCircle, XCircle, AlertTriangle, Plus, Eye, Ban, Edit2, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function Pregnancy() {

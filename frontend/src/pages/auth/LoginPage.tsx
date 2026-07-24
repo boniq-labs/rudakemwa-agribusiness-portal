@@ -7,7 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   AlertCircle, Eye, EyeOff, Leaf, Loader2, Lock, User, ShieldCheck,
-  Sun, Moon, Tractor, Trees, Sprout, ChevronRight, ArrowRight
+  Sun, Moon, Tractor, Trees, Sprout, ChevronRight
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../../api/client';

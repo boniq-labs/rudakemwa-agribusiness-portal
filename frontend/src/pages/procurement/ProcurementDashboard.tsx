@@ -1,5 +1,4 @@
 import { useQuery } from '@tanstack/react-query';
-import { useNavigate } from 'react-router-dom';
 import client from '../../api/client';
 import ModulePage from '../../components/ModulePage';
 import StatsCard from '../../components/StatsCard';
@@ -8,7 +7,6 @@ import { ClipboardList, ShoppingCart, FileText, TrendingUp } from 'lucide-react'
 import type { Column } from '../../components/DataTable';
 
 export default function ProcurementDashboard() {
-  const navigate = useNavigate();
   const { data } = useQuery({
     queryKey: ['procurement-dashboard'],
     queryFn: () => client.get('/dashboard/procurement').then(r => r.data.data),

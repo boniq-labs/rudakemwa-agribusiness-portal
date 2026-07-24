@@ -6,9 +6,9 @@ import { useAuth } from '../../contexts/AuthContext';
 import { ROLE_LABELS } from '../../utils/constants';
 import { formatAmount } from '../../services/currency';
 import {
-  Users, PawPrint, Milk, DollarSign, TrendingUp, TrendingDown,
-  Bell, Clock, Package, UserCircle, ListTodo,
-  ShoppingCart, Truck, ShoppingBag, Stethoscope, ArrowRight, Sprout, Activity, UserPlus,
+  Users, PawPrint, Milk, TrendingUp, TrendingDown,
+  Bell, Clock, UserCircle,
+  ArrowRight, Sprout, UserPlus,
 } from 'lucide-react';
 import type { FC } from 'react';
 

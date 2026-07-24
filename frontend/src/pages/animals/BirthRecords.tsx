@@ -156,8 +156,6 @@ export default function BirthRecords() {
       birth_date: form.birth_date,
       type: form.gender,
       category_id: Number(form.category_id),
-      child_name: form.child_name,
-      tag_number: form.tag_number,
     };
     if (editingId) {
       updateMutation.mutate({ id: editingId, ...payload });

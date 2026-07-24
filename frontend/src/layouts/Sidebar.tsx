@@ -8,7 +8,7 @@ import {
   LayoutDashboard, Users, UserCircle, UserCheck, DollarSign, ShoppingCart,
   Truck, Package, PawPrint, Milk, Settings, LogOut, Menu, X,
   ChevronDown, ChevronRight,
-  Stethoscope, Clock,
+  Stethoscope,
   Sprout,
 } from 'lucide-react';
 

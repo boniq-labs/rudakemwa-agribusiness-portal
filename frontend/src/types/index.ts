@@ -9,6 +9,7 @@ export interface User {
   departmentId: number | null;
   departmentName: string | null;
   photo: string | null;
+  phone: string | null;
   permissions: string[];
 }
 

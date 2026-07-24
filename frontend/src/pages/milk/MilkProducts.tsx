@@ -13,6 +13,7 @@ interface Product {
   quantity: number;
   unit: string;
   description: string;
+  code: string;
 }
 
 interface FormData {
@@ -22,9 +23,11 @@ interface FormData {
   quantity: string;
   unit: string;
   description: string;
+  code: string;
 }
 
 const INITIAL_FORM: FormData = {
+  code: '',
   name: '',
   category: '',
   price: '',
