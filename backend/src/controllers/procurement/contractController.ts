@@ -25,7 +25,7 @@ export const createProcurementContract = async (req: AuthRequest, res: Response)
     const { contract_number, supplier_id, start_date, end_date, terms, total_value } = req.body;
     const [result]: any = await pool.query(
       'INSERT INTO supplier_contracts (contract_number, supplier_id, start_date, end_date, terms, total_value, status) VALUES (?,?,?,?,?,?,?)',
-      [contract_number, supplier_id, start_date, end_date, terms, total_value, 'active']
+      [contract_number, supplier_id, start_date || null, end_date || null, terms, total_value, 'active']
     );
     return created(res, { id: result.insertId }, 'Contract created');
   } catch (err: any) { return error(res, err.message); }
@@ -38,7 +38,7 @@ export const updateProcurementContract = async (req: AuthRequest, res: Response)
     if (old.length === 0) return error(res, 'Contract not found', 404);
     await pool.query(
       'UPDATE supplier_contracts SET contract_number=?, start_date=?, end_date=?, terms=?, total_value=?, status=? WHERE id=?',
-      [contract_number, start_date, end_date, terms, total_value, status ?? old[0].status, req.params.id]
+      [contract_number, start_date || null, end_date || null, terms, total_value, status ?? old[0].status, req.params.id]
     );
     return success(res, null, 'Contract updated');
   } catch (err: any) { return error(res, err.message); }

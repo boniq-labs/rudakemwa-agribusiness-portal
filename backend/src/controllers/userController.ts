@@ -52,7 +52,7 @@ export const createUser = async (req: AuthRequest, res: Response) => {
     const phone = b.phone || '';
     const gender = b.gender || '';
     const address = b.address || '';
-    const dob = b.date_of_birth || b.dob || '';
+    const dob = b.date_of_birth || b.dob || null;
     const position = b.position || '';
     let isActive = b.isActive !== undefined ? b.isActive : (b.is_active !== undefined ? b.is_active : 1);
     let roleId = b.roleId || b.role_id ? Number(b.roleId || b.role_id) : (b.role ? null : null);
@@ -133,7 +133,7 @@ export const updateUser = async (req: AuthRequest, res: Response) => {
     const phone = b.phone || '';
     const gender = b.gender || '';
     const address = b.address || '';
-    const dob = b.date_of_birth || b.dob || '';
+    const dob = b.date_of_birth || b.dob || null;
     const roleInput = b.roleId ?? b.role_id;
     const roleId = roleInput !== undefined ? Number(roleInput) : old[0].role_id;
     const deptInput = b.departmentId ?? b.department_id;

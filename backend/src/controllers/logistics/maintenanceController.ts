@@ -24,7 +24,7 @@ export const createMaintenanceRecord = async (req: AuthRequest, res: Response) =
     const { vehicle_id, date, maintenance_type, description, cost, next_service_date } = req.body;
     const [result]: any = await pool.query(
       'INSERT INTO vehicle_maintenance (vehicle_id, date, maintenance_type, description, cost, next_service_date) VALUES (?,?,?,?,?,?)',
-      [vehicle_id, date, maintenance_type, description, cost, next_service_date]
+      [vehicle_id, date || null, maintenance_type, description, cost, next_service_date || null]
     );
     await pool.query('UPDATE vehicles SET status = ? WHERE id = ?', ['maintenance', vehicle_id]);
     return created(res, { id: result.insertId }, 'Maintenance record created');
@@ -47,7 +47,7 @@ export const updateMaintenanceRecord = async (req: AuthRequest, res: Response) =
     if (old.length === 0) return error(res, 'Maintenance record not found', 404);
     await pool.query(
       'UPDATE vehicle_maintenance SET vehicle_id=?, date=?, maintenance_type=?, description=?, cost=?, service_provider=?, next_service_date=? WHERE id=?',
-      [vehicle_id, date, maintenance_type, description, cost, service_provider || old[0].service_provider || null, next_service_date || null, req.params.id]
+      [vehicle_id, date || null, maintenance_type, description, cost, service_provider || old[0].service_provider || null, next_service_date || null, req.params.id]
     );
     return success(res, null, 'Maintenance record updated');
   } catch (err: any) { return error(res, err.message); }

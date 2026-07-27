@@ -55,8 +55,9 @@ export const updateFeedingRecord = async (req: AuthRequest, res: Response) => {
     const fields: string[] = [];
     const values: any[] = [];
     const allowed = ['animal_id', 'feed_type', 'quantity', 'unit', 'date', 'notes'];
+    const dateFields = new Set(['date']);
     for (const key of allowed)
-      if (req.body[key] !== undefined) { fields.push(`${key}=?`); values.push(req.body[key]); }
+      if (req.body[key] !== undefined) { fields.push(`${key}=?`); values.push(dateFields.has(key) && req.body[key] === '' ? null : req.body[key]); }
     if (fields.length === 0) return error(res, 'No fields to update', 400);
     values.push(req.params.id);
     await pool.query(`UPDATE feeding_records SET ${fields.join(', ')} WHERE id=?`, values);

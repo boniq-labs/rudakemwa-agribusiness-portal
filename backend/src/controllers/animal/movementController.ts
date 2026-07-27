@@ -38,7 +38,7 @@ export const createAnimalTransfer = async (req: AuthRequest, res: Response) => {
 
     const [result]: any = await pool.query(
       `INSERT INTO animal_transfers (animal_id, from_location, to_location, date, reason) VALUES (?,?,?,?,?)`,
-      [animal_id, from_location, to_location, date, reason]
+      [animal_id, from_location, to_location, date || null, reason]
     );
 
     await logAudit(req, createAuditEntry(req, 'Create Animal Transfer', 'AnimalTransfers', `Transferred animal ${animal_id} to location ${to_location}`, { animal_id, from_location, to_location, date }));
@@ -53,8 +53,9 @@ export const updateAnimalTransfer = async (req: AuthRequest, res: Response) => {
     const fields: string[] = [];
     const values: any[] = [];
     const allowed = ['animal_id', 'from_location', 'to_location', 'date', 'reason', 'approved_by'];
+    const dateFields = new Set(['date']);
     for (const key of allowed)
-      if (req.body[key] !== undefined) { fields.push(`${key}=?`); values.push(req.body[key]); }
+      if (req.body[key] !== undefined) { fields.push(`${key}=?`); values.push(dateFields.has(key) && req.body[key] === '' ? null : req.body[key]); }
     if (fields.length === 0) return error(res, 'No fields to update', 400);
     values.push(req.params.id);
     await pool.query(`UPDATE animal_transfers SET ${fields.join(', ')} WHERE id=?`, values);
@@ -105,7 +106,7 @@ export const createAnimalPurchase = async (req: AuthRequest, res: Response) => {
 
     const [result]: any = await pool.query(
       `INSERT INTO animal_purchases (animal_id, supplier_name, purchase_date, cost) VALUES (?,?,?,?)`,
-      [animal_id, supplier_name, purchase_date, cost]
+      [animal_id, supplier_name, purchase_date || null, cost]
     );
 
     await pool.query("UPDATE animals SET source = 'purchased' WHERE id = ?", [animal_id]);
@@ -147,7 +148,7 @@ export const createAnimalSale = async (req: AuthRequest, res: Response) => {
 
     const [result]: any = await pool.query(
       `INSERT INTO animal_sales (animal_id, customer_name, sale_date, price, payment_status) VALUES (?,?,?,?,?)`,
-      [animal_id, customer_name, sale_date, price, payment_status]
+      [animal_id, customer_name, sale_date || null, price, payment_status]
     );
 
     await pool.query("UPDATE animals SET status = 'sold' WHERE id = ?", [animal_id]);
@@ -189,7 +190,7 @@ export const createAnimalDeath = async (req: AuthRequest, res: Response) => {
 
     const [result]: any = await pool.query(
       `INSERT INTO animal_deaths (animal_id, date, cause, notes) VALUES (?,?,?,?)`,
-      [animal_id, date, cause, notes]
+      [animal_id, date || null, cause, notes]
     );
 
     await pool.query("UPDATE animals SET status = 'dead' WHERE id = ?", [animal_id]);
@@ -257,8 +258,9 @@ export const updateWeightRecord = async (req: AuthRequest, res: Response) => {
     const fields: string[] = [];
     const values: any[] = [];
     const allowed = ['animal_id', 'weight', 'weight_date', 'notes'];
+    const dateFields = new Set(['weight_date']);
     for (const key of allowed)
-      if (req.body[key] !== undefined) { fields.push(`${key === 'weight_date' ? 'date' : key}=?`); values.push(key === 'weight_date' ? req.body[key] : req.body[key]); }
+      if (req.body[key] !== undefined) { fields.push(`${key === 'weight_date' ? 'date' : key}=?`); values.push(dateFields.has(key) && req.body[key] === '' ? null : req.body[key]); }
     if (fields.length === 0) return error(res, 'No fields to update', 400);
     values.push(req.params.id);
     await pool.query(`UPDATE weight_records SET ${fields.join(', ')} WHERE id=?`, values);
@@ -284,8 +286,9 @@ export const updateAnimalSale = async (req: AuthRequest, res: Response) => {
     const fields: string[] = [];
     const values: any[] = [];
     const allowed = ['animal_id', 'customer_name', 'sale_date', 'price', 'payment_status'];
+    const dateFields = new Set(['sale_date']);
     for (const key of allowed)
-      if (req.body[key] !== undefined) { fields.push(`${key}=?`); values.push(req.body[key]); }
+      if (req.body[key] !== undefined) { fields.push(`${key}=?`); values.push(dateFields.has(key) && req.body[key] === '' ? null : req.body[key]); }
     if (fields.length === 0) return error(res, 'No fields to update', 400);
     values.push(req.params.id);
     await pool.query(`UPDATE animal_sales SET ${fields.join(', ')} WHERE id=?`, values);
@@ -311,8 +314,9 @@ export const updateAnimalDeath = async (req: AuthRequest, res: Response) => {
     const fields: string[] = [];
     const values: any[] = [];
     const allowed = ['animal_id', 'date', 'cause', 'notes'];
+    const dateFields = new Set(['date']);
     for (const key of allowed)
-      if (req.body[key] !== undefined) { fields.push(`${key}=?`); values.push(req.body[key]); }
+      if (req.body[key] !== undefined) { fields.push(`${key}=?`); values.push(dateFields.has(key) && req.body[key] === '' ? null : req.body[key]); }
     if (fields.length === 0) return error(res, 'No fields to update', 400);
     values.push(req.params.id);
     await pool.query(`UPDATE animal_deaths SET ${fields.join(', ')} WHERE id=?`, values);

@@ -101,7 +101,7 @@ export const addMilkToStorage = async (req: AuthRequest, res: Response) => {
 
     const [result]: any = await pool.query(
       `INSERT INTO milk_storage (tank_id, collection_id, quantity_liters, production_date, expiry_date, status) VALUES (?,?,?,?,?,'stored')`,
-      [tank_id, collection_id, quantity_liters, production_date, expiry_date]
+      [tank_id, collection_id, quantity_liters, production_date || null, expiry_date || null]
     );
 
     await logAudit(req, createAuditEntry(req, 'Add Milk to Storage', 'MilkStorage', `Added ${quantity_liters}L to tank ${tank_id}`, { tank_id, collection_id, quantity_liters }));

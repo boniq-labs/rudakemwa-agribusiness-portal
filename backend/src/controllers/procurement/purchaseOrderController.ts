@@ -26,7 +26,7 @@ export const createPurchaseOrder = async (req: AuthRequest, res: Response) => {
     const po_number = `PO-${Date.now()}`;
     const [result]: any = await pool.query(
       'INSERT INTO purchase_orders (po_number, supplier_id, request_id, order_date, expected_delivery, notes, status, created_by) VALUES (?,?,?,?,?,?,?,?)',
-      [po_number, supplier_id, request_id || null, order_date, expected_delivery || null, notes || null, 'pending', req.user?.id]
+      [po_number, supplier_id, request_id || null, order_date || null, expected_delivery || null, notes || null, 'pending', req.user?.id]
     );
     const orderId = result.insertId;
     if (items && items.length > 0) {
@@ -50,7 +50,7 @@ export const updatePurchaseOrder = async (req: AuthRequest, res: Response) => {
     if (old.length === 0) return error(res, 'Purchase order not found', 404);
     await pool.query(
       'UPDATE purchase_orders SET supplier_id=?, request_id=?, order_date=?, expected_delivery=?, status=?, notes=? WHERE id=?',
-      [supplier_id, request_id || null, order_date, expected_delivery || null, status || 'draft', notes || null, req.params.id]
+      [supplier_id, request_id || null, order_date || null, expected_delivery || null, status || 'draft', notes || null, req.params.id]
     );
     return success(res, null, 'Purchase order updated');
   } catch (err: any) { return error(res, err.message); }

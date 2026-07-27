@@ -38,7 +38,7 @@ export const updateFuelRecord = async (req: AuthRequest, res: Response) => {
     if (old.length === 0) return error(res, 'Fuel record not found', 404);
     await pool.query(
       'UPDATE fuel_records SET vehicle_id=?, quantity=?, cost=?, date=?, fuel_type=?, mileage=?, notes=? WHERE id=?',
-      [vehicle_id, quantity, cost, date, fuel_type, mileage, notes, req.params.id]
+      [vehicle_id, quantity, cost, date || null, fuel_type, mileage, notes, req.params.id]
     );
     return success(res, null, 'Fuel record updated');
   } catch (err: any) { return error(res, err.message); }

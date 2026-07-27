@@ -41,7 +41,7 @@ export const updateTraining = async (req: AuthRequest, res: Response) => {
 
     await pool.query(
       `UPDATE trainings SET title=?, description=?, trainer=?, start_date=?, end_date=?, status=? WHERE id=?`,
-      [title, description || null, trainer || null, start_date, end_date || null, status, req.params.id]
+      [title, description || null, trainer || null, start_date || null, end_date || null, status, req.params.id]
     );
     await logAudit(req, createAuditEntry(req, 'Update Training', 'HR', `Updated training ${title}`, req.body, old[0]));
     return success(res, null, 'Training updated');

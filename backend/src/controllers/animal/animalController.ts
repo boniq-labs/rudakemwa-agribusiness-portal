@@ -185,7 +185,7 @@ export const createAnimal = async (req: AuthRequest, res: Response) => {
     const [result]: any = await pool.query(
       `INSERT INTO animals (tag_number, name, animal_category_id, breed_id, gender, color, date_of_birth, weight, height, source, purchase_price, is_dairy, location_id, group_id, photo, feed_type, animal_status, status)
        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
-      [tag_number, name, animal_category_id, breed_id || null, gender, color, date_of_birth, weight, height, source, purchase_price, is_dairy ?? false, location_id || null, group_id || null, photo || null, feed_type || null, animal_status || null, 'active']
+      [tag_number, name, animal_category_id, breed_id || null, gender, color, date_of_birth || null, weight, height, source, purchase_price, is_dairy ?? false, location_id || null, group_id || null, photo || null, feed_type || null, animal_status || null, 'active']
     );
 
     await logAudit(req, createAuditEntry(req, 'Create Animal', 'Animals', `Created animal ${tag_number}`, { tag_number, name, animal_category_id, breed_id, gender }));
@@ -201,10 +201,11 @@ export const updateAnimal = async (req: AuthRequest, res: Response) => {
     const fields: string[] = [];
     const values: any[] = [];
     const allowed = ['name', 'animal_category_id', 'breed_id', 'gender', 'color', 'date_of_birth', 'weight', 'height', 'source', 'purchase_price', 'is_dairy', 'location_id', 'status', 'photo', 'feed_type', 'animal_status'];
+    const dateFields = new Set(['date_of_birth']);
     for (const key of allowed) {
       if (req.body[key] !== undefined) {
         fields.push(`${key}=?`);
-        values.push(req.body[key]);
+        values.push(dateFields.has(key) && req.body[key] === '' ? null : req.body[key]);
       }
     }
 

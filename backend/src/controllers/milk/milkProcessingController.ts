@@ -38,7 +38,7 @@ export const createProcessingRecord = async (req: AuthRequest, res: Response) =>
 
     const [result]: any = await pool.query(
       `INSERT INTO milk_processing_records (collection_id, product_id, input_quantity, output_quantity, processing_date) VALUES (?,?,?,?,?)`,
-      [collection_id, product_id, input_quantity, output_quantity, processing_date]
+      [collection_id, product_id, input_quantity, output_quantity, processing_date || null]
     );
 
     await logAudit(req, createAuditEntry(req, 'Create Processing Record', 'MilkProcessing', `Processed ${input_quantity}L into product ${product_id}`, { collection_id, product_id, input_quantity, output_quantity }));
@@ -104,7 +104,7 @@ export const updateProcessingRecord = async (req: AuthRequest, res: Response) =>
 
     await pool.query(
       `UPDATE milk_processing_records SET collection_id=?, product_id=?, input_quantity=?, output_quantity=?, processing_date=?, notes=?, updated_at=NOW() WHERE id=?`,
-      [collection_id, product_id, input_quantity, output_quantity, processing_date, notes, id]
+      [collection_id, product_id, input_quantity, output_quantity, processing_date || null, notes, id]
     );
 
     const [updated]: any = await pool.query('SELECT * FROM milk_processing_records WHERE id = ?', [id]);

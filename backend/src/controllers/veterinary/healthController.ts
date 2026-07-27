@@ -26,7 +26,7 @@ export const createHealthRecord = async (req: AuthRequest, res: Response) => {
     const { animal_id, checkup_date, diagnosis, prescription, notes } = req.body;
     const [result]: any = await pool.query(
       `INSERT INTO health_records (animal_id, checkup_date, diagnosis, prescription, notes) VALUES (?,?,?,?,?)`,
-      [animal_id, checkup_date, diagnosis, prescription, notes]
+      [animal_id, checkup_date || null, diagnosis, prescription, notes]
     );
     await logAudit(req, createAuditEntry(req, 'Create Health Record', 'Veterinary', `Health record created for animal #${animal_id}`, req.body));
     return created(res, { id: result.insertId }, 'Health record created');
@@ -75,7 +75,7 @@ export const createVaccinationRecord = async (req: AuthRequest, res: Response) =
     const { animal_id, schedule_id, vaccination_date, next_due_date, batch_number, cost, notes } = req.body;
     const [result]: any = await pool.query(
       `INSERT INTO vaccination_records (animal_id, schedule_id, vaccination_date, next_due_date, batch_number, cost, notes) VALUES (?,?,?,?,?,?,?)`,
-      [animal_id, schedule_id, vaccination_date, next_due_date, batch_number, cost, notes]
+      [animal_id, schedule_id, vaccination_date || null, next_due_date || null, batch_number, cost, notes]
     );
     await logAudit(req, createAuditEntry(req, 'Create Vaccination Record', 'Veterinary', `Vaccination record created for animal #${animal_id}`, req.body));
     return created(res, { id: result.insertId }, 'Vaccination record created');

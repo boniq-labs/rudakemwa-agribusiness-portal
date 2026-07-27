@@ -42,7 +42,7 @@ export const createMilkCollection = async (req: AuthRequest, res: Response) => {
 
     const [result]: any = await pool.query(
       `INSERT INTO milk_collections (collection_date, time, collector_id, collector_name, branch_id, quantity_liters, number_of_animals, notes) VALUES (?,?,?,?,?,?,?,?)`,
-      [collection_date, time, collector_id || null, collector_name || null, branch_id, quantity_liters, number_of_animals, notes]
+      [collection_date || null, time, collector_id || null, collector_name || null, branch_id, quantity_liters, number_of_animals, notes]
     );
 
     await logAudit(req, createAuditEntry(req, 'Create Milk Collection', 'MilkCollections', `Collection of ${quantity_liters}L created`, { collection_date, time, collector_name, collector_id, branch_id, quantity_liters }));
@@ -60,7 +60,7 @@ export const updateMilkCollection = async (req: AuthRequest, res: Response) => {
 
     await pool.query(
       `UPDATE milk_collections SET collection_date=?, time=?, collector_id=?, collector_name=?, branch_id=?, quantity_liters=?, number_of_animals=?, notes=? WHERE id=?`,
-      [collection_date, time, collector_id || null, collector_name || null, branch_id, quantity_liters, number_of_animals, notes, req.params.id]
+      [collection_date || null, time, collector_id || null, collector_name || null, branch_id, quantity_liters, number_of_animals, notes, req.params.id]
     );
 
     await logAudit(req, createAuditEntry(req, 'Update Milk Collection', 'MilkCollections', `Updated collection ${req.params.id}`, req.body, old[0]));

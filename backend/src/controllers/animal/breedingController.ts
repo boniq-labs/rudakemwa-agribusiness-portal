@@ -39,7 +39,7 @@ export const createBreedingRecord = async (req: AuthRequest, res: Response) => {
 
     const [result]: any = await pool.query(
       `INSERT INTO breeding_records (mother_id, father_id, breeding_date, method, notes) VALUES (?,?,?,?,?)`,
-      [mother_id, father_id || null, breeding_date, method, notes]
+      [mother_id, father_id || null, breeding_date || null, method, notes]
     );
 
     await logAudit(req, createAuditEntry(req, 'Create Breeding Record', 'BreedingRecords', `Created breeding record`, { mother_id, father_id, breeding_date, method }));
@@ -55,10 +55,12 @@ export const updateBreedingRecord = async (req: AuthRequest, res: Response) => {
     const fields: string[] = [];
     const values: any[] = [];
     const allowed = ['mother_id', 'father_id', 'breeding_date', 'method', 'result', 'notes'];
+    const dateFields = new Set(['breeding_date']);
     for (const key of allowed) {
       if (req.body[key] !== undefined) {
         fields.push(`${key}=?`);
-        values.push(key === 'father_id' && !req.body[key] ? null : req.body[key]);
+        const val = req.body[key];
+        values.push(key === 'father_id' && !val ? null : dateFields.has(key) && val === '' ? null : val);
       }
     }
 
@@ -105,7 +107,7 @@ export const createPregnancy = async (req: AuthRequest, res: Response) => {
 
     const [result]: any = await pool.query(
       `INSERT INTO pregnancies (animal_id, breeding_record_id, pregnancy_date, expected_delivery_date, sire_name, status, notes) VALUES (?,?,?,?,?,?,?)`,
-      [animal_id, breeding_record_id || null, pregnancy_date, expected_delivery_date, sire_name || null, status || 'Pregnant', notes || null]
+      [animal_id, breeding_record_id || null, pregnancy_date || null, expected_delivery_date || null, sire_name || null, status || 'Pregnant', notes || null]
     );
 
     if (breeding_record_id) {
@@ -125,10 +127,11 @@ export const updatePregnancy = async (req: AuthRequest, res: Response) => {
     const fields: string[] = [];
     const values: any[] = [];
     const allowed = ['animal_id', 'pregnancy_date', 'expected_delivery_date', 'sire_name', 'status', 'notes'];
+    const dateFields = new Set(['pregnancy_date', 'expected_delivery_date']);
     for (const key of allowed) {
       if (req.body[key] !== undefined) {
         fields.push(`${key}=?`);
-        values.push(req.body[key]);
+        values.push(dateFields.has(key) && req.body[key] === '' ? null : req.body[key]);
       }
     }
 
@@ -213,14 +216,14 @@ export const createBirthRecord = async (req: AuthRequest, res: Response) => {
     const [animalResult]: any = await connection.query(
       `INSERT INTO animals (tag_number, name, animal_category_id, gender, date_of_birth, weight, color, status, source, photo)
        VALUES (?,?,?,?,?,?,?,?,?,?)`,
-      [tagNum, animal_name || `Offspring of ${motherTag}`, catId, gender, birth_date, weight, color || null, 'active', 'born', photo || null]
+      [tagNum, animal_name || `Offspring of ${motherTag}`, catId, gender, birth_date || null, weight, color || null, 'active', 'born', photo || null]
     );
 
     const animalId = animalResult.insertId;
 
     const [result]: any = await connection.query(
       `INSERT INTO birth_records (mother_id, animal_id, birth_date, gender, weight, health_status, notes, photo, tag_number, animal_name, type) VALUES (?,?,?,?,?,?,?,?,?,?,?)`,
-      [mother_id, animalId, birth_date, gender, weight, health_status, notes || null, photo || null, tagNum, animal_name || null, type || null]
+      [mother_id, animalId, birth_date || null, gender, weight, health_status, notes || null, photo || null, tagNum, animal_name || null, type || null]
     );
 
     await connection.query("UPDATE pregnancies SET status = 'Delivered' WHERE animal_id = ? AND status = 'Pregnant'", [mother_id]);
@@ -245,8 +248,9 @@ export const updateBirthRecord = async (req: AuthRequest, res: Response) => {
     const fields: string[] = [];
     const values: any[] = [];
     const allowed = ['mother_id', 'birth_date', 'gender', 'weight', 'health_status', 'notes', 'tag_number', 'animal_name', 'type', 'photo', 'color', 'animal_id'];
+    const dateFields = new Set(['birth_date']);
     for (const key of allowed)
-      if (req.body[key] !== undefined) { fields.push(`${key}=?`); values.push(req.body[key]); }
+      if (req.body[key] !== undefined) { fields.push(`${key}=?`); values.push(dateFields.has(key) && req.body[key] === '' ? null : req.body[key]); }
     if (fields.length === 0) return error(res, 'No fields to update', 400);
     values.push(req.params.id);
     await pool.query(`UPDATE birth_records SET ${fields.join(', ')} WHERE id=?`, values);

@@ -105,7 +105,7 @@ export const createCropActivity = async (req: AuthRequest, res: Response) => {
     const { crop_type_id, land_area_id, planting_date, harvest_date, quantity_planted, quantity_harvested, status, diseases, sales_amount, notes } = req.body;
     const [result]: any = await pool.query(
       'INSERT INTO crop_activities (crop_type_id, land_area_id, planting_date, harvest_date, quantity_planted, quantity_harvested, status, diseases, sales_amount, notes) VALUES (?,?,?,?,?,?,?,?,?,?)',
-      [crop_type_id, land_area_id, planting_date, harvest_date, quantity_planted, quantity_harvested, status || 'planted', diseases, sales_amount || 0, notes]
+      [crop_type_id, land_area_id, planting_date || null, harvest_date || null, quantity_planted, quantity_harvested, status || 'planted', diseases, sales_amount || 0, notes]
     );
     await logAudit(req, createAuditEntry(req, 'Create Crop Activity', 'CropActivities', `Crop activity created`));
     return created(res, { id: result.insertId }, 'Crop activity created');
@@ -117,7 +117,7 @@ export const updateCropActivity = async (req: AuthRequest, res: Response) => {
     const { crop_type_id, land_area_id, planting_date, harvest_date, quantity_planted, quantity_harvested, status, diseases, sales_amount, notes } = req.body;
     await pool.query(
       'UPDATE crop_activities SET crop_type_id=?, land_area_id=?, planting_date=?, harvest_date=?, quantity_planted=?, quantity_harvested=?, status=?, diseases=?, sales_amount=?, notes=? WHERE id=?',
-      [crop_type_id, land_area_id, planting_date, harvest_date, quantity_planted, quantity_harvested, status, diseases, sales_amount, notes, req.params.id]
+      [crop_type_id, land_area_id, planting_date || null, harvest_date || null, quantity_planted, quantity_harvested, status, diseases, sales_amount, notes, req.params.id]
     );
     return success(res, null, 'Crop activity updated');
   } catch (err: any) { return error(res, err.message); }

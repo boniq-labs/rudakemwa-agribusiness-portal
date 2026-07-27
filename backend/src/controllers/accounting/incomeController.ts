@@ -28,7 +28,7 @@ export const createIncomeRecord = async (req: AuthRequest, res: Response) => {
     const { customer_id, amount, date, description } = b;
     const [result]: any = await pool.query(
       `INSERT INTO income_records (income_number, source, customer_id, amount, payment_method, date, description) VALUES (?,?,?,?,?,?,?)`,
-      [income_number, source, customer_id || null, amount, payment_method || null, date, description || null]
+      [income_number, source, customer_id || null, amount, payment_method || null, date || null, description || null]
     );
     await logAudit(req, createAuditEntry(req, 'Create Income', 'Accounting', `Income record ${income_number} created`, req.body));
     return created(res, { id: result.insertId }, 'Income record created');
@@ -45,7 +45,7 @@ export const updateIncomeRecord = async (req: AuthRequest, res: Response) => {
     const { customer_id, amount, date, description } = b;
     await pool.query(
       `UPDATE income_records SET source=?, customer_id=?, amount=?, payment_method=?, date=?, description=? WHERE id=?`,
-      [source, customer_id || null, amount, payment_method || null, date, description || null, req.params.id]
+      [source, customer_id || null, amount, payment_method || null, date || null, description || null, req.params.id]
     );
     await logAudit(req, createAuditEntry(req, 'Update Income', 'Accounting', `Income record #${req.params.id} updated`, req.body, old[0]));
     return success(res, null, 'Income record updated');

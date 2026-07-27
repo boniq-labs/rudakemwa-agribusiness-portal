@@ -57,7 +57,7 @@ export const updateContract = async (req: AuthRequest, res: Response) => {
 
     await pool.query(
       `UPDATE contracts SET type=?, start_date=?, end_date=?, salary=?, terms=?, status=? WHERE id=?`,
-      [type, start_date, end_date || null, salary, terms || null, status, req.params.id]
+      [type, start_date || old[0].start_date, end_date || null, salary, terms || null, status, req.params.id]
     );
     await logAudit(req, createAuditEntry(req, 'Update Contract', 'HR', `Updated contract ${req.params.id}`, req.body, old[0]));
     return success(res, null, 'Contract updated');

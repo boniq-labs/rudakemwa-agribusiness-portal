@@ -115,7 +115,7 @@ export const createVetVaccination = async (req: AuthRequest, res: Response) => {
     const veterinarian = b.veterinarian || b.administered_by || null;
     const [result]: any = await pool.query(
       'INSERT INTO vaccination_records (animal_id, vaccine_name, vaccination_date, next_due_date, veterinarian, batch_number, cost, notes) VALUES (?,?,?,?,?,?,?,?)',
-      [b.animal_id, vaccine_name, b.vaccination_date, b.next_due_date || null, veterinarian, b.batch_number || null, b.cost || null, b.notes || null]
+      [b.animal_id, vaccine_name, b.vaccination_date || null, b.next_due_date || null, veterinarian, b.batch_number || null, b.cost || null, b.notes || null]
     );
     return created(res, { id: result.insertId }, 'Vaccination record created');
   } catch (err: any) { return error(res, err.message); }
@@ -129,7 +129,7 @@ export const updateVetVaccination = async (req: AuthRequest, res: Response) => {
     const veterinarian = b.veterinarian || b.administered_by || old[0].veterinarian;
     await pool.query(
       'UPDATE vaccination_records SET animal_id=?, vaccine_name=?, vaccination_date=?, next_due_date=?, veterinarian=?, batch_number=?, cost=?, notes=? WHERE id=?',
-      [b.animal_id || old[0].animal_id, b.vaccine_name || b.vaccine || old[0].vaccine_name || '', b.vaccination_date || old[0].vaccination_date, b.next_due_date ?? old[0].next_due_date, veterinarian, b.batch_number ?? old[0].batch_number, b.cost ?? old[0].cost, b.notes ?? old[0].notes, req.params.id]
+      [b.animal_id || old[0].animal_id, b.vaccine_name || b.vaccine || old[0].vaccine_name || '', b.vaccination_date || old[0].vaccination_date, b.next_due_date || old[0].next_due_date, veterinarian, b.batch_number ?? old[0].batch_number, b.cost ?? old[0].cost, b.notes ?? old[0].notes, req.params.id]
     );
     return success(res, null, 'Vaccination record updated');
   } catch (err: any) { return error(res, err.message); }
@@ -189,7 +189,7 @@ export const updatePrescription = async (req: AuthRequest, res: Response) => {
     const medicine = b.medicine || b.medication || old[0].medicine;
     await pool.query(
       'UPDATE prescriptions SET animal_id=?, medicine=?, dosage=?, duration=?, frequency=?, start_date=?, end_date=?, veterinarian=?, notes=? WHERE id=?',
-      [b.animal_id || old[0].animal_id, medicine, b.dosage ?? old[0].dosage, b.duration ?? old[0].duration, b.frequency ?? old[0].frequency, b.start_date ?? old[0].start_date, b.end_date ?? old[0].end_date, b.veterinarian ?? old[0].veterinarian, b.notes ?? old[0].notes, req.params.id]
+      [b.animal_id || old[0].animal_id, medicine, b.dosage ?? old[0].dosage, b.duration ?? old[0].duration, b.frequency ?? old[0].frequency, b.start_date || old[0].start_date, b.end_date || old[0].end_date, b.veterinarian ?? old[0].veterinarian, b.notes ?? old[0].notes, req.params.id]
     );
     return success(res, null, 'Prescription updated');
   } catch (err: any) { return error(res, err.message); }

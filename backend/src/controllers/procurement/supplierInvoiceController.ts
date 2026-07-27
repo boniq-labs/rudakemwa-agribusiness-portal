@@ -46,7 +46,7 @@ export const recordSupplierPayment = async (req: AuthRequest, res: Response) => 
     const [result]: any = await pool.query(
       `INSERT INTO supplier_payments (invoice_id, amount, payment_date, payment_method, reference_number)
        VALUES (?,?,?,?,?)`,
-      [invoice_id, amount, payment_date, payment_method, reference_number]
+      [invoice_id, amount, payment_date || null, payment_method, reference_number]
     );
 
     const [paid]: any = await pool.query(
@@ -81,7 +81,7 @@ export const createSupplierContract = async (req: AuthRequest, res: Response) =>
     const [result]: any = await pool.query(
       `INSERT INTO supplier_contracts (supplier_id, contract_number, title, description, start_date, end_date, value, terms, status)
        VALUES (?,?,?,?,?,?,?,?,'active')`,
-      [supplier_id, contract_number, title, description || null, start_date, end_date, value, terms || null]
+      [supplier_id, contract_number, title, description || null, start_date || null, end_date || null, value, terms || null]
     );
     await logAudit(req, createAuditEntry(req, 'Create Contract', 'Procurement', `Created contract ${contract_number}`, req.body));
     return created(res, { id: result.insertId }, 'Contract created');
@@ -95,7 +95,7 @@ export const updateSupplierContract = async (req: AuthRequest, res: Response) =>
     if (old.length === 0) return error(res, 'Contract not found', 404);
     await pool.query(
       `UPDATE supplier_contracts SET supplier_id=?, contract_number=?, title=?, description=?, start_date=?, end_date=?, value=?, terms=?, status=? WHERE id=?`,
-      [supplier_id, contract_number, title, description, start_date, end_date, value, terms, status, req.params.id]
+      [supplier_id, contract_number, title, description, start_date || null, end_date || null, value, terms, status, req.params.id]
     );
     await logAudit(req, createAuditEntry(req, 'Update Contract', 'Procurement', `Updated contract ${contract_number}`, req.body, old[0]));
     return success(res, null, 'Contract updated');

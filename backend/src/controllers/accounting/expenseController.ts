@@ -71,7 +71,7 @@ export const createExpenseRecord = async (req: AuthRequest, res: Response) => {
     const genExpenseNumber = b.expense_number || `EXP-${Date.now()}`;
     const [result]: any = await pool.query(
       `INSERT INTO expense_records (expense_number, category_id, description, amount, payment_method, vendor, notes, date, department_id) VALUES (?,?,?,?,?,?,?,?,?)`,
-      [genExpenseNumber, category_id, b.description || null, b.amount, payment_method || null, b.vendor || null, b.notes || null, b.date, b.department_id || null]
+      [genExpenseNumber, category_id, b.description || null, b.amount, payment_method || null, b.vendor || null, b.notes || null, b.date || null, b.department_id || null]
     );
     await logAudit(req, createAuditEntry(req, 'Create Expense', 'Accounting', `Expense record ${genExpenseNumber} created`, req.body));
     return created(res, { id: result.insertId }, 'Expense record created');
@@ -87,7 +87,7 @@ export const updateExpenseRecord = async (req: AuthRequest, res: Response) => {
     const payment_method = (b.payment_method || '').toLowerCase().replace(/\s+/g, '_');
     await pool.query(
       `UPDATE expense_records SET category_id=?, description=?, amount=?, payment_method=?, vendor=?, notes=?, date=?, department_id=? WHERE id=?`,
-      [category_id, b.description || null, b.amount, payment_method || null, b.vendor || null, b.notes || null, b.date, b.department_id || null, req.params.id]
+      [category_id, b.description || null, b.amount, payment_method || null, b.vendor || null, b.notes || null, b.date || null, b.department_id || null, req.params.id]
     );
     await logAudit(req, createAuditEntry(req, 'Update Expense', 'Accounting', `Expense record #${req.params.id} updated`, req.body, old[0]));
     return success(res, null, 'Expense record updated');

@@ -69,7 +69,7 @@ export const createLeaveRequest = async (req: AuthRequest, res: Response) => {
     const [result]: any = await pool.query(
       `INSERT INTO leave_requests (employee_id, leave_type_id, start_date, end_date, reason, status)
        VALUES (?,?,?,?,?,'pending')`,
-      [employee_id, leave_type_id, start_date, end_date, reason || null]
+      [employee_id, leave_type_id, start_date || null, end_date || null, reason || null]
     );
     await logAudit(req, createAuditEntry(req, 'Create Leave Request', 'HR', `Leave request created for employee ${employee_id}`, req.body));
     return created(res, { id: result.insertId }, 'Leave request created');

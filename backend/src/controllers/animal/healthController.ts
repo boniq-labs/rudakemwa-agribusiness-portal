@@ -39,7 +39,7 @@ export const createVaccination = async (req: AuthRequest, res: Response) => {
 
     const [result]: any = await pool.query(
       `INSERT INTO vaccinations (animal_id, vaccine_name, date, next_due_date, veterinarian, batch_number, notes) VALUES (?,?,?,?,?,?,?)`,
-      [animal_id, vaccine_name, vaccination_date, next_due_date || null, veterinarian || null, batch_number || null, notes || null]
+      [animal_id, vaccine_name, vaccination_date || null, next_due_date || null, veterinarian || null, batch_number || null, notes || null]
     );
 
     await logAudit(req, createAuditEntry(req, 'Create Vaccination', 'Vaccinations', `Vaccination ${vaccine_name} for animal ${animal_id}`, { animal_id, vaccine_name, vaccination_date }));
@@ -54,8 +54,9 @@ export const updateVaccination = async (req: AuthRequest, res: Response) => {
     const fields: string[] = [];
     const values: any[] = [];
     const allowed: Record<string, string> = { animal_id: 'animal_id', vaccine_name: 'vaccine_name', vaccination_date: 'date', next_due_date: 'next_due_date', veterinarian: 'veterinarian', batch_number: 'batch_number', notes: 'notes' };
+    const dateFields = new Set(['vaccination_date', 'next_due_date']);
     for (const [bodyKey, col] of Object.entries(allowed))
-      if (req.body[bodyKey] !== undefined) { fields.push(`${col}=?`); values.push(req.body[bodyKey]); }
+      if (req.body[bodyKey] !== undefined) { fields.push(`${col}=?`); values.push(dateFields.has(bodyKey) && req.body[bodyKey] === '' ? null : req.body[bodyKey]); }
     if (fields.length === 0) return error(res, 'No fields to update', 400);
     values.push(req.params.id);
     await pool.query(`UPDATE vaccinations SET ${fields.join(', ')} WHERE id=?`, values);
@@ -106,7 +107,7 @@ export const createDisease = async (req: AuthRequest, res: Response) => {
 
     const [result]: any = await pool.query(
       `INSERT INTO diseases (animal_id, disease_name, symptoms, severity, date, notes) VALUES (?,?,?,?,?,?)`,
-      [animal_id, disease_name, symptoms, severity, date, notes]
+      [animal_id, disease_name, symptoms, severity, date || null, notes]
     );
 
     await logAudit(req, createAuditEntry(req, 'Create Disease', 'Diseases', `Disease ${disease_name} for animal ${animal_id}`, { animal_id, disease_name, severity }));
@@ -135,8 +136,9 @@ export const updateDisease = async (req: AuthRequest, res: Response) => {
     const fields: string[] = [];
     const values: any[] = [];
     const allowed = ['animal_id', 'disease_name', 'symptoms', 'severity', 'date', 'status', 'notes'];
+    const dateFields = new Set(['date']);
     for (const key of allowed)
-      if (req.body[key] !== undefined) { fields.push(`${key}=?`); values.push(req.body[key]); }
+      if (req.body[key] !== undefined) { fields.push(`${key}=?`); values.push(dateFields.has(key) && req.body[key] === '' ? null : req.body[key]); }
     if (fields.length === 0) return error(res, 'No fields to update', 400);
     values.push(req.params.id);
     await pool.query(`UPDATE diseases SET ${fields.join(', ')} WHERE id=?`, values);
@@ -223,10 +225,11 @@ export const updateTreatment = async (req: AuthRequest, res: Response) => {
       dosage: 'dosage', duration: 'duration', cost: 'cost', notes: 'notes',
       veterinarian_name: 'veterinarian_name',
     };
+    const dateFields = new Set(['treatment_date', 'date', 'follow_up_date']);
     for (const [bodyKey, col] of Object.entries(fieldMap)) {
       if (b[bodyKey] !== undefined && !fields.includes(`${col}=?`)) {
         fields.push(`${col}=?`);
-        values.push(b[bodyKey]);
+        values.push(dateFields.has(bodyKey) && b[bodyKey] === '' ? null : b[bodyKey]);
       }
     }
     if (b.veterinarian !== undefined) {
