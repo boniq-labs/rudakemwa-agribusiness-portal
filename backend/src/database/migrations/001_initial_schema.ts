@@ -65,7 +65,7 @@ export async function up(conn: mysql.Connection): Promise<void> {
     `CREATE TABLE IF NOT EXISTS employees (
       id INT AUTO_INCREMENT PRIMARY KEY,
       user_id INT UNIQUE NOT NULL,
-      employee_code VARCHAR(20) UNIQUE NOT NULL,
+      employee_code VARCHAR(250) UNIQUE NOT NULL,
       national_id VARCHAR(50),
       position VARCHAR(100),
       employment_type VARCHAR(50),

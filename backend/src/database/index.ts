@@ -10,6 +10,7 @@ import * as m007 from './migrations/007_alter_animal_tables_timestamps';
 import * as m008 from './migrations/008_alter_birth_vaccination_milk_customer';
 import * as m009 from './migrations/009_alter_attendance';
 import * as m010 from './migrations/010_alter_logistics_accounting';
+import * as m011 from './migrations/011_alter_employee_code_length';
 
 const migrations = [
   { name: m001.name, up: m001.up },
@@ -22,6 +23,7 @@ const migrations = [
   { name: m008.name, up: m008.up },
   { name: m009.name, up: m009.up },
   { name: m010.name, up: m010.up },
+  { name: m011.name, up: m011.up },
 ];
 
 export async function runMigrations(conn: mysql.Connection): Promise<void> {
