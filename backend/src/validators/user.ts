@@ -35,7 +35,13 @@ export const updateUserSchema = z.object({
   dob: z.string().optional().nullable().or(z.literal('')),
   roleId: z.number().int().positive().optional().nullable(),
   departmentId: z.number().int().positive().optional().nullable(),
-  isActive: z.boolean().optional().nullable(),
+  isActive: z
+    .union([
+      z.boolean(),
+      z.number().int().min(0).max(1),
+    ])
+    .optional()
+    .nullable(),
   photo: z.string().optional().nullable(),
 }).passthrough();
 
