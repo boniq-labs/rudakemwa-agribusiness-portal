@@ -123,9 +123,11 @@ export const createUser = async (req: AuthRequest, res: Response) => {
 };
 
 export const updateUser = async (req: AuthRequest, res: Response) => {
+  const conn = await pool.getConnection();
   try {
-    const [old]: any = await pool.query('SELECT * FROM users WHERE id = ?', [req.params.id]);
-    if (old.length === 0) return error(res, 'User not found', 404);
+    await conn.beginTransaction();
+    const [old]: any = await conn.query('SELECT * FROM users WHERE id = ?', [req.params.id]);
+    if (old.length === 0) { conn.release(); return error(res, 'User not found', 404); }
 
     const b = req.body;
     const email = b.email;
@@ -142,14 +144,48 @@ export const updateUser = async (req: AuthRequest, res: Response) => {
     const isActive = b.isActive !== undefined ? b.isActive : (b.is_active !== undefined ? b.is_active : old[0].is_active);
 
     const photo = req.body.photo !== undefined ? req.body.photo : old[0].photo;
-    await pool.query(
+    await conn.query(
       `UPDATE users SET email=?, first_name=?, last_name=?, phone=?, gender=?, address=?, date_of_birth=?, role_id=?, department_id=?, is_active=?, photo=? WHERE id=?`,
       [email, firstName, lastName, phone, gender, address, dob, roleId, departmentId, isActive ?? true, photo, req.params.id]
     );
 
+    const employeeCode = b.employee_code || b.employeeCode;
+    const position = b.position;
+    const dateHired = b.date_hired || b.dateHired;
+    const employmentType = b.employment_type || b.employmentType;
+    const supervisorId = b.supervisor_id || b.supervisorId;
+    if (employeeCode !== undefined || position !== undefined || dateHired !== undefined || employmentType !== undefined || supervisorId !== undefined) {
+      const [existingEmp]: any = await conn.query('SELECT id FROM employees WHERE user_id = ?', [req.params.id]);
+      if (existingEmp.length > 0) {
+        const empFields: string[] = [];
+        const empValues: any[] = [];
+        if (employeeCode !== undefined) { empFields.push('employee_code=?'); empValues.push(employeeCode); }
+        if (position !== undefined) { empFields.push('position=?'); empValues.push(position); }
+        if (dateHired !== undefined) { empFields.push('date_hired=?'); empValues.push(dateHired); }
+        if (employmentType !== undefined) { empFields.push('employment_type=?'); empValues.push(employmentType); }
+        if (supervisorId !== undefined) { empFields.push('supervisor_id=?'); empValues.push(supervisorId); }
+        if (empFields.length > 0) {
+          empValues.push(req.params.id);
+          await conn.query(`UPDATE employees SET ${empFields.join(', ')} WHERE user_id=?`, empValues);
+        }
+      } else {
+        await conn.query(
+          'INSERT INTO employees (user_id, employee_code, position, date_hired, employment_type, supervisor_id) VALUES (?,?,?,?,?,?)',
+          [req.params.id, employeeCode || null, position || null, dateHired || null, employmentType || null, supervisorId || null]
+        );
+      }
+    }
+
+    await conn.commit();
+    conn.release();
+
     await logAudit(req, createAuditEntry(req, 'Update User', 'Users', `Updated user ${firstName} ${lastName}`, req.body, old[0]));
     return success(res, null, 'User updated');
-  } catch (err: any) { return error(res, err.message); }
+  } catch (err: any) {
+    await conn.rollback();
+    conn.release();
+    return error(res, err.message);
+  }
 };
 
 export const deleteUser = async (req: AuthRequest, res: Response) => {
