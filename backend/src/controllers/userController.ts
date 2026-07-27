@@ -98,6 +98,7 @@ export const createUser = async (req: AuthRequest, res: Response) => {
       'SELECT id FROM users WHERE username = ? OR (email = ? AND email IS NOT NULL)',
       [username, email]
     );
+    console.log({ username, email, existingLength: existing.length, existing });
     if (existing.length > 0) return error(res, 'Username or email already exists', 400);
 
     if (password.toLowerCase().includes(username.toLowerCase())) return error(res, 'Password cannot contain username', 400);
