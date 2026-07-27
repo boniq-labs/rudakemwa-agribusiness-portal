@@ -141,7 +141,13 @@ function ProtectedRoute({ children, roles }: { children?: React.ReactNode; roles
   if (loading) return <div className="loading-screen"><div className="loading-spinner" /></div>;
   if (!user) return <Navigate to="/login" />;
   if (roles && !roles.includes(user.role) && user.role !== 'owner' && user.role !== 'farm_owner') {
-    return <div className="error-page"><h2>Access Denied</h2><p>You do not have permission to access this page.</p></div>;
+    const hasMappedAccess = roles.some(r => r === 'procurement' && user.role === 'animal')
+      || roles.some(r => r === 'veterinary' && user.role === 'milk')
+      || roles.some(r => r === 'sales' && user.role === 'crops')
+      || roles.some(r => r === 'hr' && user.role === 'logistics');
+    if (!hasMappedAccess) {
+      return <div className="error-page"><h2>Access Denied</h2><p>You do not have permission to access this page.</p></div>;
+    }
   }
   return children ? <>{children}</> : <Outlet />;
 }

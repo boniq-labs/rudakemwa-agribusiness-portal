@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { ROLE_LABELS } from '../utils/constants';
 import { settingsApi } from '../api';
 import { cn } from '../utils/cn';
+import { canAccessDepartment } from '../utils/departmentAccess';
 import {
   LayoutDashboard, Users, UserCircle, UserCheck, DollarSign, ShoppingCart,
   Truck, Package, PawPrint, Milk, Settings, LogOut, Menu, X,
@@ -214,7 +215,8 @@ export default function Sidebar() {
             .filter((item) => {
               if (!item.roles) return true;
               if (['owner', 'farm_owner', 'admin'].includes(user?.role || '')) return true;
-              return item.roles.includes(user?.role || '');
+              if (item.roles.includes(user?.role || '')) return true;
+              return item.roles.some(r => canAccessDepartment(user?.role || '', r));
             })
             .map((item) => (
               <NavItemComponent
