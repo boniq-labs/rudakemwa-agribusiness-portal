@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import pool from '../config/database';
+import { canAccessDepartment } from '../utils/departmentAccess';
 
 export interface AuthRequest extends Request {
   user?: { id: number; username: string; role: string; roleId: number; departmentId: number | null; permissions: string[] };
@@ -56,6 +57,8 @@ export const hasRole = (...roles: string[]) => {
   return (req: AuthRequest, res: Response, next: NextFunction) => {
     if (!req.user) return res.status(401).json({ error: 'Not authenticated' });
     if (isSuperAdmin(req.user.role) || roles.includes(req.user.role)) return next();
+    const hasMappedAccess = roles.some(r => canAccessDepartment(req.user!.role, r));
+    if (hasMappedAccess) return next();
     return res.status(403).json({ error: 'Insufficient role' });
   };
 };
