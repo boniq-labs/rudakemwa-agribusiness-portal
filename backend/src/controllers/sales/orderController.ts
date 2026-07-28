@@ -20,6 +20,19 @@ export const getSalesOrders = async (req: AuthRequest, res: Response) => {
        FROM sales_orders so LEFT JOIN customers c ON so.customer_id = c.id
        ${where} ORDER BY so.created_at DESC`, params
     );
+    if (rows.length > 0) {
+      const orderIds = rows.map((r: any) => r.id);
+      const placeholders = orderIds.map(() => '?').join(',');
+      const [allItems]: any = await pool.query(`SELECT * FROM sales_order_items WHERE order_id IN (${placeholders}) ORDER BY id`, orderIds);
+      const itemsByOrder: Record<number, any[]> = {};
+      for (const item of allItems) {
+        if (!itemsByOrder[item.order_id]) itemsByOrder[item.order_id] = [];
+        itemsByOrder[item.order_id].push(item);
+      }
+      for (const order of rows) {
+        order.items = itemsByOrder[order.id] || [];
+      }
+    }
     return success(res, rows);
   } catch (err: any) { return error(res, err.message); }
 };
@@ -28,8 +41,10 @@ export const createSalesOrder = async (req: AuthRequest, res: Response) => {
   try {
     const b = req.body;
     const order_number = b.order_number || `ORD-${Date.now()}`;
-    const items = b.items || (b.product_id ? [{ product_id: b.product_id, quantity: b.quantity, unit_price: b.unit_price }] : []);
-    const total_amount = b.total_amount || items.reduce((sum: number, item: any) => sum + (item.quantity * item.unit_price), 0);
+    const items = (Array.isArray(b.items) && b.items.length > 0)
+      ? b.items
+      : (b.product_id ? [{ product_id: b.product_id, quantity: b.quantity, unit_price: b.unit_price }] : []);
+    const total_amount = (b.total_amount && b.total_amount > 0) ? b.total_amount : items.reduce((sum: number, item: any) => sum + (item.quantity * item.unit_price), 0);
     const order_date = b.order_date || new Date().toISOString().split('T')[0];
     const [result]: any = await pool.query(
       `INSERT INTO sales_orders (order_number, customer_id, total_amount, order_date, notes) VALUES (?,?,?,?,?)`,
@@ -81,12 +96,12 @@ export const getQuotations = async (req: AuthRequest, res: Response) => {
 
 export const createQuotation = async (req: AuthRequest, res: Response) => {
   try {
-    const { quotation_number, customer_id, items, notes, valid_until } = req.body;
+    const { quotation_number, customer_id, items, notes } = req.body;
     const qNumber = quotation_number || `QTN-${Date.now()}`;
     const total_amount = items ? items.reduce((sum: number, item: any) => sum + (item.quantity * item.unit_price), 0) : 0;
     const [result]: any = await pool.query(
-      `INSERT INTO sales_quotations (quotation_number, customer_id, total_amount, notes, valid_until) VALUES (?,?,?,?,?)`,
-      [qNumber, customer_id, total_amount, notes || null, valid_until || null]
+      `INSERT INTO sales_quotations (quotation_number, customer_id, total_amount) VALUES (?,?,?)`,
+      [qNumber, customer_id, total_amount]
     );
     for (const item of items || []) {
       await pool.query(

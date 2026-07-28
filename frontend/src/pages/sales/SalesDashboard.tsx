@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import client from '../../api/client';
 import ModulePage from '../../components/ModulePage';
 import StatsCard from '../../components/StatsCard';
-import { TrendingUp, Clock, Users, Plus, FileText } from 'lucide-react';
+import { TrendingUp, Clock, Users, Package, CheckCircle, Plus, FileText } from 'lucide-react';
 import { formatAmount } from '../../services/currency';
 
 export default function SalesDashboard() {
@@ -14,7 +14,7 @@ export default function SalesDashboard() {
     queryFn: () => client.get('/sales/dashboard').then(r => r.data.data),
   });
 
-  const d = (dashboard as any) || { monthSales: 0, pendingOrders: 0, customersCount: 0, customerRevenue: 0, recentOrders: [] };
+  const d = (dashboard as any) || { monthSales: 0, pendingOrders: 0, customersCount: 0, customerRevenue: 0, totalProducts: 0, completedOrders: 0, recentOrders: [] };
 
   return (
     <ModulePage
@@ -35,6 +35,8 @@ export default function SalesDashboard() {
         <StatsCard title="Month Sales" value={formatAmount(d.monthSales)} icon={TrendingUp} color="var(--primary)" />
         <StatsCard title="Pending Orders" value={d.pendingOrders} icon={Clock} color="var(--warning)" />
         <StatsCard title="Customers" value={d.customersCount} icon={Users} color="var(--success)" />
+        <StatsCard title="Total Products" value={d.totalProducts} icon={Package} color="var(--primary)" />
+        <StatsCard title="Completed Orders" value={d.completedOrders} icon={CheckCircle} color="var(--success)" />
         <StatsCard title="Customer Revenue" value={formatAmount(d.customerRevenue)} icon={TrendingUp} color="var(--primary)" />
       </div>
 

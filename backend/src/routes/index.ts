@@ -837,8 +837,10 @@ router.get('/sales/dashboard', authenticate, authorize(['customers.view']), asyn
     const [[{ pendingOrders }]]: any = await pool.query("SELECT COUNT(*) as pendingOrders FROM sales_orders WHERE status='pending' AND deleted_at IS NULL");
     const [[{ customersCount }]]: any = await pool.query("SELECT COUNT(*) as customersCount FROM customers WHERE deleted_at IS NULL");
     const [[{ customerRevenue }]]: any = await pool.query("SELECT COALESCE(SUM(total_amount),0) as customerRevenue FROM sales_orders WHERE status='completed' AND deleted_at IS NULL");
+    const [[{ totalProducts }]]: any = await pool.query("SELECT COUNT(*) as totalProducts FROM products WHERE deleted_at IS NULL");
+    const [[{ completedOrders }]]: any = await pool.query("SELECT COUNT(*) as completedOrders FROM sales_orders WHERE status='completed' AND deleted_at IS NULL");
     const [recentOrders]: any = await pool.query("SELECT so.*, CONCAT(c.first_name,' ',c.last_name) as customer_name FROM sales_orders so LEFT JOIN customers c ON so.customer_id=c.id WHERE so.deleted_at IS NULL ORDER BY so.created_at DESC LIMIT 5");
-    return success(res, { monthSales: Number(monthSales), pendingOrders, customersCount, customerRevenue: Number(customerRevenue), recentOrders });
+    return success(res, { monthSales: Number(monthSales), pendingOrders, customersCount, customerRevenue: Number(customerRevenue), totalProducts: Number(totalProducts), completedOrders: Number(completedOrders), recentOrders });
   } catch (err: any) { return (await import('../utils/response')).error(res, err.message); }
 });
 
@@ -896,6 +898,26 @@ router.delete('/sales/orders/:id', authenticate, authorize(['orders.delete']), a
 // Sales - Quotations
 router.get('/sales/quotations', authenticate, authorize(['orders.view']), getQuotations);
 router.post('/sales/quotations', authenticate, authorize(['orders.create']), createQuotation);
+router.put('/sales/quotations/:id', authenticate, authorize(['orders.update']), async (req, res) => {
+  const pool = (await import('../config/database')).default;
+  try {
+    const [old]: any = await pool.query('SELECT * FROM sales_quotations WHERE id = ?', [req.params.id]);
+    if (old.length === 0) return (await import('../utils/response')).error(res, 'Quotation not found', 404);
+    const { customer_id, total_amount, notes, valid_until } = req.body;
+    await pool.query('UPDATE sales_quotations SET customer_id=?, total_amount=?, notes=?, valid_until=? WHERE id=?',
+      [customer_id || old[0].customer_id, total_amount || old[0].total_amount, notes ?? old[0].notes, valid_until || old[0].valid_until, req.params.id]);
+    return (await import('../utils/response')).success(res, null, 'Quotation updated');
+  } catch (err: any) { return (await import('../utils/response')).error(res, err.message); }
+});
+router.delete('/sales/quotations/:id', authenticate, authorize(['orders.delete']), async (req, res) => {
+  const pool = (await import('../config/database')).default;
+  try {
+    const [old]: any = await pool.query('SELECT * FROM sales_quotations WHERE id = ?', [req.params.id]);
+    if (old.length === 0) return (await import('../utils/response')).error(res, 'Quotation not found', 404);
+    await pool.query('DELETE FROM sales_quotations WHERE id = ?', [req.params.id]);
+    return (await import('../utils/response')).success(res, null, 'Quotation deleted');
+  } catch (err: any) { return (await import('../utils/response')).error(res, err.message); }
+});
 router.put('/sales/quotations/:id/convert', authenticate, authorize(['orders.update']), convertQuotationToOrder);
 
 // Sales - Invoices

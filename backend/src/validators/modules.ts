@@ -424,11 +424,12 @@ export const createCustomerSchema = z.object({
 
 export const createProductSchema = z.object({
   category_id: z.union([z.number(), z.string()]).optional().nullable(),
+  category_name: z.string().optional().nullable(),
   category: z.string().optional().nullable(),
   name: z.string().min(1, 'Name is required'),
   code: z.string().optional().nullable(),
   unit: z.string().optional().nullable(),
-  price: z.number().positive(),
+  price: z.number().min(0),
   cost_price: z.number().optional().nullable(),
   quantity_available: z.number().optional().nullable(),
   quantity: z.number().optional().nullable(),

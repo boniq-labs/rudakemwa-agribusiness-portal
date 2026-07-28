@@ -114,11 +114,12 @@ export default function OrdersPage() {
   };
 
   const handleEdit = (o: any) => {
+    const firstItem = Array.isArray(o.items) && o.items.length > 0 ? o.items[0] : null;
     setForm({
       customer_id: String(o.customer_id || ''),
-      product_id: String(o.product_id || ''),
-      quantity: String(o.quantity || ''),
-      unit_price: String(o.unit_price || ''),
+      product_id: firstItem ? String(firstItem.product_id || '') : '',
+      quantity: firstItem ? String(firstItem.quantity || '') : '',
+      unit_price: firstItem ? String(firstItem.unit_price || '') : '',
       total_amount: String(o.total_amount || ''),
       order_date: o.order_date ? o.order_date.split('T')[0] : '',
       status: o.status || 'pending',
