@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useState, useRef, useEffect, type FormEvent } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import client from '../../api/client';
@@ -7,18 +7,75 @@ import DataTable from '../../components/DataTable';
 import Modal from '../../components/Modal';
 import FormField from '../../components/FormField';
 import type { Column } from '../../components/DataTable';
-import { Plus, Search } from 'lucide-react';
+import { Plus, Search, ChevronDown } from 'lucide-react';
+
+const CATEGORY_OPTIONS = ['Milk Products', 'Crop Sales', 'Animal Sales'];
 
 interface ProductForm {
   name: string;
-  category_id: string;
+  category_name: string;
   price: string;
   unit: string;
   quantity_available: string;
   description: string;
 }
 
-const initialForm: ProductForm = { name: '', category_id: '', price: '', unit: '', quantity_available: '', description: '' };
+const initialForm: ProductForm = { name: '', category_name: '', price: '', unit: '', quantity_available: '', description: '' };
+
+function SearchableCategorySelect({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  const filtered = CATEGORY_OPTIONS.filter(c => c.toLowerCase().includes(query.toLowerCase()));
+
+  return (
+    <div ref={ref} style={{ position: 'relative' }}>
+      <div
+        onClick={() => setOpen(!open)}
+        style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', padding: '8px 12px', border: '1px solid var(--border)', borderRadius: 6, background: 'var(--card-bg)' }}
+      >
+        <span style={{ flex: 1, color: value ? 'inherit' : 'var(--text-secondary)' }}>{value || 'Select category'}</span>
+        <ChevronDown size={16} style={{ color: 'var(--text-secondary)' }} />
+      </div>
+      {open && (
+        <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 100, background: 'var(--card-bg)', border: '1px solid var(--border)', borderRadius: 6, marginTop: 4, boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
+          <div style={{ padding: '4px 8px' }}>
+            <input
+              autoFocus
+              placeholder="Search category..."
+              value={query}
+              onChange={e => setQuery(e.target.value)}
+              style={{ width: '100%', border: 'none', outline: 'none', padding: '6px 8px', fontSize: '0.9rem', background: 'transparent', color: 'inherit' }}
+            />
+          </div>
+          <div style={{ maxHeight: 160, overflow: 'auto' }}>
+            {filtered.length === 0 && <div style={{ padding: '8px 12px', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>No categories match</div>}
+            {filtered.map(c => (
+              <div
+                key={c}
+                onClick={() => { onChange(c); setOpen(false); setQuery(''); }}
+                style={{ padding: '8px 12px', cursor: 'pointer', background: value === c ? 'var(--primary)' : 'transparent', color: value === c ? '#fff' : 'inherit', fontSize: '0.9rem' }}
+                onMouseEnter={e => { if (value !== c) (e.target as HTMLElement).style.background = 'var(--bg)'; }}
+                onMouseLeave={e => { if (value !== c) (e.target as HTMLElement).style.background = 'transparent'; }}
+              >
+                {c}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function ProductsPage() {
   const queryClient = useQueryClient();
@@ -31,13 +88,6 @@ export default function ProductsPage() {
     queryKey: ['sales-products'],
     queryFn: () => client.get('/sales/products').then(r => r.data.data || []),
   });
-
-  const { data: categories } = useQuery({
-    queryKey: ['sales-product-categories'],
-    queryFn: () => client.get('/sales/product-categories').then(r => r.data.data || []),
-  });
-
-  const categoryList = Array.isArray(categories) ? categories : [];
 
   const createMutation = useMutation({
     mutationFn: (d: any) => client.post('/sales/products', d),
@@ -83,7 +133,7 @@ export default function ProductsPage() {
     e.preventDefault();
     const payload: any = {
       name: form.name,
-      category_id: form.category_id ? Number(form.category_id) : null,
+      category_name: form.category_name || undefined,
       price: Number(form.price),
       unit: form.unit || null,
       quantity_available: Number(form.quantity_available),
@@ -96,7 +146,7 @@ export default function ProductsPage() {
   const handleEdit = (p: any) => {
     setForm({
       name: p.name || '',
-      category_id: String(p.category_id || ''),
+      category_name: p.category_name || '',
       price: String(p.price || ''),
       unit: p.unit || '',
       quantity_available: String(p.quantity_available || p.quantity || ''),
@@ -149,13 +199,8 @@ export default function ProductsPage() {
           <FormField label="Name" required>
             <input className="form-input" value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} required />
           </FormField>
-          <FormField label="Category">
-            <select className="form-input" value={form.category_id} onChange={e => setForm(p => ({ ...p, category_id: e.target.value }))}>
-              <option value="">Select category</option>
-              {categoryList.map((c: any) => (
-                <option key={c.id} value={c.id}>{c.name}</option>
-              ))}
-            </select>
+          <FormField label="Category" required>
+            <SearchableCategorySelect value={form.category_name} onChange={v => setForm(p => ({ ...p, category_name: v }))} />
           </FormField>
           <FormField label="Price" required>
             <input className="form-input" type="number" step="0.01" value={form.price} onChange={e => setForm(p => ({ ...p, price: e.target.value }))} required />

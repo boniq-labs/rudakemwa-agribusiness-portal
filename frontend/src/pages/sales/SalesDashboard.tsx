@@ -14,7 +14,7 @@ export default function SalesDashboard() {
     queryFn: () => client.get('/sales/dashboard').then(r => r.data.data),
   });
 
-  const d = (dashboard as any) || { monthSales: 0, pendingOrders: 0, customersCount: 0, recentOrders: [] };
+  const d = (dashboard as any) || { monthSales: 0, pendingOrders: 0, customersCount: 0, customerRevenue: 0, recentOrders: [] };
 
   return (
     <ModulePage
@@ -35,6 +35,7 @@ export default function SalesDashboard() {
         <StatsCard title="Month Sales" value={formatAmount(d.monthSales)} icon={TrendingUp} color="var(--primary)" />
         <StatsCard title="Pending Orders" value={d.pendingOrders} icon={Clock} color="var(--warning)" />
         <StatsCard title="Customers" value={d.customersCount} icon={Users} color="var(--success)" />
+        <StatsCard title="Customer Revenue" value={formatAmount(d.customerRevenue)} icon={TrendingUp} color="var(--primary)" />
       </div>
 
       <div className="card" style={{ marginTop: 20 }}>

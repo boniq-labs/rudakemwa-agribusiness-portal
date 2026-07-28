@@ -1,4 +1,5 @@
-import { useState, type FormEvent } from 'react';
+import { useState, useEffect, type FormEvent } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import client from '../../api/client';
@@ -29,10 +30,17 @@ const initialForm: InvoiceForm = {
 
 export default function SalesInvoices() {
   const queryClient = useQueryClient();
-  const [showModal, setShowModal] = useState(false);
+  const [searchParams] = useSearchParams();
+  const [showModal, setShowModal] = useState(searchParams.get('add') === 'true');
   const [search, setSearch] = useState('');
   const [editId, setEditId] = useState<number | null>(null);
   const [form, setForm] = useState<InvoiceForm>(initialForm);
+
+  useEffect(() => {
+    if (searchParams.get('add') === 'true' && !editId) {
+      setShowModal(true);
+    }
+  }, [searchParams, editId]);
 
   const { data, isLoading } = useQuery({
     queryKey: ['sales-invoices'],

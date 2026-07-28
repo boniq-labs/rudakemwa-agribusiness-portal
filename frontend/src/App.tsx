@@ -56,7 +56,6 @@ const ShiftManagement = lazy(() => import('./pages/animals/ShiftManagement'));
 
 // Milk
 const MilkDashboard = lazy(() => import('./pages/milk/MilkDashboard'));
-const MilkProducts = lazy(() => import('./pages/milk/MilkProducts'));
 const MilkCustomers = lazy(() => import('./pages/milk/MilkCustomers'));
 const MilkReports = lazy(() => import('./pages/milk/MilkReports'));
 const MorningProduction = lazy(() => import('./pages/milk/MorningProduction'));
@@ -219,7 +218,6 @@ function AppRoutes() {
           {/* Milk */}
           <Route element={<ProtectedRoute roles={['owner', 'admin', 'milk']} />}>
             <Route path="milk/dashboard" element={<MilkDashboard />} />
-            <Route path="milk/products" element={<MilkProducts />} />
             <Route path="milk/customers" element={<MilkCustomers />} />
             <Route path="milk/reports" element={<MilkReports />} />
             <Route path="milk/morning" element={<MorningProduction />} />

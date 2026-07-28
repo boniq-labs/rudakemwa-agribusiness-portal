@@ -79,7 +79,6 @@ const navItems: NavItem[] = [
       { label: 'Dashboard', path: '/milk/dashboard' },
       { label: 'Morning Production', path: '/milk/morning' },
       { label: 'Evening Production', path: '/milk/evening' },
-      { label: 'Milk Products', path: '/milk/products' },
       { label: 'Customers', path: '/milk/customers' },
       { label: 'Daily Reports', path: '/milk/reports' },
     ],

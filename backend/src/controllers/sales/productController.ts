@@ -52,7 +52,16 @@ export const getProducts = async (req: AuthRequest, res: Response) => {
 export const createProduct = async (req: AuthRequest, res: Response) => {
   try {
     const b = req.body;
-    const category_id = b.category_id || b.category || null;
+    let category_id = b.category_id || b.category || null;
+    if (!category_id && b.category_name) {
+      const [existing]: any = await pool.query('SELECT id FROM product_categories WHERE name = ?', [b.category_name]);
+      if (existing.length > 0) {
+        category_id = existing[0].id;
+      } else {
+        const [result]: any = await pool.query('INSERT INTO product_categories (name) VALUES (?)', [b.category_name]);
+        category_id = result.insertId;
+      }
+    }
     const quantity_available = b.quantity_available ?? b.quantity ?? 0;
     const { name, code, unit, price, cost_price, description } = b;
     const [result]: any = await pool.query(
@@ -70,7 +79,16 @@ export const updateProduct = async (req: AuthRequest, res: Response) => {
     const [old]: any = await pool.query('SELECT * FROM products WHERE id = ?', [req.params.id]);
     if (old.length === 0) return error(res, 'Product not found', 404);
     const b = req.body;
-    const category_id = b.category_id || b.category || null;
+    let category_id = b.category_id || b.category || null;
+    if (!category_id && b.category_name) {
+      const [existing]: any = await pool.query('SELECT id FROM product_categories WHERE name = ?', [b.category_name]);
+      if (existing.length > 0) {
+        category_id = existing[0].id;
+      } else {
+        const [result]: any = await pool.query('INSERT INTO product_categories (name) VALUES (?)', [b.category_name]);
+        category_id = result.insertId;
+      }
+    }
     const quantity_available = b.quantity_available ?? b.quantity ?? old[0].quantity_available;
     const { name, code, unit, price, cost_price, description, status } = b;
     await pool.query(

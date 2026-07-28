@@ -12,7 +12,11 @@ export const getCustomers = async (req: AuthRequest, res: Response) => {
     if (type) { where += ' AND c.customer_type = ?'; params.push(type); }
     if (status) { where += ' AND c.status = ?'; params.push(status); }
     if (search) { where += ' AND (CONCAT(c.first_name,\' \',c.last_name) LIKE ? OR c.company_name LIKE ? OR c.email LIKE ? OR c.phone LIKE ?)'; params.push(`%${search}%`, `%${search}%`, `%${search}%`, `%${search}%`); }
-    const [rows]: any = await pool.query(`SELECT c.*, CONCAT(c.first_name, ' ', c.last_name) as name FROM customers c ${where} ORDER BY c.created_at DESC`, params);
+    const [rows]: any = await pool.query(
+      `SELECT c.*, CONCAT(c.first_name, ' ', c.last_name) as name,
+       COALESCE((SELECT SUM(total_amount) FROM sales_orders WHERE customer_id = c.id AND status = 'completed' AND deleted_at IS NULL), 0) as total_purchase_amount
+       FROM customers c ${where} ORDER BY c.created_at DESC`, params
+    );
     return success(res, rows);
   } catch (err: any) { return error(res, err.message); }
 };

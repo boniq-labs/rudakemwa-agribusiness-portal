@@ -44,7 +44,7 @@ const DEPARTMENTS: DeptDef[] = [
   {
     key: 'milk', label: 'Milk Production', icon: Milk, path: '/milk/dashboard', color: '#d97706',
     roles: ['owner', 'admin', 'milk'],
-    links: [{ label: 'Morning', path: '/milk/morning' }, { label: 'Evening', path: '/milk/evening' }, { label: 'Products', path: '/milk/products' }, { label: 'Reports', path: '/milk/reports' }],
+    links: [{ label: 'Morning', path: '/milk/morning' }, { label: 'Evening', path: '/milk/evening' }, { label: 'Reports', path: '/milk/reports' }],
     stats: (o) => [
       { label: 'Today (L)', value: o?.milk?.today ?? 0 },
       { label: 'Morning (L)', value: o?.milk?.morning ?? 0 },

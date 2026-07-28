@@ -836,8 +836,9 @@ router.get('/sales/dashboard', authenticate, authorize(['customers.view']), asyn
     const [[{ monthSales }]]: any = await pool.query("SELECT COALESCE(SUM(total_amount),0) as monthSales FROM sales_orders WHERE MONTH(order_date)=MONTH(CURDATE()) AND deleted_at IS NULL");
     const [[{ pendingOrders }]]: any = await pool.query("SELECT COUNT(*) as pendingOrders FROM sales_orders WHERE status='pending' AND deleted_at IS NULL");
     const [[{ customersCount }]]: any = await pool.query("SELECT COUNT(*) as customersCount FROM customers WHERE deleted_at IS NULL");
+    const [[{ customerRevenue }]]: any = await pool.query("SELECT COALESCE(SUM(total_amount),0) as customerRevenue FROM sales_orders WHERE status='completed' AND deleted_at IS NULL");
     const [recentOrders]: any = await pool.query("SELECT so.*, CONCAT(c.first_name,' ',c.last_name) as customer_name FROM sales_orders so LEFT JOIN customers c ON so.customer_id=c.id WHERE so.deleted_at IS NULL ORDER BY so.created_at DESC LIMIT 5");
-    return success(res, { monthSales: Number(monthSales), pendingOrders, customersCount, recentOrders });
+    return success(res, { monthSales: Number(monthSales), pendingOrders, customersCount, customerRevenue: Number(customerRevenue), recentOrders });
   } catch (err: any) { return (await import('../utils/response')).error(res, err.message); }
 });
 
@@ -866,9 +867,18 @@ router.put('/sales/orders/:id', authenticate, authorize(['orders.update']), asyn
   try {
     const [old]: any = await pool.query('SELECT * FROM sales_orders WHERE id = ?', [req.params.id]);
     if (old.length === 0) return (await import('../utils/response')).error(res, 'Order not found', 404);
-    const { customer_id, order_date, status, total_amount, notes } = req.body;
+    const { customer_id, order_date, status, total_amount, notes, items } = req.body;
     await pool.query('UPDATE sales_orders SET customer_id=?, order_date=?, status=?, total_amount=?, notes=? WHERE id=?',
       [customer_id || old[0].customer_id, order_date || old[0].order_date, status || old[0].status, total_amount || old[0].total_amount, notes ?? old[0].notes, req.params.id]);
+    if (items && Array.isArray(items) && items.length > 0) {
+      await pool.query('DELETE FROM sales_order_items WHERE order_id = ?', [req.params.id]);
+      for (const item of items) {
+        await pool.query(
+          'INSERT INTO sales_order_items (order_id, product_id, quantity, unit_price, total_price) VALUES (?,?,?,?,?)',
+          [req.params.id, item.product_id, item.quantity, item.unit_price, item.quantity * item.unit_price]
+        );
+      }
+    }
     return (await import('../utils/response')).success(res, null, 'Order updated');
   } catch (err: any) { return (await import('../utils/response')).error(res, err.message); }
 });
@@ -898,7 +908,7 @@ router.put('/sales/invoices/:id', authenticate, authorize(['sales_invoices.updat
     if (old.length === 0) return (await import('../utils/response')).error(res, 'Invoice not found', 404);
     const { order_id, invoice_number, invoice_date, due_date, total_amount, status, notes } = req.body;
     await pool.query('UPDATE sales_invoices SET order_id=?, invoice_number=?, invoice_date=?, due_date=?, total_amount=?, status=?, notes=? WHERE id=?',
-      [order_id || old[0].order_id, invoice_number || old[0].invoice_number, invoice_date || null, due_date || null, total_amount, status || old[0].status, notes ?? old[0].notes, req.params.id]);
+      [order_id || old[0].order_id, invoice_number || old[0].invoice_number, invoice_date || old[0].invoice_date, due_date ?? old[0].due_date, total_amount, status || old[0].status, notes ?? old[0].notes, req.params.id]);
     return (await import('../utils/response')).success(res, null, 'Invoice updated');
   } catch (err: any) { return (await import('../utils/response')).error(res, err.message); }
 });
