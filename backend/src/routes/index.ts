@@ -903,9 +903,9 @@ router.put('/sales/quotations/:id', authenticate, authorize(['orders.update']), 
   try {
     const [old]: any = await pool.query('SELECT * FROM sales_quotations WHERE id = ?', [req.params.id]);
     if (old.length === 0) return (await import('../utils/response')).error(res, 'Quotation not found', 404);
-    const { customer_id, total_amount, notes, valid_until } = req.body;
-    await pool.query('UPDATE sales_quotations SET customer_id=?, total_amount=?, notes=?, valid_until=? WHERE id=?',
-      [customer_id || old[0].customer_id, total_amount || old[0].total_amount, notes ?? old[0].notes, valid_until || old[0].valid_until, req.params.id]);
+    const { customer_id, total_amount, valid_until } = req.body;
+    await pool.query('UPDATE sales_quotations SET customer_id=?, total_amount=?, valid_until=? WHERE id=?',
+      [customer_id || old[0].customer_id, total_amount || old[0].total_amount, valid_until || old[0].valid_until, req.params.id]);
     return (await import('../utils/response')).success(res, null, 'Quotation updated');
   } catch (err: any) { return (await import('../utils/response')).error(res, err.message); }
 });

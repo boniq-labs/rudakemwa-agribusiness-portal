@@ -1444,6 +1444,7 @@ export async function up(conn: mysql.Connection): Promise<void> {
       total_amount DECIMAL(12,2),
       notes TEXT,
       created_by INT,
+      deleted_at TIMESTAMP NULL,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
       FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE SET NULL,
