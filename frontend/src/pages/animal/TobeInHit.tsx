@@ -78,7 +78,7 @@ export default function TobeInHit() {
       setForm({
         animal_category_id: String(record.animal_category_id || ''),
         animal_id: String(record.animal_id || ''),
-        tobe_date: record.tobe_date ? record.tobe_date.substring(0, 10) : '',
+        tobe_date: record.tobe_date ? (typeof record.tobe_date === 'string' ? record.tobe_date.substring(0, 10) : new Date(record.tobe_date).toISOString().split('T')[0]) : '',
       });
       if (record.animal_category_id) await fetchAnimals(String(record.animal_category_id));
     } else {

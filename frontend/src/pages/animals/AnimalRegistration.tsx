@@ -53,12 +53,12 @@ export default function AnimalRegistration() {
             animal_category_id: String(a.animal_category_id || ''),
             breed_id: String(a.breed_id || ''),
             gender: a.gender || '', color: a.color || '',
-            date_of_birth: a.date_of_birth ? a.date_of_birth.split('T')[0] : '',
+            date_of_birth: a.date_of_birth ? (typeof a.date_of_birth === 'string' ? a.date_of_birth.split('T')[0] : new Date(a.date_of_birth).toISOString().split('T')[0]) : '',
             weight: String(a.weight || ''), height: String(a.height || ''),
             photo: a.photo || '', feed_type: a.feed_type || '',
             animal_status: a.animal_status || '',
             source: a.source || 'born', purchase_price: String(a.purchase_price || ''),
-            registration_date: a.created_at ? a.created_at.split('T')[0] : '',
+            registration_date: a.created_at ? (typeof a.created_at === 'string' ? a.created_at.split('T')[0] : new Date(a.created_at).toISOString().split('T')[0]) : '',
           });
         }
       }).catch(() => {});

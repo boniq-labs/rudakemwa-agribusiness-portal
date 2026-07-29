@@ -25,8 +25,8 @@ export default function AnimalDashboard() {
   });
 
   const { data: animalsData } = useQuery({
-    queryKey: ['animals'],
-    queryFn: async () => (await animalAPI.getAll()).data.data || [],
+    queryKey: ['animals-all'],
+    queryFn: async () => (await animalAPI.getAll({ limit: 10000 })).data.data || [],
   });
 
   const { data: birthsData } = useQuery({
@@ -56,9 +56,9 @@ export default function AnimalDashboard() {
   const weights = Array.isArray(weightsData) ? weightsData : [];
   const deaths = Array.isArray(deathsData) ? deathsData : [];
 
-  const totalAnimals = stats.totalAnimals ?? animals.length;
-  const totalCattle = stats.totalCattle ?? animals.filter((a: any) => (a.category_name || '').toLowerCase() === 'cattle').length;
-  const totalPigs = stats.totalPigs ?? animals.filter((a: any) => (a.category_name || '').toLowerCase() === 'pigs' || (a.category_name || '').toLowerCase() === 'pig').length;
+  const totalAnimals = stats.totalAnimals ?? 0;
+  const totalCattle = stats.totalCattle ?? 0;
+  const totalPigs = stats.totalPigs ?? 0;
   const pregnant = stats.pregnantAnimals ?? 0;
   const sick = stats.sickAnimals ?? 0;
   const vaccDue = stats.vaccinationsDue ?? vaccinations.filter((v: any) => v.next_due_date && new Date(v.next_due_date) <= new Date()).length;

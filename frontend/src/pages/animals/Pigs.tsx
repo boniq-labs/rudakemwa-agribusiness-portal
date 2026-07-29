@@ -21,7 +21,7 @@ export default function Pigs() {
       const categories = await animalAPI.getCategories().then(r => r.data.data || []);
       const pigCat = categories.find((c: any) => c.name.toLowerCase() === 'pigs' || c.name.toLowerCase() === 'pig');
       if (!pigCat) return [];
-      const response = await animalAPI.getAll({ animal_category_id: pigCat.id, limit: 1000 });
+      const response = await animalAPI.getAll({ animal_category_id: pigCat.id, limit: 10000 });
       return response.data.data || [];
     },
   });

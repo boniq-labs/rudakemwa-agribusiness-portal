@@ -37,6 +37,7 @@ export default function Breeding() {
     mutationFn: (d: any) => breedingAPI.create(d),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['breeding'] });
+      queryClient.invalidateQueries({ queryKey: ['animal-dashboard-stats'] });
       closeModal();
       toast.success('Breeding record created');
     },
@@ -46,6 +47,7 @@ export default function Breeding() {
     mutationFn: (d: any) => breedingAPI.update(d.id, d),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['breeding'] });
+      queryClient.invalidateQueries({ queryKey: ['animal-dashboard-stats'] });
       closeModal();
       toast.success('Breeding record updated');
     },
@@ -55,6 +57,7 @@ export default function Breeding() {
     mutationFn: (id: number) => breedingAPI.deleteRecord(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['breeding'] });
+      queryClient.invalidateQueries({ queryKey: ['animal-dashboard-stats'] });
       toast.success('Breeding record deleted');
     },
   });

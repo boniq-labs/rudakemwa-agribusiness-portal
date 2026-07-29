@@ -254,13 +254,20 @@ export const deleteAnimal = async (req: AuthRequest, res: Response) => {
 
 export const getAnimalsForSelect = async (req: AuthRequest, res: Response) => {
   try {
+    let filter = '';
+    const params: any[] = [];
+    if (req.query.animal_category_id) {
+      filter = ' AND a.animal_category_id = ?';
+      params.push(req.query.animal_category_id);
+    }
     const [rows]: any = await pool.query(
-       `SELECT a.id, a.tag_number, a.name, a.animal_category_id, b.name as breed, a.gender, ac.name as species
-        FROM animals a
-        LEFT JOIN breeds b ON a.breed_id = b.id
-        LEFT JOIN animal_categories ac ON a.animal_category_id = ac.id
-        WHERE a.deleted_at IS NULL AND a.status NOT IN ('dead', 'sold')
-        ORDER BY a.tag_number`
+      `SELECT a.id, a.tag_number, a.name, a.animal_category_id, b.name as breed, a.gender, ac.name as species
+       FROM animals a
+       LEFT JOIN breeds b ON a.breed_id = b.id
+       LEFT JOIN animal_categories ac ON a.animal_category_id = ac.id
+       WHERE a.deleted_at IS NULL AND a.status NOT IN ('dead', 'sold')${filter}
+       ORDER BY a.tag_number`,
+      params
     );
     return success(res, rows);
   } catch (err: any) { return error(res, err.message); }

@@ -86,7 +86,7 @@ export const getDashboard = async (req: AuthRequest, res: Response) => {
 async function getOwnerDashboard() {
   const [[{ totalUsers }]]: any = await pool.query('SELECT COUNT(*) as totalUsers FROM users WHERE deleted_at IS NULL');
   const [[{ totalEmployees }]]: any = await pool.query("SELECT COUNT(*) as totalEmployees FROM employees WHERE deleted_at IS NULL AND status = 'active'");
-  const [[{ totalAnimals }]]: any = await pool.query("SELECT COUNT(*) as totalAnimals FROM animals WHERE status='active'");
+  const [[{ totalAnimals }]]: any = await pool.query("SELECT COUNT(*) as totalAnimals FROM animals WHERE status='active' AND deleted_at IS NULL");
   const [[{ income }]]: any = await pool.query("SELECT COALESCE(SUM(total),0) as income FROM supplier_invoices WHERE status='paid' AND MONTH(created_at)=MONTH(CURDATE())");
   const [[{ expenses }]]: any = await pool.query("SELECT COALESCE(SUM(cost),0) as expenses FROM fuel_records WHERE MONTH(date)=MONTH(CURDATE())");
   const [[{ milk }]]: any = await pool.query("SELECT COALESCE(SUM(quantity_liters),0) as milk FROM milk_collections WHERE DATE(collection_date)=CURDATE()");
@@ -99,7 +99,7 @@ async function getOwnerDashboard() {
 async function getAdminDashboard() {
   const [[{ totalUsers }]]: any = await pool.query('SELECT COUNT(*) as totalUsers FROM users WHERE deleted_at IS NULL');
   const [[{ totalEmployees }]]: any = await pool.query("SELECT COUNT(*) as totalEmployees FROM employees WHERE deleted_at IS NULL AND status = 'active'");
-  const [[{ totalAnimals }]]: any = await pool.query("SELECT COUNT(*) as totalAnimals FROM animals WHERE status='active'");
+  const [[{ totalAnimals }]]: any = await pool.query("SELECT COUNT(*) as totalAnimals FROM animals WHERE status='active' AND deleted_at IS NULL");
   const [[{ income }]]: any = await pool.query("SELECT COALESCE(SUM(amount),0) as income FROM income_records WHERE MONTH(date)=MONTH(CURDATE()) AND YEAR(date)=YEAR(CURDATE())");
   const [[{ expenses }]]: any = await pool.query("SELECT COALESCE(SUM(amount),0) as expenses FROM expense_records WHERE MONTH(date)=MONTH(CURDATE()) AND YEAR(date)=YEAR(CURDATE())");
   const [[{ milk }]]: any = await pool.query("SELECT COALESCE(SUM(quantity_liters),0) as milk FROM milk_collections WHERE DATE(collection_date)=CURDATE()");
@@ -249,7 +249,7 @@ export const getDepartmentOverview = async (req: AuthRequest, res: Response) => 
         pendingLeaves: await val("SELECT COUNT(*) c FROM leave_requests WHERE status='pending'"),
       },
       animals: {
-        total: await val("SELECT COUNT(*) c FROM animals WHERE status='active'"),
+        total: await val("SELECT COUNT(*) c FROM animals WHERE status='active' AND deleted_at IS NULL"),
         pregnant: await val("SELECT COUNT(*) c FROM pregnancies WHERE status = 'Pregnant' AND deleted_at IS NULL"),
         vaccinationsDue: await val("SELECT COUNT(*) c FROM vaccinations WHERE next_due_date <= DATE_ADD(CURDATE(), INTERVAL 7 DAY)"),
       },

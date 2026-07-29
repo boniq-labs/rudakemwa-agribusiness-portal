@@ -147,7 +147,7 @@ export default function BirthRecords() {
       gender: item.gender || '',
       weight: item.weight ? String(item.weight) : '',
       color: item.color || '',
-      birth_date: item.birth_date ? item.birth_date.split('T')[0] : '',
+      birth_date: item.birth_date ? (typeof item.birth_date === 'string' ? item.birth_date.split('T')[0] : new Date(item.birth_date).toISOString().split('T')[0]) : '',
     });
     setShowModal(true);
   };

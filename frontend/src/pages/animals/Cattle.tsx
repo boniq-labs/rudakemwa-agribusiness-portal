@@ -21,7 +21,7 @@ export default function Cattle() {
       const categories = await animalAPI.getCategories().then(r => r.data.data || []);
       const cattleCat = categories.find((c: any) => c.name.toLowerCase() === 'cattle');
       if (!cattleCat) return [];
-      const response = await animalAPI.getAll({ animal_category_id: cattleCat.id, limit: 1000 });
+      const response = await animalAPI.getAll({ animal_category_id: cattleCat.id, limit: 10000 });
       return response.data.data || [];
     },
   });
