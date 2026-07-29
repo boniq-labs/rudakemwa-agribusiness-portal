@@ -133,7 +133,7 @@ export default function WeightTracking() {
     {
       key: 'actions', label: 'Actions',
       render: (item: WeightRecord) => (
-        <div style={{ display: 'flex', gap: 8 }}>
+        <div className="actions">
           <button className="btn btn-sm" title="Edit" onClick={() => openEdit(item)}><Edit2 size={14} /></button>
           <button className="btn btn-sm" title="Delete" onClick={() => { if (confirm('Delete this weight record?')) deleteMutation.mutate(item.id); }}><Trash2 size={14} /></button>
         </div>

@@ -117,7 +117,7 @@ export default function Breeding() {
     {
       key: 'actions', label: 'Actions',
       render: (item: any) => (
-        <div style={{ display: 'flex', gap: 8 }}>
+        <div className="actions">
           <button className="btn btn-sm" title="Edit" onClick={() => openEdit(item)}><Edit2 size={14} /></button>
           <button className="btn btn-sm" title="Delete" onClick={() => { if (confirm('Delete this breeding record?')) deleteMutation.mutate(item.id); }}><Trash2 size={14} /></button>
         </div>
@@ -162,12 +162,12 @@ export default function Breeding() {
               </div>
               <div className="form-group">
                 <label className="form-label">Method *</label>
-                <div style={{ display: 'flex', gap: 16, marginTop: 4 }}>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
+                <div style={{ display: 'flex', gap: 16, marginTop: 4, flexWrap: 'wrap' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', minHeight: 44 }}>
                     <input type="radio" name="method" value="natural" checked={form.method === 'natural'} onChange={e => setForm(p => ({ ...p, method: e.target.value }))} />
                     Natural
                   </label>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', minHeight: 44 }}>
                     <input type="radio" name="method" value="ai" checked={form.method === 'ai'} onChange={e => setForm(p => ({ ...p, method: e.target.value }))} />
                     Artificial Insemination
                   </label>

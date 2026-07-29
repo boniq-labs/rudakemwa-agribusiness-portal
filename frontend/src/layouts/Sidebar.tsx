@@ -62,6 +62,7 @@ const navItems: NavItem[] = [
       { label: 'Animal Sale', path: '/animals/sales' },
       { label: 'Animal Death', path: '/animals/deaths' },
       { label: 'Shift Management', path: '/animals/shifts' },
+      { label: 'Tobe in Hit', path: '/animals/tobe-in-hit' },
       { label: 'Reports', path: '/animals/reports' },
     ],
   },
@@ -79,8 +80,6 @@ const navItems: NavItem[] = [
       { label: 'Dashboard', path: '/milk/dashboard' },
       { label: 'Morning Production', path: '/milk/morning' },
       { label: 'Evening Production', path: '/milk/evening' },
-      { label: 'Customers', path: '/milk/customers' },
-      { label: 'Daily Reports', path: '/milk/reports' },
     ],
   },
   {

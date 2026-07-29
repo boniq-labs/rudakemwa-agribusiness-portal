@@ -77,7 +77,7 @@ export default function AnimalReports() {
       title="Animal Reports"
       subtitle="View animal production reports"
       actions={
-        <div style={{ display: 'flex', gap: 8 }}>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           <button className="btn btn-sm btn-secondary" onClick={() => handleExport('PDF')}><FileText size={14} /> PDF</button>
           <button className="btn btn-sm btn-secondary" onClick={() => handleExport('Excel')}><FileSpreadsheet size={14} /> Excel</button>
           <button className="btn btn-sm btn-secondary" onClick={() => handleExport('Print')}><Printer size={14} /> Print</button>

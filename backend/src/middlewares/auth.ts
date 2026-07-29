@@ -1,7 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import pool from '../config/database';
-import { canAccessDepartment } from '../utils/departmentAccess';
+import { canAccessDepartment, departmentRoleMap } from '../utils/departmentAccess';
+// NB: departmentRoleMap provides mapped cross-department permissions — e.g. crops role gets sales.*, milk gets veterinary.*
 
 export interface AuthRequest extends Request {
   user?: { id: number; username: string; role: string; roleId: number; departmentId: number | null; permissions: string[] };
@@ -28,13 +29,31 @@ export const authenticate = async (req: AuthRequest, res: Response, next: NextFu
     if (rows.length === 0) return res.status(401).json({ error: 'User not found or inactive' });
 
     const user = rows[0];
+    let permissions = user.permissions ? user.permissions.split(',') : [];
+
+    // Include permissions from mapped cross-department role
+    const extraDept = departmentRoleMap[user.role];
+    if (extraDept) {
+      const [extraRows]: any = await pool.query(
+        `SELECT GROUP_CONCAT(DISTINCT p.slug) as extra_perms
+         FROM roles r
+         JOIN role_permissions rp ON r.id = rp.role_id
+         JOIN permissions p ON rp.permission_id = p.id
+         WHERE r.slug = ?`,
+        [extraDept]
+      );
+      if (extraRows[0]?.extra_perms) {
+        permissions = [...new Set([...permissions, ...extraRows[0].extra_perms.split(',')])];
+      }
+    }
+
     req.user = {
       id: user.id,
       username: user.username,
       role: user.role,
       roleId: user.role_id,
       departmentId: user.department_id,
-      permissions: user.permissions ? user.permissions.split(',') : [],
+      permissions,
     };
     next();
   } catch (err) {

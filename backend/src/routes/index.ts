@@ -53,6 +53,7 @@ import { getBreedingRecords, createBreedingRecord, updateBreedingRecord, deleteB
 import { getVaccinations, createVaccination, updateVaccination, deleteVaccination, getDiseases, createDisease, updateDiseaseStatus, updateDisease, deleteDisease, getTreatments, createTreatment, updateTreatment, deleteTreatment } from '../controllers/animal/healthController';
 import { getFeedingRecords, createFeedingRecord, updateFeedingRecord, deleteFeedingRecord, getFeedConsumptionReport } from '../controllers/animal/feedingController';
 import { getAnimalTransfers, createAnimalTransfer, updateAnimalTransfer, deleteAnimalTransfer, getAnimalPurchases, createAnimalPurchase, getAnimalSales, createAnimalSale, updateAnimalSale, deleteAnimalSale, getAnimalDeaths, createAnimalDeath, updateAnimalDeath, deleteAnimalDeath, getWeightRecords, createWeightRecord, updateWeightRecord, deleteWeightRecord } from '../controllers/animal/movementController';
+import { getTobeInHitRecords, createTobeInHitRecord, updateTobeInHitRecord, deleteTobeInHitRecord, getTobeInHitReports } from '../controllers/animal/tobeInHitController';
 
 import { getMilkCollections, createMilkCollection, updateMilkCollection, deleteMilkCollection, getDailyProduction, getMonthlyProduction } from '../controllers/milk/milkCollectionController';
 import { getQualityTests, createQualityTest, deleteQualityTest, updateQualityTest, getQualityAlerts } from '../controllers/milk/milkQualityController';
@@ -532,6 +533,14 @@ router.get('/movement/weights', authenticate, authorize(['weight.view']), getWei
 router.post('/movement/weights', authenticate, authorize(['weight.create']), validate(createWeightRecordSchema), createWeightRecord);
 router.put('/movement/weights/:id', authenticate, authorize(['weight.update']), updateWeightRecord);
 router.delete('/movement/weights/:id', authenticate, authorize(['weight.delete']), deleteWeightRecord);
+
+// ─────────────────────────────────────────────
+// Tobe in hit routes
+router.get('/animal/tobe-in-hit/reports', authenticate, hasRole('owner', 'admin', 'animal'), getTobeInHitReports);
+router.get('/animal/tobe-in-hit', authenticate, hasRole('owner', 'admin', 'animal'), getTobeInHitRecords);
+router.post('/animal/tobe-in-hit', authenticate, hasRole('owner', 'admin', 'animal'), createTobeInHitRecord);
+router.put('/animal/tobe-in-hit/:id', authenticate, hasRole('owner', 'admin', 'animal'), updateTobeInHitRecord);
+router.delete('/animal/tobe-in-hit/:id', authenticate, hasRole('owner', 'admin', 'animal'), deleteTobeInHitRecord);
 
 // Feeding aliases (frontend uses /feeding/...)
 router.get('/feeding', authenticate, authorize(['feeding.view']), getFeedingRecords);

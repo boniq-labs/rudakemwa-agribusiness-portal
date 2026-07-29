@@ -1,4 +1,4 @@
-const departmentRoleMap: Record<string, string> = {
+export const departmentRoleMap: Record<string, string> = {
   animal: 'procurement',
   milk: 'veterinary',
   crops: 'sales',

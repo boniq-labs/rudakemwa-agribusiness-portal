@@ -330,7 +330,8 @@ export const deleteAnimalDeath = async (req: AuthRequest, res: Response) => {
     const [old]: any = await pool.query('SELECT * FROM animal_deaths WHERE id = ?', [req.params.id]);
     if (old.length === 0) return error(res, 'Death record not found', 404);
     await pool.query('UPDATE animal_deaths SET deleted_at = NOW() WHERE id = ?', [req.params.id]);
-    await logAudit(req, createAuditEntry(req, 'Delete Animal Death', 'AnimalDeaths', `Deleted death record ${req.params.id}`, {}, old[0]));
-    return success(res, null, 'Death record deleted');
+    await pool.query("UPDATE animals SET status = 'active' WHERE id = ?", [old[0].animal_id]);
+    await logAudit(req, createAuditEntry(req, 'Delete Animal Death', 'AnimalDeaths', `Deleted death record ${req.params.id} and restored animal`, {}, old[0]));
+    return success(res, null, 'Death record deleted, animal restored');
   } catch (err: any) { return error(res, err.message); }
 };

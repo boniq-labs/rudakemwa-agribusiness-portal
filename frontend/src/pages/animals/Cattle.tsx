@@ -59,7 +59,7 @@ export default function Cattle() {
     {
       key: 'actions', label: 'Actions',
       render: (c: any) => (
-        <div style={{ display: 'flex', gap: 4 }}>
+        <div className="actions">
           <button className="btn btn-sm" style={{ background: 'var(--bg)', border: '1px solid var(--border)' }} onClick={(e) => { e.stopPropagation(); navigate(`/animals/profile/${c.id}`); }}>View</button>
           <button className="btn btn-sm" style={{ background: 'var(--bg)', border: '1px solid var(--border)' }} onClick={(e) => { e.stopPropagation(); navigate(`/animals/registration?edit=${c.id}`); }}>Edit</button>
           <button className="btn btn-sm" style={{ color: 'var(--danger)', border: '1px solid var(--danger)' }} onClick={(e) => { e.stopPropagation(); if (confirm('Delete this animal?')) deleteMutation.mutate(c.id); }}>Delete</button>

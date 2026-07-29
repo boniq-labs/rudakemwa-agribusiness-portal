@@ -53,11 +53,10 @@ const AnimalDeaths = lazy(() => import('./pages/animals/AnimalDeaths'));
 const AnimalReports = lazy(() => import('./pages/animals/AnimalReports'));
 const AnimalProfile = lazy(() => import('./pages/animals/AnimalProfile'));
 const ShiftManagement = lazy(() => import('./pages/animals/ShiftManagement'));
+const TobeInHit = lazy(() => import('./pages/animal/TobeInHit'));
 
 // Milk
 const MilkDashboard = lazy(() => import('./pages/milk/MilkDashboard'));
-const MilkCustomers = lazy(() => import('./pages/milk/MilkCustomers'));
-const MilkReports = lazy(() => import('./pages/milk/MilkReports'));
 const MorningProduction = lazy(() => import('./pages/milk/MorningProduction'));
 const EveningProduction = lazy(() => import('./pages/milk/EveningProduction'));
 
@@ -203,6 +202,7 @@ function AppRoutes() {
             <Route path="animals/deaths" element={<AnimalDeaths />} />
             <Route path="animals/shifts" element={<ShiftManagement />} />
             <Route path="animals/reports" element={<AnimalReports />} />
+            <Route path="animals/tobe-in-hit" element={<TobeInHit />} />
             <Route path="animals/profile/:id" element={<AnimalProfile />} />
           </Route>
 
@@ -218,8 +218,6 @@ function AppRoutes() {
           {/* Milk */}
           <Route element={<ProtectedRoute roles={['owner', 'admin', 'milk']} />}>
             <Route path="milk/dashboard" element={<MilkDashboard />} />
-            <Route path="milk/customers" element={<MilkCustomers />} />
-            <Route path="milk/reports" element={<MilkReports />} />
             <Route path="milk/morning" element={<MorningProduction />} />
             <Route path="milk/evening" element={<EveningProduction />} />
           </Route>

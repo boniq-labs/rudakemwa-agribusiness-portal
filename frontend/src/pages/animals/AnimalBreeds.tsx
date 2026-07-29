@@ -68,7 +68,7 @@ export default function AnimalBreeds() {
     {
       key: 'actions', label: 'Actions',
       render: (item) => (
-        <div style={{ display: 'flex', gap: 4 }}>
+        <div className="actions">
           <button className="btn btn-sm btn-secondary" onClick={() => openEdit(item)}><Edit2 size={14} /> Edit</button>
           <button className="btn btn-sm" style={{ color: 'var(--danger)', border: '1px solid var(--danger)' }} onClick={() => { if (confirm('Delete this breed?')) deleteMutation.mutate(item.id); }}><Trash2 size={14} /> Delete</button>
         </div>
