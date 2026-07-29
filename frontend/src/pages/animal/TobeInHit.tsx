@@ -97,25 +97,25 @@ export default function TobeInHit() {
     });
   };
 
-  const columns: Column[] = [
+  const columns: Column<any>[] = [
     { key: 'id', label: 'ID' },
-    { key: 'category_name', label: 'Category', render: (v) => v || '-' },
-    { key: 'animal_name', label: 'Animal', render: (v) => v || '-' },
-    { key: 'tag_number', label: 'Tag', render: (v) => v || '-' },
+    { key: 'category_name', label: 'Category', render: (row: any) => row.category_name || '-' },
+    { key: 'animal_name', label: 'Animal', render: (row: any) => row.animal_name || '-' },
+    { key: 'tag_number', label: 'Tag', render: (row: any) => row.tag_number || '-' },
     {
       key: 'tobe_date', label: 'Tobe Date',
-      render: (v) => v ? new Date(v + 'T00:00:00').toLocaleDateString() : '-',
+      render: (row: any) => row.tobe_date ? new Date(row.tobe_date).toLocaleDateString() : '-',
     },
     {
       key: 'created_at', label: 'Created',
-      render: (v) => v ? new Date(v).toLocaleDateString() : '-',
+      render: (row: any) => row.created_at ? new Date(row.created_at).toLocaleDateString() : '-',
     },
     {
       key: 'actions', label: 'Actions', sortable: false,
-      render: (_v, record: any) => (
+      render: (row: any) => (
         <div className="actions">
-          <button className="btn btn-icon" title="Edit" onClick={() => handleOpen(record)}><Edit2 size={16} /></button>
-          <button className="btn btn-icon btn-danger" title="Delete" onClick={async () => { if (await confirm('Delete?')) deleteMutation.mutate(record.id); }} disabled={deleteMutation.isPending}><Trash2 size={16} /></button>
+          <button className="btn btn-icon" title="Edit" onClick={() => handleOpen(row)}><Edit2 size={16} /></button>
+          <button className="btn btn-icon btn-danger" title="Delete" onClick={async () => { if (await confirm('Delete?')) deleteMutation.mutate(row.id); }} disabled={deleteMutation.isPending}><Trash2 size={16} /></button>
         </div>
       ),
     },
@@ -127,7 +127,7 @@ export default function TobeInHit() {
     }>
       <input className="input" placeholder="Search..." value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} style={{ marginBottom: 16, maxWidth: 300 }} />
 
-      <DataTable columns={columns} data={data?.data || []} isLoading={isLoading}
+      <DataTable columns={columns} data={data?.data || []} loading={isLoading}
         pagination={{ page, pages: data?.pagination?.pages || 1, total: data?.pagination?.total || 0, onPageChange: setPage }}
       />
 

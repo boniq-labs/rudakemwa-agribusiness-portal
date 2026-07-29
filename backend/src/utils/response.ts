@@ -1,4 +1,5 @@
 import { Response } from 'express';
+import logger from './logger';
 
 export function success(res: Response, data: any = null, message = 'Success', status = 200) {
   return res.status(status).json({ success: true, message, data });
@@ -28,5 +29,10 @@ export class AppError extends Error {
 }
 
 export function error(res: Response, message = 'Internal server error', status = 500, errors: string[] = []) {
+  if (status >= 500) {
+    logger.error({ message, status, url: (res.req as any)?.originalUrl, method: (res.req as any)?.method });
+  } else if (status >= 400) {
+    logger.warn({ message, status, url: (res.req as any)?.originalUrl, method: (res.req as any)?.method });
+  }
   return res.status(status).json({ success: false, message, errors });
 }

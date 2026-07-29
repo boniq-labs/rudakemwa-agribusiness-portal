@@ -130,11 +130,12 @@ export const getAnimals = async (req: AuthRequest, res: Response) => {
   try {
     const pag = getPagination(req);
     const ff = { ...pag.filters };
-    delete ff.category_id; delete ff.breed_id; delete ff.status; delete ff.gender; delete ff.is_dairy;
+    delete ff.animal_category_id; delete ff.category_id; delete ff.breed_id; delete ff.status; delete ff.gender; delete ff.is_dairy;
     const { where, params } = buildWhereClause(ff, pag.search, ['a.tag_number', 'a.name']);
 
     let filters = '';
-    if (req.query.category_id) { filters += ' AND a.animal_category_id = ?'; params.push(req.query.category_id); }
+    if (req.query.animal_category_id) { filters += ' AND a.animal_category_id = ?'; params.push(req.query.animal_category_id); }
+    else if (req.query.category_id) { filters += ' AND a.animal_category_id = ?'; params.push(req.query.category_id); }
     if (req.query.breed_id) { filters += ' AND a.breed_id = ?'; params.push(req.query.breed_id); }
     if (req.query.status) { filters += ' AND a.status = ?'; params.push(req.query.status); }
     if (req.query.gender) { filters += ' AND a.gender = ?'; params.push(req.query.gender); }

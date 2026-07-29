@@ -21,6 +21,10 @@ api.interceptors.response.use(
   (res) => res,
   async (err) => {
     const original = err.config;
+    if (err.response?.status && err.response.status !== 401) {
+      const ctx = `${original?.method?.toUpperCase()} ${original?.url}`;
+      console.error(`[API Error ${err.response.status}] ${ctx}`, err.response.data?.message || err.message);
+    }
     if (err.response?.status === 401 && !original._retry && !original.url?.includes('/auth/login')) {
       original._retry = true;
       const refreshToken = getToken('refreshToken');

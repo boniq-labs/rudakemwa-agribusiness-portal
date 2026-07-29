@@ -2,13 +2,26 @@
 
 ## Project: EFMS (Enterprise Farm Management System)
 
-### Session Focus: Bug-fixing Milk Production, Stock Management, Stock Reports, Logistics, Procurement
+### Session Focus: Animal Production bug fixes + Milk Production, Stock Management, Stock Reports, Logistics, Procurement
 
 #### Important Details
 - **No `dateStrings: true`** in DB pool config — MySQL2 returns DATE/DATETIME as Date objects. `.substring(0,10)` or `.split('T')[0]` on Date objects throws TypeError, crashing `openEdit` modals silently.
 - **Permissions bypass**: `owner` role bypasses all `authorize()` checks via `isSuperAdmin`. Non-owner roles may fail silently on operations requiring specific permissions if frontend lacks `onError` toast handlers.
 - **Validation middleware**: `POST` routes use `validate(schema)` which rejects requests with `400` if body fields don't match schema field names.
 - **Build strictness**: Backend `tsc` no strict mode, `allowJs: true`. Frontend uses Vite with TypeScript.
+
+#### Completed — Animal Production Fixes
+- **Issue 1 — HTTP 500 on animal APIs**: Root cause was `buildWhereClause` returning `WHERE key = ?` (with WHERE keyword) while every controller uses template `WHERE X IS NULL ${where}` creating duplicate `WHERE ... WHERE ...` SQL. Fixed by changing prefix to ` AND `. Affected all 81 callers across every module.
+- **Issue 2/3 — Animal list filters**: `getAnimals` controller now handles `animal_category_id` query param (sent by frontend) + backward-compatible `category_id`. Both stripped from auto-filters and handled as explicit manual filters with `a.` alias prefix.
+- **Issue 4 — BirthRecord dropdown**: Query key `['animals', 'select']` confirmed isolated. Cache invalidation cascades via `invalidateQueries(['animals'])` (partial match). `getAnimalsForSelect` returns all active non-dead non-sold animals with no LIMIT.
+- **Issue 5 — Cache invalidation audit**: All 14 animal pages correctly invalidate specific key + `['animals']` + `['animal-dashboard-stats']` on every mutation. No gaps.
+- **Issue 6 — Dashboard SQL**: All 6 queries in `getAnimalDashboard` verified with `AND a.deleted_at IS NULL`. Counts: DB=API=UI (3 pigs, 3 cattle).
+- **Issue 7 — DB consistency**: 18 FK constraints referencing `animals(id)` verified. Hard delete uses transaction across 11 child tables + FK cascade for rest.
+- **Issue 8 — Error logging**: Frontend axios interceptor now logs non-401 API errors to console. Backend `error()` utility logs all 4xx/5xx via Winston (file + console).
+- **Hard delete**: Transactional hard delete across 11 child tables.
+- **Dashboard stats**: `AND a.deleted_at IS NULL` added to 6 dashboard queries.
+- **Cattle/Pigs**: Server-side filtering with `{ animal_category_id, limit: 1000 }` — no more client-side filter on truncated list.
+- **BirthRecords query key**: Changed to `['animals', 'select']` to avoid cache collision.
 
 #### Completed — Milk Production & Stock Management
 - **Milk Collectors**: Collector select changed from `/users?is_active=1` to dedicated `GET /milk/collectors` — queries users with employee JOIN.
