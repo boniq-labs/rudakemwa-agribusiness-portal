@@ -4,6 +4,7 @@ import client from '../../api/client';
 import toast from 'react-hot-toast';
 import { Plus, Pencil, Trash2, Package } from 'lucide-react';
 import ModulePage from '../../components/ModulePage';
+import { useConfirm } from '../../components/ConfirmDialog';
 
 interface Product {
   id: number;
@@ -41,6 +42,7 @@ export default function MilkProducts() {
   const [editing, setEditing] = useState<Product | null>(null);
   const [form, setForm] = useState<FormData>(INITIAL_FORM);
   const queryClient = useQueryClient();
+  const confirm = useConfirm();
 
   const { data, isLoading } = useQuery({
     queryKey: ['milk-products'],
@@ -120,8 +122,8 @@ export default function MilkProducts() {
     setShowModal(true);
   };
 
-  const handleDelete = (product: Product) => {
-    if (confirm(`Delete product "${product.name}"?`)) {
+  const handleDelete = async (product: Product) => {
+    if (await confirm(`Delete product "${product.name}"?`)) {
       deleteMutation.mutate(product.id);
     }
   };

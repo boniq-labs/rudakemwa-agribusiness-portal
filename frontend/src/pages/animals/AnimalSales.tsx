@@ -7,9 +7,11 @@ import StatusBadge from '../../components/StatusBadge';
 import type { Column } from '../../components/DataTable';
 import { Plus, DollarSign, Edit2, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useConfirm } from '../../components/ConfirmDialog';
 
 export default function AnimalSales() {
   const queryClient = useQueryClient();
+  const confirm = useConfirm();
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [form, setForm] = useState({
@@ -125,7 +127,7 @@ export default function AnimalSales() {
       render: (item: any) => (
         <div className="actions">
           <button className="btn btn-sm" title="Edit" onClick={() => openEdit(item)}><Edit2 size={14} /></button>
-          <button className="btn btn-sm" title="Delete" onClick={(e) => { e.stopPropagation(); if (confirm('Delete this sale record?')) deleteMutation.mutate(item.id); }}><Trash2 size={14} /></button>
+          <button className="btn btn-sm" title="Delete" onClick={async (e) => { e.stopPropagation(); if (await confirm('Delete this sale record?')) deleteMutation.mutate(item.id); }} disabled={deleteMutation.isPending}><Trash2 size={14} /></button>
         </div>
       ),
     },

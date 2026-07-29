@@ -7,22 +7,22 @@ import DataTable from '../../components/DataTable';
 import StatusBadge from '../../components/StatusBadge';
 import { Plus, Search, Camera } from 'lucide-react';
 import type { Column } from '../../components/DataTable';
+import { useConfirm } from '../../components/ConfirmDialog';
 
 export default function Pigs() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const confirm = useConfirm();
   const [search, setSearch] = useState('');
 
   const { data: animalsData, isLoading } = useQuery({
     queryKey: ['animals', 'pigs'],
     queryFn: async () => {
-      const [categories, animals] = await Promise.all([
-        animalAPI.getCategories().then(r => r.data.data || []),
-        animalAPI.getAll({}).then(r => r.data.data || []),
-      ]);
+      const categories = await animalAPI.getCategories().then(r => r.data.data || []);
       const pigCat = categories.find((c: any) => c.name.toLowerCase() === 'pigs' || c.name.toLowerCase() === 'pig');
       if (!pigCat) return [];
-      return animals.filter((a: any) => a.animal_category_id === pigCat.id);
+      const response = await animalAPI.getAll({ animal_category_id: pigCat.id, limit: 1000 });
+      return response.data.data || [];
     },
   });
 
@@ -62,7 +62,7 @@ export default function Pigs() {
         <div className="actions">
           <button className="btn btn-sm" style={{ background: 'var(--bg)', border: '1px solid var(--border)' }} onClick={(e) => { e.stopPropagation(); navigate(`/animals/profile/${p.id}`); }}>View</button>
           <button className="btn btn-sm" style={{ background: 'var(--bg)', border: '1px solid var(--border)' }} onClick={(e) => { e.stopPropagation(); navigate(`/animals/registration?edit=${p.id}`); }}>Edit</button>
-          <button className="btn btn-sm" style={{ color: 'var(--danger)', border: '1px solid var(--danger)' }} onClick={(e) => { e.stopPropagation(); if (confirm('Delete this pig?')) deleteMutation.mutate(p.id); }}>Delete</button>
+          <button className="btn btn-sm" style={{ color: 'var(--danger)', border: '1px solid var(--danger)' }} onClick={async (e) => { e.stopPropagation(); if (await confirm('Delete this pig?')) deleteMutation.mutate(p.id); }} disabled={deleteMutation.isPending}>Delete</button>
         </div>
       ),
     },

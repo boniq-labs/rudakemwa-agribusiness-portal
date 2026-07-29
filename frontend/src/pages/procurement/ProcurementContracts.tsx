@@ -8,6 +8,7 @@ import { Plus, X, AlertTriangle, Edit2, Trash2 } from 'lucide-react';
 import { procurementAPI } from '../../api/endpoints';
 import toast from 'react-hot-toast';
 import type { Column } from '../../components/DataTable';
+import { useConfirm } from '../../components/ConfirmDialog';
 
 interface ContractForm { contract_number: string; supplier_id: string; start_date: string; end_date: string; terms: string; total_value: string; }
 
@@ -19,6 +20,7 @@ export default function ProcurementContracts() {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [form, setForm] = useState<ContractForm>(initialForm);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const confirm = useConfirm();
 
   const { data: contracts, isLoading } = useQuery({
     queryKey: ['procurement', 'contracts'],
@@ -149,8 +151,8 @@ export default function ProcurementContracts() {
           <button className="btn btn-sm btn-ghost" onClick={(e) => { e.stopPropagation(); openEdit(c); }}>
             <Edit2 size={14} /> Edit
           </button>
-          <button className="btn btn-sm btn-danger" onClick={(e) => { e.stopPropagation(); if (confirm('Delete this contract?')) deleteMutation.mutate(c.id); }}>
-            <Trash2 size={14} /> Delete
+          <button className="btn btn-sm btn-danger" onClick={async (e) => { e.stopPropagation(); if (await confirm('Delete this contract?')) deleteMutation.mutate(c.id); }} disabled={deleteMutation.isPending}>
+            <Trash2 size={14} /> {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
           </button>
         </div>
       ),

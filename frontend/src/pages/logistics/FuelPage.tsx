@@ -9,6 +9,7 @@ import client from '../../api/client';
 import { Plus, Search, Edit2, Trash2, Fuel, DollarSign } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
+import { useConfirm } from '../../components/ConfirmDialog';
 import type { Column } from '../../components/DataTable';
 
 interface FuelForm {
@@ -33,6 +34,7 @@ export default function FuelPage() {
   const [dateTo, setDateTo] = useState('');
   const [form, setForm] = useState<FuelForm>(initialForm);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const confirm = useConfirm();
 
   const params = useMemo(() => {
     const p: Record<string, string> = {};
@@ -145,8 +147,8 @@ export default function FuelPage() {
     }
   };
 
-  const handleDelete = (item: any) => {
-    if (window.confirm('Delete this fuel record?')) {
+  const handleDelete = async (item: any) => {
+    if (await confirm('Delete this fuel record?')) {
       deleteMutation.mutate(item.id);
     }
   };
@@ -169,8 +171,8 @@ export default function FuelPage() {
             <Edit2 size={14} />
           </button>
           <button className="btn btn-sm" style={{ background: '#fef2f2', color: '#991b1b', border: 'none' }}
-            onClick={e => { e.stopPropagation(); handleDelete(f); }}>
-            <Trash2 size={14} />
+            onClick={e => { e.stopPropagation(); handleDelete(f); }} disabled={deleteMutation.isPending}>
+            <Trash2 size={14} />{deleteMutation.isPending && ' Deleting...'}
           </button>
         </div>
       ),

@@ -5,6 +5,7 @@ import DataTable from '../../components/DataTable';
 import FormField from '../../components/FormField';
 import { departmentsAPI } from '../../api/endpoints';
 import { Plus, Edit2, Trash2, X } from 'lucide-react';
+import { useConfirm } from '../../components/ConfirmDialog';
 import type { Column } from '../../components/DataTable';
 
 export default function DepartmentsPage() {
@@ -13,6 +14,7 @@ export default function DepartmentsPage() {
   const [editing, setEditing] = useState<any>(null);
   const [form, setForm] = useState({ name: '', description: '' });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const confirm = useConfirm();
 
   const { data: departments, isLoading } = useQuery({
     queryKey: ['departments'],
@@ -78,7 +80,7 @@ export default function DepartmentsPage() {
           <button className="btn btn-sm" style={{ background: 'var(--primary-light)', color: 'var(--primary)' }} onClick={() => openEdit(d)}>
             <Edit2 size={14} />
           </button>
-          <button className="btn btn-sm" style={{ background: '#fef2f2', color: 'var(--danger)' }} onClick={() => { if (confirm('Delete this department?')) deleteMutation.mutate(d.id); }}>
+          <button className="btn btn-sm" style={{ background: '#fef2f2', color: 'var(--danger)' }} onClick={async () => { if (await confirm('Delete this department?')) deleteMutation.mutate(d.id); }} disabled={deleteMutation.isPending}>
             <Trash2 size={14} />
           </button>
         </div>

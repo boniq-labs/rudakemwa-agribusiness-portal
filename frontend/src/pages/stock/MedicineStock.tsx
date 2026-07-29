@@ -8,6 +8,7 @@ import client from '../../api/client';
 import { Plus, X, Edit2, Trash2, AlertTriangle, Clock } from 'lucide-react';
 import toast from 'react-hot-toast';
 import type { Column } from '../../components/DataTable';
+import { useConfirm } from '../../components/ConfirmDialog';
 
 interface FormData {
   name: string; brand: string; category_id: string; unit: string;
@@ -22,6 +23,7 @@ const initialForm: FormData = {
 
 export default function MedicineStock() {
   const queryClient = useQueryClient();
+  const confirm = useConfirm();
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [form, setForm] = useState<FormData>(initialForm);
@@ -92,8 +94,8 @@ export default function MedicineStock() {
     setShowModal(true);
   };
 
-  const handleDelete = (item: any) => {
-    if (window.confirm(`Delete medicine "${item.name}"?`)) {
+  const handleDelete = async (item: any) => {
+    if (await confirm(`Delete medicine "${item.name}"?`)) {
       deleteMutation.mutate(item.id);
     }
   };

@@ -8,6 +8,7 @@ import client from '../../api/client';
 import { formatAmount } from '../../services/currency';
 import { Plus, Edit2, Trash2, X, DollarSign, TrendingUp, Calendar } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useConfirm } from '../../components/ConfirmDialog';
 import type { Column } from '../../components/DataTable';
 
 const CATEGORIES = ['Milk Sales', 'Animal Sales', 'Crop Sales', 'Product Sales', 'Services', 'Other Income'];
@@ -23,6 +24,7 @@ export default function IncomePage() {
   const [dateTo, setDateTo] = useState(() => new Date().toISOString().split('T')[0]);
   const [form, setForm] = useState({ amount: '', category: '', date: new Date().toISOString().split('T')[0], description: '', payment_method: 'Cash', reference: '' });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const confirm = useConfirm();
 
   const { data: income, isLoading } = useQuery({
     queryKey: ['accounting-income', dateFrom, dateTo],
@@ -113,7 +115,7 @@ export default function IncomePage() {
           <button className="btn btn-sm" style={{ background: 'var(--primary-light)', color: 'var(--primary)' }} onClick={() => openEdit(i)}>
             <Edit2 size={14} />
           </button>
-          <button className="btn btn-sm" style={{ background: '#fef2f2', color: 'var(--danger)' }} onClick={() => { if (confirm('Delete this income record?')) deleteMutation.mutate(i.id); }}>
+          <button className="btn btn-sm" style={{ background: '#fef2f2', color: 'var(--danger)' }} disabled={deleteMutation.isPending} onClick={async () => { if (await confirm('Delete this income record?')) deleteMutation.mutate(i.id); }}>
             <Trash2 size={14} />
           </button>
         </div>

@@ -8,6 +8,7 @@ import FormField from '../../components/FormField';
 import toast from 'react-hot-toast';
 import { Plus, X, Edit2, Trash2 } from 'lucide-react';
 import type { Column } from '../../components/DataTable';
+import { useConfirm } from '../../components/ConfirmDialog';
 
 const STATUSES = ['All', 'Pending', 'Approved', 'Rejected', 'Completed'];
 
@@ -28,6 +29,7 @@ export default function PurchaseRequests() {
   const [form, setForm] = useState<RequestForm>(initialForm);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const confirm = useConfirm();
 
   const { data: requests, isLoading } = useQuery({
     queryKey: ['procurement-requests'],
@@ -113,7 +115,7 @@ export default function PurchaseRequests() {
       key: 'actions', label: 'Actions', render: (r: any) => (
         <div className="actions">
           <button className="btn btn-sm" onClick={e => { e.stopPropagation(); openEdit(r); }} style={{ background: 'var(--bg)', border: '1px solid var(--border)' }}><Edit2 size={14} /></button>
-          <button className="btn btn-sm" onClick={e => { e.stopPropagation(); if (confirm('Delete this request?')) deleteMutation.mutate(r.id); }} style={{ background: '#fef2f2', border: '1px solid #fecaca', color: 'var(--danger)' }}><Trash2 size={14} /></button>
+          <button className="btn btn-sm" onClick={async e => { e.stopPropagation(); if (await confirm('Delete this request?')) deleteMutation.mutate(r.id); }} style={{ background: '#fef2f2', border: '1px solid #fecaca', color: 'var(--danger)' }} disabled={deleteMutation.isPending}><Trash2 size={14} />{deleteMutation.isPending && ' Deleting...'}</button>
         </div>
       ),
     },

@@ -3,11 +3,13 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { shiftsApi } from '../../api';
 import { Clock, Plus, Trash2, Save } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useConfirm } from '../../components/ConfirmDialog';
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 const TIME_SLOTS = ['06:00', '07:00', '08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00', '21:00', '22:00'];
 
 export default function ShiftManagement() {
+  const confirm = useConfirm();
   const qc = useQueryClient();
 
   const { data: employees, isLoading: empLoading } = useQuery({
@@ -157,7 +159,7 @@ export default function ShiftManagement() {
                       ))}
                     </td>
                     <td>
-                      <button className="btn btn-danger btn-sm" onClick={() => { if (confirm('Remove this shift?')) deleteMutation.mutate(s.id); }}>
+                      <button className="btn btn-danger btn-sm" onClick={async () => { if (await confirm('Remove this shift?')) deleteMutation.mutate(s.id); }} disabled={deleteMutation.isPending}>
                         <Trash2 size={14} />
                       </button>
                     </td>

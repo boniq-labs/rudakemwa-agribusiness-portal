@@ -7,6 +7,7 @@ import client from '../../api/client';
 import { Plus, X, Edit2, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import type { Column } from '../../components/DataTable';
+import { useConfirm } from '../../components/ConfirmDialog';
 
 interface CategoryForm { name: string; description: string; }
 
@@ -18,6 +19,7 @@ export default function StockCategories() {
   const [editing, setEditing] = useState<any>(null);
   const [form, setForm] = useState<CategoryForm>(initialForm);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const confirm = useConfirm();
 
   const { data: categories, isLoading } = useQuery({
     queryKey: ['stock-categories'],
@@ -89,8 +91,8 @@ export default function StockCategories() {
     }
   };
 
-  const handleDelete = (item: any) => {
-    if (window.confirm(`Delete category "${item.name}"?`)) {
+  const handleDelete = async (item: any) => {
+    if (await confirm(`Delete category "${item.name}"?`)) {
       deleteMutation.mutate(item.id);
     }
   };

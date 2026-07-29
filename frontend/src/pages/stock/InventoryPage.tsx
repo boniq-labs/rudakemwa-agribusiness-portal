@@ -9,6 +9,7 @@ import { Plus, Search, X, Edit2, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useSearchParams } from 'react-router-dom';
 import type { Column } from '../../components/DataTable';
+import { useConfirm } from '../../components/ConfirmDialog';
 
 interface FormData {
   name: string; category_id: string; code: string; barcode: string;
@@ -23,6 +24,7 @@ const initialForm: FormData = {
 
 export default function InventoryPage() {
   const queryClient = useQueryClient();
+  const confirm = useConfirm();
   const [searchParams] = useSearchParams();
   const [showModal, setShowModal] = useState(searchParams.get('add') === 'true');
   const [search, setSearch] = useState('');
@@ -122,7 +124,7 @@ export default function InventoryPage() {
     { key: 'actions', label: 'Actions', render: (i: any) => (
       <div className="actions">
         <button className="btn btn-sm" onClick={(e) => { e.stopPropagation(); openEdit(i); }} style={{ background: 'var(--bg)', border: '1px solid var(--border)' }}><Edit2 size={14} /></button>
-        <button className="btn btn-sm" onClick={(e) => { e.stopPropagation(); if (confirm('Delete this item?')) deleteMutation.mutate(i.id); }} style={{ background: '#fef2f2', border: '1px solid #fecaca', color: 'var(--danger)' }}><Trash2 size={14} /></button>
+        <button className="btn btn-sm" onClick={async (e) => { e.stopPropagation(); if (await confirm('Delete this item?')) deleteMutation.mutate(i.id); }} style={{ background: '#fef2f2', border: '1px solid #fecaca', color: 'var(--danger)' }} disabled={deleteMutation.isPending}><Trash2 size={14} /></button>
       </div>
     )},
   ];

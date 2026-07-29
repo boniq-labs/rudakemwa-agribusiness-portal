@@ -8,11 +8,13 @@ import type { Column } from '../../components/DataTable';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { Plus, Skull, Edit2, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useConfirm } from '../../components/ConfirmDialog';
 
 const PIE_COLORS = ['#dc2626', '#d97706', '#2563eb', '#16a34a', '#8b5cf6', '#ec4899'];
 
 export default function AnimalDeaths() {
   const queryClient = useQueryClient();
+  const confirm = useConfirm();
   const { user } = useAuth();
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -128,7 +130,7 @@ export default function AnimalDeaths() {
       render: (item: any) => (
         <div className="actions">
           <button className="btn btn-sm" title="Edit" onClick={() => openEdit(item)}><Edit2 size={14} /></button>
-          <button className="btn btn-sm" title="Delete" onClick={(e) => { e.stopPropagation(); if (confirm('Delete this death record?')) deleteMutation.mutate(item.id); }}><Trash2 size={14} /></button>
+          <button className="btn btn-sm" title="Delete" onClick={async (e) => { e.stopPropagation(); if (await confirm('Delete this death record?')) deleteMutation.mutate(item.id); }} disabled={deleteMutation.isPending}><Trash2 size={14} /></button>
         </div>
       ),
     },

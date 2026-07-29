@@ -7,6 +7,7 @@ import FormField from '../../components/FormField';
 import type { Column } from '../../components/DataTable';
 import { Plus, Baby, Eye, Edit2, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useConfirm } from '../../components/ConfirmDialog';
 
 interface BirthRecord {
   id: number;
@@ -53,6 +54,7 @@ const GENDER_OPTIONS: Record<string, string[]> = {
 
 export default function BirthRecords() {
   const queryClient = useQueryClient();
+  const confirm = useConfirm();
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [viewItem, setViewItem] = useState<BirthRecord | null>(null);
@@ -71,7 +73,7 @@ export default function BirthRecords() {
   });
 
   const { data: animalsData } = useQuery({
-    queryKey: ['animals'],
+    queryKey: ['animals', 'select'],
     queryFn: async () => (await client.get('/animals/select')).data?.data || [],
   });
 
@@ -196,7 +198,7 @@ export default function BirthRecords() {
         <div className="actions">
           <button className="btn btn-sm" title="View" onClick={() => setViewItem(item)}><Eye size={14} /></button>
           <button className="btn btn-sm" title="Edit" onClick={() => openEdit(item)}><Edit2 size={14} /></button>
-          <button className="btn btn-sm" title="Delete" onClick={(e) => { e.stopPropagation(); if (confirm('Delete this birth record?')) deleteMutation.mutate(item.id); }}><Trash2 size={14} /></button>
+          <button className="btn btn-sm" title="Delete" onClick={async (e) => { e.stopPropagation(); if (await confirm('Delete this birth record?')) deleteMutation.mutate(item.id); }} disabled={deleteMutation.isPending}><Trash2 size={14} /></button>
         </div>
       ),
     },

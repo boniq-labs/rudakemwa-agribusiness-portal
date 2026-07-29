@@ -7,9 +7,11 @@ import DataTable from '../../components/DataTable';
 import type { Column } from '../../components/DataTable';
 import { Plus, Edit2, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useConfirm } from '../../components/ConfirmDialog';
 
 export default function AnimalBreeds() {
   const queryClient = useQueryClient();
+  const confirm = useConfirm();
   const [showModal, setShowModal] = useState(false);
   const [editItem, setEditItem] = useState<any>(null);
   const [form, setForm] = useState({ name: '', category_id: '', description: '' });
@@ -70,7 +72,7 @@ export default function AnimalBreeds() {
       render: (item) => (
         <div className="actions">
           <button className="btn btn-sm btn-secondary" onClick={() => openEdit(item)}><Edit2 size={14} /> Edit</button>
-          <button className="btn btn-sm" style={{ color: 'var(--danger)', border: '1px solid var(--danger)' }} onClick={() => { if (confirm('Delete this breed?')) deleteMutation.mutate(item.id); }}><Trash2 size={14} /> Delete</button>
+          <button className="btn btn-sm" style={{ color: 'var(--danger)', border: '1px solid var(--danger)' }} onClick={async () => { if (await confirm('Delete this breed?')) deleteMutation.mutate(item.id); }} disabled={deleteMutation.isPending}><Trash2 size={14} /> Delete</button>
         </div>
       ),
     },

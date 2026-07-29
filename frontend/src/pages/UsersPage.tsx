@@ -5,8 +5,10 @@ import { useAuth } from '../contexts/AuthContext';
 import { Loader2, UserPlus, Search, Eye, EyeOff, Edit2, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import client from '../api/client';
+import { useConfirm } from '../components/ConfirmDialog';
 
 export default function UsersPage() {
+  const confirm = useConfirm();
   const { hasPermission } = useAuth();
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
@@ -263,7 +265,7 @@ export default function UsersPage() {
                       <button className="btn btn-sm btn-ghost" onClick={() => openEdit(u)}>
                         <Edit2 size={14} /> Edit
                       </button>
-                      <button className="btn btn-sm btn-danger" onClick={() => { if (confirm('Delete this user?')) deleteMutation.mutate(u.id); }} disabled={deleteMutation.isPending}>
+                      <button className="btn btn-sm btn-danger" onClick={async () => { if (await confirm('Delete this user?')) deleteMutation.mutate(u.id); }} disabled={deleteMutation.isPending}>
                         <Trash2 size={14} /> Delete
                       </button>
                     </div>

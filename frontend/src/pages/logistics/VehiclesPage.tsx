@@ -8,6 +8,7 @@ import client from '../../api/client';
 import { Plus, Search, Edit2, Trash2 } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
+import { useConfirm } from '../../components/ConfirmDialog';
 import type { Column } from '../../components/DataTable';
 
 interface VehicleForm {
@@ -33,6 +34,7 @@ export default function VehiclesPage() {
   const [search, setSearch] = useState('');
   const [form, setForm] = useState<VehicleForm>(initialForm);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const confirm = useConfirm();
 
   const { data: vehicles, isLoading } = useQuery({
     queryKey: ['logistics-vehicles'],
@@ -132,8 +134,8 @@ export default function VehiclesPage() {
     }
   };
 
-  const handleDelete = (item: any) => {
-    if (window.confirm(`Delete vehicle "${item.vehicle_name || item.name}"?`)) {
+  const handleDelete = async (item: any) => {
+    if (await confirm(`Delete vehicle "${item.vehicle_name || item.name}"?`)) {
       deleteMutation.mutate(item.id);
     }
   };
@@ -162,8 +164,8 @@ export default function VehiclesPage() {
             <Edit2 size={14} />
           </button>
           <button className="btn btn-sm" style={{ background: '#fef2f2', color: '#991b1b', border: 'none' }}
-            onClick={e => { e.stopPropagation(); handleDelete(v); }}>
-            <Trash2 size={14} />
+            onClick={e => { e.stopPropagation(); handleDelete(v); }} disabled={deleteMutation.isPending}>
+            <Trash2 size={14} />{deleteMutation.isPending && ' Deleting...'}
           </button>
         </div>
       ),

@@ -6,7 +6,7 @@ EFMS — Enterprise Farm Management System. Full-stack React + Vite frontend, Ex
 ## Session Context (Last Updated: 2026-07-29)
 
 ### Objective
-Fix production issues across all modules: Animal Production (birth records gender, TobeInHit, mobile CRUD), Admin Dashboard (stale data), mobile responsiveness (delete, touch targets, modals), and cross-module mobile audit.
+Fix 6 Animal Production issues: cattle registration not appearing, hard delete, missing older pigs, pagination, birth record select, cache invalidation, dashboard counts.
 
 ### Important Details
 - **No `dateStrings: true`** in DB pool config — MySQL2 returns DATE/DATETIME as Date objects. `.substring(0,10)` on Date objects throws TypeError, crashing `openEdit` modals silently.
@@ -14,42 +14,34 @@ Fix production issues across all modules: Animal Production (birth records gende
 - **Validation middleware**: `POST` routes use `validate(schema)` — rejects `400` if body fields don't match schema.
 - **Build**: Backend `tsc` no strict mode, `allowJs: true`. Frontend Vite + TypeScript.
 - **Gender mapping (breedingController.ts)**: Uses `MALE_TYPES` array (`['Bull','Male','Boar','Ram','Buck','Stallion','Rooster','Tom','Jack']`) — anything else maps to `'female'`.
-- **Birth Records GENDER_OPTIONS**: Keyed by category name (Cattle, Pigs, Sheep, Goats, Horses, Poultry) with `DEFAULT` fallback.
-- **Mobile delete fix root cause**: `confirm()` blocks/fails silently in iOS PWA/standalone mode. Fix: `touch-action: manipulation` CSS + `e.stopPropagation()` on all delete buttons.
-- **Dashboard stale cache**: `refetchOnMount: true` + `staleTime: 0` required on all queries. SQL YEAR filter: `AND YEAR(date)=YEAR(CURDATE())`.
+- **Default QueryClient staleTime: 30000** — queries refetch on mount only if stale. `staleTime: 30000` can delay refetches after cache invalidation.
+- **Backend getAnimals default limit: 25** — `getPagination` returns `limit: 25` by default. Pages fetching "all animals" only get 25 unless a larger limit is passed.
+- **buildWhereClause** generates `WHERE key = ?` from query params not in exclude list (`page, limit, sort, order, search`). Custom filters like `category_id`, `status`, `gender` are handled separately in each controller.
 
 ### Work State
 #### Completed
-- **MilkDashboard.tsx**: Refactored to 4 real DB metric cards (Total Today, Morning, Evening, Avg/Animal) from `/dashboard/milk`.
-- **Sidebar.tsx**: Removed Customers, Daily Reports from Milk Production section.
-- **App.tsx**: Removed MilkCustomers, MilkRoutes imports & routes. Added TobeInHit lazy import + route.
-- **Tobe in Hit module**: New table (`tobe_in_hit`), controller (`tobeInHitController.ts`), routes, frontend page (`TobeInHit.tsx`), sidebar link.
-- **Mobile CRUD audit (all 12 Animal Production pages)**: Wrapped action buttons in `.actions` class. Breeding.tsx radio buttons `flexWrap: 'wrap'` + `minHeight: 44`. Pagination buttons 44px touch targets on mobile. CSS `.actions { display: flex; flex-wrap: wrap; align-items: center; }`.
-- **Birth Records gender options**: `GENDER_OPTIONS` map expanded (Cattle: Bull/Cow, Pigs: Boar/Sow, Sheep: Ram/Ewe, Goats: Buck/Doe, Horses: Stallion/Mare, Poultry: Rooster/Hen, DEFAULT: Male/Female). Backend gender mapping uses `MALE_TYPES` array instead of `type === 'Bull' ? 'male' : 'female'`.
-- **TobeInHit pagination**: Fixed — added `pages: data?.meta?.pages || 1` to DataTable.
-- **Admin Dashboard stale cache**: Added `refetchOnMount: true` + `staleTime: 0` to all 4 dashboard queries. SQL YEAR filter added to income/expense aggregation queries.
-- **Delete on mobile**: Added `touch-action: manipulation; -webkit-touch-callout: none;` CSS to table buttons. Added `e.stopPropagation()` to ALL delete buttons (BirthRecords, AnimalDeaths, AnimalSales, Breeding, Vaccination, DiseaseManagement, Feeding).
-- **Mobile responsiveness Phase 5**: Sticky table headers (`.table thead { position: sticky; top: 0; }`). Body scroll lock for modals (`body.modal-open { overflow: hidden; }` + `useEffect` in `Modal.tsx`). Verified all charts use `ResponsiveContainer width="100%"`.
-- **Frontend build**: `npx vite build` — zero errors.
-- **Backend build**: `npx tsc --noEmit` — zero errors.
+- **Fix 1 — Hard delete for animals** (`animalController.ts`): Replaced `UPDATE animals SET deleted_at=NOW()` with transactional hard delete cascading to 11 child tables (birth_records, breeding_records, pregnancies, vaccinations, treatments, feeding_records, weight_records, transfers, purchases, sales, deaths).
+- **Fix 2 — Dashboard stats include deleted animals** (`dashboardController.ts`): Added `AND a.deleted_at IS NULL` to 6 queries in `getAnimalDashboard` (total, female, male, cattle, pigs, sick). Added JOIN for sick count.
+- **Fix 3 — Cattle/Pigs pagination** (`Cattle.tsx`, `Pigs.tsx`): Changed query from fetching ALL animals (limit 25) then client-filtering by category, to fetching directly with `{ animal_category_id: id, limit: 1000 }` — server-side filtering returns only relevant animals with adequate limit.
+- **Fix 4 — BirthRecords query key collision** (`BirthRecords.tsx`): Changed `queryKey: ['animals']` to `queryKey: ['animals', 'select']` to avoid cache collision with other `['animals']` prefix queries.
+- **Fix 5 — Missing dashboard invalidation** (`AnimalRegistration.tsx`): Added `['animal-dashboard-stats']` invalidation to `createMutation.onSuccess` (was only in `updateMutation`).
+- **All builds pass**: Backend `tsc --noEmit` ✅ (0 errors), Frontend `tsc --noEmit` ✅ (0 errors), Frontend `vite build` ✅ (10.20s).
 
 #### Active
-- (none — all phases completed)
+- (none)
 
 #### Blocked
 - (none)
 
 ### Next Move
-- No remaining tasks. Restart backend + frontend servers to verify end-to-end.
+- No remaining tasks. Clear browser cache and test all 5 fixes end-to-end.
 
 ### Key Files
-- `frontend/src/pages/animals/BirthRecords.tsx` — GENDER_OPTIONS map + DEFAULT fallback
-- `backend/src/controllers/animal/breedingController.ts` — MALE_TYPES gender mapping
-- `backend/src/controllers/animal/tobeInHitController.ts` — Tobe in hit CRUD
-- `frontend/src/pages/animal/TobeInHit.tsx` — Tobe in hit page (pagination fixed)
-- `frontend/src/pages/admin/DashboardPage.tsx` — refetchOnMount + staleTime:0
-- `backend/src/controllers/admin/dashboardController.ts` — YEAR filter in SQL
-- `frontend/src/styles/index.css` — all mobile responsive rules, touch-action, sticky headers
-- `frontend/src/components/Modal.tsx` — body scroll lock via useEffect
-- `frontend/src/layouts/Sidebar.tsx` — Milk Customers/Reports removed
-- `frontend/src/App.tsx` — TobeInHit route added
+- `backend/src/controllers/animal/animalController.ts` — hard delete, `deleteAnimal` (L222-252)
+- `backend/src/controllers/dashboardController.ts` — `getAnimalDashboard` with `deleted_at IS NULL` filters
+- `backend/src/utils/pagination.ts` — `getPagination` default limit 25
+- `frontend/src/pages/animals/Cattle.tsx` — server-side category filter with `{ animal_category_id, limit: 1000 }`
+- `frontend/src/pages/animals/Pigs.tsx` — server-side category filter with `{ animal_category_id, limit: 1000 }`
+- `frontend/src/pages/animals/BirthRecords.tsx` — query key `['animals', 'select']`
+- `frontend/src/pages/animals/AnimalRegistration.tsx` — `createMutation` dashboard-stats invalidation
+- `frontend/src/App.tsx` — `QueryClient` with `staleTime: 30000`

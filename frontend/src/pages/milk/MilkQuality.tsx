@@ -8,6 +8,7 @@ import StatusBadge from '../../components/StatusBadge';
 import type { Column } from '../../components/DataTable';
 import { milkAPI } from '../../api/endpoints';
 import toast from 'react-hot-toast';
+import { useConfirm } from '../../components/ConfirmDialog';
 
 interface QualityRecord {
   id: number;
@@ -52,6 +53,7 @@ export default function MilkQuality() {
   const [form, setForm] = useState<FormData>(INITIAL_FORM);
   const [editingId, setEditingId] = useState<number | null>(null);
   const queryClient = useQueryClient();
+  const confirm = useConfirm();
 
   const { data, isLoading } = useQuery({
     queryKey: ['milk-quality'],
@@ -154,7 +156,7 @@ export default function MilkQuality() {
       key: 'actions', label: 'Actions', render: (r) => (
         <div className="actions">
           <button className="btn btn-sm" onClick={(e) => { e.stopPropagation(); openEdit(r); }} style={{ background: 'var(--bg)', border: '1px solid var(--border)' }}><Edit2 size={14} /></button>
-          <button className="btn btn-sm" onClick={(e) => { e.stopPropagation(); if (confirm('Delete this quality test?')) deleteMutation.mutate(r.id); }} style={{ background: '#fef2f2', border: '1px solid #fecaca', color: 'var(--danger)' }}><Trash2 size={14} /></button>
+          <button className="btn btn-sm" onClick={async (e) => { e.stopPropagation(); if (await confirm('Delete this quality test?')) deleteMutation.mutate(r.id); }} style={{ background: '#fef2f2', border: '1px solid #fecaca', color: 'var(--danger)' }} disabled={deleteMutation.isPending}><Trash2 size={14} /></button>
         </div>
       ),
     },

@@ -8,6 +8,7 @@ import Modal from '../../components/Modal';
 import FormField from '../../components/FormField';
 import type { Column } from '../../components/DataTable';
 import { Plus, Search } from 'lucide-react';
+import { useConfirm } from '../../components/ConfirmDialog';
 
 interface PrescriptionForm {
   animal_id: string;
@@ -63,6 +64,8 @@ export default function Prescriptions() {
     onError: (err: any) => toast.error(err.response?.data?.message || 'Failed to update'),
   });
 
+  const confirm = useConfirm();
+
   const deleteMutation = useMutation({
     mutationFn: (id: number) => client.delete(`/veterinary/prescriptions/${id}`),
     onSuccess: () => {
@@ -100,8 +103,8 @@ export default function Prescriptions() {
     setShowModal(true);
   };
 
-  const handleDelete = (id: number) => {
-    if (confirm('Delete this prescription?')) deleteMutation.mutate(id);
+  const handleDelete = async (id: number) => {
+    if (await confirm('Delete this prescription?')) deleteMutation.mutate(id);
   };
 
   const columns: Column<any>[] = [

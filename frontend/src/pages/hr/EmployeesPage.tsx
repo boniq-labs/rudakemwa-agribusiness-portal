@@ -8,6 +8,7 @@ import { usersAPI, departmentsAPI, positionsAPI } from '../../api/endpoints';
 import { Search, Plus, Edit2, Trash2, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
+import { useConfirm } from '../../components/ConfirmDialog';
 import type { Column } from '../../components/DataTable';
 
 interface EmployeeForm {
@@ -30,6 +31,7 @@ export default function EmployeesPage() {
   const [editing, setEditing] = useState<any>(null);
   const [form, setForm] = useState<EmployeeForm>({ first_name: '', last_name: '', email: '', username: '', password: '', phone: '', department_id: '', role_id: '', position: '' });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const confirm = useConfirm();
 
   const { data: users, isLoading } = useQuery({
     queryKey: ['users'],
@@ -153,7 +155,7 @@ export default function EmployeesPage() {
           <button className="btn btn-sm" style={{ background: 'var(--primary-light)', color: 'var(--primary)' }} onClick={(e) => { e.stopPropagation(); openEdit(u); }}>
             <Edit2 size={14} />
           </button>
-          <button className="btn btn-sm" style={{ background: '#fef2f2', color: 'var(--danger)' }} onClick={(e) => { e.stopPropagation(); if (confirm('Delete this employee?')) deleteMutation.mutate(u.id); }}>
+          <button className="btn btn-sm" style={{ background: '#fef2f2', color: 'var(--danger)' }} onClick={async (e) => { e.stopPropagation(); if (await confirm('Delete this employee?')) deleteMutation.mutate(u.id); }} disabled={deleteMutation.isPending}>
             <Trash2 size={14} />
           </button>
           <button className="btn btn-sm" style={{ background: 'var(--bg)', border: '1px solid var(--border)' }} onClick={(e) => { e.stopPropagation(); navigate(`/hr/employees/${u.id}`); }}>

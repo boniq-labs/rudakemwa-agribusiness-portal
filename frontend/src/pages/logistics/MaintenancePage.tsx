@@ -6,6 +6,7 @@ import FormField from '../../components/FormField';
 import { logisticsAPI } from '../../api/endpoints';
 import { Plus, X, AlertTriangle, Calendar, Edit2, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useConfirm } from '../../components/ConfirmDialog';
 import type { Column } from '../../components/DataTable';
 
 interface FormData {
@@ -24,6 +25,7 @@ export default function MaintenancePage() {
   const [editing, setEditing] = useState<any>(null);
   const [form, setForm] = useState<FormData>(initialForm);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const confirm = useConfirm();
 
   const { data: maintenance, isLoading } = useQuery({
     queryKey: ['logistics', 'maintenance'],
@@ -168,8 +170,8 @@ export default function MaintenancePage() {
             <Edit2 size={14} />
           </button>
           <button className="btn btn-sm" style={{ background: '#fef2f2', color: '#991b1b', border: 'none' }}
-            onClick={e => { e.stopPropagation(); if (confirm('Delete this maintenance record?')) deleteMutation.mutate(m.id); }}>
-            <Trash2 size={14} />
+            onClick={async e => { e.stopPropagation(); if (await confirm('Delete this maintenance record?')) deleteMutation.mutate(m.id); }} disabled={deleteMutation.isPending}>
+            <Trash2 size={14} />{deleteMutation.isPending && ' Deleting...'}
           </button>
         </div>
       ),

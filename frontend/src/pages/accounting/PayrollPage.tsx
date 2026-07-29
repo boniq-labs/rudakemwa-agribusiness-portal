@@ -9,11 +9,13 @@ import client from '../../api/client';
 import { formatAmount } from '../../services/currency';
 import { DollarSign, Users, CheckCircle, Clock, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useConfirm } from '../../components/ConfirmDialog';
 import type { Column } from '../../components/DataTable';
 
 export default function PayrollPage() {
   const queryClient = useQueryClient();
   const [month, setMonth] = useState(() => new Date().toISOString().substring(0, 7));
+  const confirm = useConfirm();
 
   const { data: payroll, isLoading } = useQuery({
     queryKey: ['accounting-payroll', month],
@@ -93,7 +95,7 @@ export default function PayrollPage() {
       key: 'actions', label: '',
       render: (e: any) => (
         <div className="actions">
-          <button className="btn btn-sm btn-danger" onClick={(ev) => { ev.stopPropagation(); if (confirm('Delete this payroll record?')) deleteMutation.mutate(e.id); }}>
+          <button className="btn btn-sm btn-danger" disabled={deleteMutation.isPending} onClick={async (ev) => { ev.stopPropagation(); if (await confirm('Delete this payroll record?')) deleteMutation.mutate(e.id); }}>
             <Trash2 size={14} /> Delete
           </button>
         </div>

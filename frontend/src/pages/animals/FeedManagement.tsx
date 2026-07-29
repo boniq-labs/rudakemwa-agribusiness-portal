@@ -6,6 +6,7 @@ import DataTable from '../../components/DataTable';
 import FormField from '../../components/FormField';
 import { Plus, Edit2, Trash2, Search, X } from 'lucide-react';
 import type { Column } from '../../components/DataTable';
+import { useConfirm } from '../../components/ConfirmDialog';
 
 interface FeedForm {
   code: string;
@@ -28,6 +29,7 @@ const initialForm: FeedForm = {
 };
 
 export default function FeedManagement() {
+  const confirm = useConfirm();
   const queryClient = useQueryClient();
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState<any>(null);
@@ -124,7 +126,7 @@ export default function FeedManagement() {
           <button className="btn btn-sm" style={{ background: 'var(--primary-light)', color: 'var(--primary)' }} onClick={() => openEdit(i)}>
             <Edit2 size={14} />
           </button>
-          <button className="btn btn-sm" style={{ background: '#fef2f2', color: 'var(--danger)' }} onClick={() => { if (confirm('Delete this feed item?')) deleteMutation.mutate(i.id); }}>
+          <button className="btn btn-sm" style={{ background: '#fef2f2', color: 'var(--danger)' }} onClick={async () => { if (await confirm('Delete this feed item?')) deleteMutation.mutate(i.id); }} disabled={deleteMutation.isPending}>
             <Trash2 size={14} />
           </button>
         </div>

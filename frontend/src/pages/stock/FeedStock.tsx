@@ -6,6 +6,7 @@ import DataTable from '../../components/DataTable';
 import FormField from '../../components/FormField';
 import { stockAPI } from '../../api/endpoints';
 import { Plus, X, Wheat, ClipboardList, AlertTriangle, UtensilsCrossed, Edit2, Trash2 } from 'lucide-react';
+import { useConfirm } from '../../components/ConfirmDialog';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import toast from 'react-hot-toast';
 import type { Column } from '../../components/DataTable';
@@ -20,6 +21,7 @@ const FEED_CATEGORIES = ['Grass', 'Hay', 'Silage', 'Concentrate', 'Grains', 'Sup
 
 export default function FeedStock() {
   const queryClient = useQueryClient();
+  const confirm = useConfirm();
   const [showModal, setShowModal] = useState(false);
   const [showConsume, setShowConsume] = useState(false);
   const [form, setForm] = useState<FeedForm>(initialForm);
@@ -118,7 +120,7 @@ export default function FeedStock() {
     { key: 'actions', label: 'Actions', render: (f: any) => (
       <div className="actions">
         <button className="btn btn-sm" onClick={(e) => { e.stopPropagation(); openEdit(f); }} style={{ background: 'var(--bg)', border: '1px solid var(--border)' }}><Edit2 size={14} /></button>
-        <button className="btn btn-sm" onClick={(e) => { e.stopPropagation(); if (confirm('Delete this feed item?')) deleteMutation.mutate(f.id); }} style={{ background: '#fef2f2', border: '1px solid #fecaca', color: 'var(--danger)' }}><Trash2 size={14} /></button>
+        <button className="btn btn-sm" onClick={async (e) => { e.stopPropagation(); if (await confirm('Delete this feed item?')) deleteMutation.mutate(f.id); }} style={{ background: '#fef2f2', border: '1px solid #fecaca', color: 'var(--danger)' }} disabled={deleteMutation.isPending}><Trash2 size={14} /></button>
       </div>
     )},
   ];

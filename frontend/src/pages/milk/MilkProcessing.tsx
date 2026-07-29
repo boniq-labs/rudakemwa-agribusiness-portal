@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Package, Edit2, Trash2 } from 'lucide-react';
 import ModulePage from '../../components/ModulePage';
+import { useConfirm } from '../../components/ConfirmDialog';
 import DataTable from '../../components/DataTable';
 import type { Column } from '../../components/DataTable';
 import { milkAPI } from '../../api/endpoints';
@@ -65,6 +66,7 @@ export default function MilkProcessing() {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editingProductId, setEditingProductId] = useState<number | null>(null);
   const queryClient = useQueryClient();
+  const confirm = useConfirm();
 
   const { data: processingData, isLoading } = useQuery({
     queryKey: ['milk-processing'],
@@ -217,7 +219,7 @@ export default function MilkProcessing() {
       key: 'actions', label: 'Actions', render: (r) => (
         <div className="actions">
           <button className="btn btn-sm" onClick={(e) => { e.stopPropagation(); openEdit(r); }} style={{ background: 'var(--bg)', border: '1px solid var(--border)' }}><Edit2 size={14} /></button>
-          <button className="btn btn-sm" onClick={(e) => { e.stopPropagation(); if (confirm('Delete this processing record?')) deleteMutation.mutate(r.id); }} style={{ background: '#fef2f2', border: '1px solid #fecaca', color: 'var(--danger)' }}><Trash2 size={14} /></button>
+          <button className="btn btn-sm" onClick={async (e) => { e.stopPropagation(); if (await confirm('Delete this processing record?')) deleteMutation.mutate(r.id); }} style={{ background: '#fef2f2', border: '1px solid #fecaca', color: 'var(--danger)' }} disabled={deleteMutation.isPending}><Trash2 size={14} /></button>
         </div>
       ),
     },
@@ -257,7 +259,7 @@ export default function MilkProcessing() {
                 {p.description && <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: 4 }}>{p.description}</div>}
                 <div style={{ display: 'flex', gap: 4, marginTop: 12 }}>
                   <button className="btn btn-sm" onClick={() => openEditProduct(p)} style={{ background: 'var(--bg)', border: '1px solid var(--border)', padding: '4px 8px' }}><Edit2 size={14} /></button>
-                  <button className="btn btn-sm" onClick={() => { if (confirm('Delete this product?')) deleteProductMutation.mutate(p.id); }} style={{ background: '#fef2f2', border: '1px solid #fecaca', color: 'var(--danger)', padding: '4px 8px' }}><Trash2 size={14} /></button>
+                  <button className="btn btn-sm" onClick={async () => { if (await confirm('Delete this product?')) deleteProductMutation.mutate(p.id); }} style={{ background: '#fef2f2', border: '1px solid #fecaca', color: 'var(--danger)', padding: '4px 8px' }} disabled={deleteProductMutation.isPending}><Trash2 size={14} /></button>
                 </div>
               </div>
             ))}

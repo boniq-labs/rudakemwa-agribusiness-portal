@@ -7,6 +7,7 @@ import FormField from '../../components/FormField';
 import type { Column } from '../../components/DataTable';
 import { Plus, Edit2, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useConfirm } from '../../components/ConfirmDialog';
 
 interface TobeInHitRecord {
   id: number;
@@ -23,6 +24,7 @@ interface TobeInHitRecord {
 
 export default function TobeInHit() {
   const queryClient = useQueryClient();
+  const confirm = useConfirm();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [open, setOpen] = useState(false);
@@ -113,7 +115,7 @@ export default function TobeInHit() {
       render: (_v, record: any) => (
         <div className="actions">
           <button className="btn btn-icon" title="Edit" onClick={() => handleOpen(record)}><Edit2 size={16} /></button>
-          <button className="btn btn-icon btn-danger" title="Delete" onClick={() => { if (confirm('Delete?')) deleteMutation.mutate(record.id); }}><Trash2 size={16} /></button>
+          <button className="btn btn-icon btn-danger" title="Delete" onClick={async () => { if (await confirm('Delete?')) deleteMutation.mutate(record.id); }} disabled={deleteMutation.isPending}><Trash2 size={16} /></button>
         </div>
       ),
     },

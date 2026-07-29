@@ -7,6 +7,7 @@ import { accountingAPI } from '../../api/endpoints';
 import { formatAmount } from '../../services/currency';
 import { Plus, X, DollarSign, Edit2, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useConfirm } from '../../components/ConfirmDialog';
 import type { Column } from '../../components/DataTable';
 
 const STATUS_TABS = ['All', 'Draft', 'Sent', 'Paid', 'Partial', 'Overdue', 'Cancelled'];
@@ -22,6 +23,7 @@ export default function AccountingInvoices() {
     tax: 0, due_date: '',
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const confirm = useConfirm();
 
   const { data: invoices, isLoading } = useQuery({
     queryKey: ['accounting-invoices'],
@@ -161,7 +163,7 @@ export default function AccountingInvoices() {
           <button className="btn btn-sm btn-ghost" onClick={(e) => { e.stopPropagation(); openEdit(inv); }}>
             <Edit2 size={14} /> Edit
           </button>
-          <button className="btn btn-sm btn-danger" onClick={(e) => { e.stopPropagation(); if (confirm('Delete this invoice?')) deleteMutation.mutate(inv.id); }}>
+          <button className="btn btn-sm btn-danger" disabled={deleteMutation.isPending} onClick={async (e) => { e.stopPropagation(); if (await confirm('Delete this invoice?')) deleteMutation.mutate(inv.id); }}>
             <Trash2 size={14} /> Delete
           </button>
         </div>

@@ -7,6 +7,7 @@ import FormField from '../../components/FormField';
 import { recruitmentAPI } from '../../api/endpoints';
 import { Briefcase, Users, Plus, Edit2, Trash2, X } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import { useConfirm } from '../../components/ConfirmDialog';
 import type { Column } from '../../components/DataTable';
 
 const APPLICANT_STATUSES = ['new', 'screening', 'interviewed', 'shortlisted', 'offered', 'hired', 'rejected'];
@@ -16,6 +17,7 @@ export default function RecruitmentPage() {
   const [showJobModal, setShowJobModal] = useState(false);
   const [editingJob, setEditingJob] = useState<any>(null);
   const [jobForm, setJobForm] = useState({ title: '', description: '', status: 'open' });
+  const confirm = useConfirm();
 
   const { data: jobs, isLoading: jobsLoading } = useQuery({
     queryKey: ['recruitment-jobs'],
@@ -121,7 +123,7 @@ export default function RecruitmentPage() {
                   <Edit2 size={14} />
                 </button>
                 {j.status === 'open' && (
-                  <button className="btn btn-sm" style={{ background: '#fef2f2', color: 'var(--danger)' }} onClick={(e) => { e.stopPropagation(); if (confirm('Close this position?')) closeJobMutation.mutate(j.id); }}>
+                  <button className="btn btn-sm" style={{ background: '#fef2f2', color: 'var(--danger)' }} onClick={async (e) => { e.stopPropagation(); if (await confirm('Close this position?')) closeJobMutation.mutate(j.id); }} disabled={closeJobMutation.isPending}>
                     <Trash2 size={14} />
                   </button>
                 )}

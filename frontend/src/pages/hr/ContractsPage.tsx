@@ -7,6 +7,7 @@ import FormField from '../../components/FormField';
 import { contractsAPI, usersAPI } from '../../api/endpoints';
 import { Plus, AlertTriangle, Edit2, Trash2, X } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import { useConfirm } from '../../components/ConfirmDialog';
 import type { Column } from '../../components/DataTable';
 
 const CONTRACT_TYPES = ['Permanent', 'Temporary', 'Fixed-term', 'Probation'];
@@ -16,6 +17,7 @@ export default function ContractsPage() {
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState<any>(null);
   const [form, setForm] = useState({ user_id: '', type: '', start_date: '', end_date: '' });
+  const confirm = useConfirm();
 
   const { data: contracts, isLoading } = useQuery({
     queryKey: ['contracts'],
@@ -99,7 +101,7 @@ export default function ContractsPage() {
             <Edit2 size={14} />
           </button>
           {(c.status === 'active' || !c.status) && (
-            <button className="btn btn-sm" style={{ background: '#fef2f2', color: 'var(--danger)' }} onClick={() => { if (confirm('Terminate this contract?')) terminateMutation.mutate(c.id); }}>
+            <button className="btn btn-sm" style={{ background: '#fef2f2', color: 'var(--danger)' }} onClick={async () => { if (await confirm('Terminate this contract?')) terminateMutation.mutate(c.id); }} disabled={terminateMutation.isPending}>
               <Trash2 size={14} />
             </button>
           )}

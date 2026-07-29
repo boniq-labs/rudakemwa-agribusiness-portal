@@ -7,6 +7,7 @@ import FormField from '../../components/FormField';
 import { logisticsAPI, departmentsAPI } from '../../api/endpoints';
 import { Plus, X, CheckCircle, XCircle, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useConfirm } from '../../components/ConfirmDialog';
 import type { Column } from '../../components/DataTable';
 
 const STATUS_TABS = ['All', 'Pending', 'Approved', 'Rejected', 'Completed'];
@@ -33,6 +34,7 @@ export default function TransportRequests() {
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState<FormData>(initialForm);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const confirm = useConfirm();
 
   const { data: requests, isLoading } = useQuery({
     queryKey: ['logistics', 'requests'],
@@ -144,8 +146,8 @@ export default function TransportRequests() {
               </button>
             </>
           )}
-          <button className="btn btn-sm btn-danger" onClick={(e) => { e.stopPropagation(); if (confirm('Delete this request?')) deleteMutation.mutate(r.id); }}>
-            <Trash2 size={14} /> Delete
+          <button className="btn btn-sm btn-danger" onClick={async (e) => { e.stopPropagation(); if (await confirm('Delete this request?')) deleteMutation.mutate(r.id); }} disabled={deleteMutation.isPending}>
+            <Trash2 size={14} /> {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
           </button>
         </div>
       ),

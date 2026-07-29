@@ -8,9 +8,11 @@ import StatusBadge from '../../components/StatusBadge';
 import type { Column } from '../../components/DataTable';
 import { HeartPulse, CheckCircle, XCircle, AlertTriangle, Plus, Eye, Ban, Edit2, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useConfirm } from '../../components/ConfirmDialog';
 
 export default function Pregnancy() {
   const queryClient = useQueryClient();
+  const confirm = useConfirm();
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [form, setForm] = useState({
@@ -136,7 +138,7 @@ export default function Pregnancy() {
       render: (item: any) => (
         <div className="actions">
           <button className="btn btn-sm" title="Edit" onClick={() => openEdit(item)}><Edit2 size={14} /></button>
-          <button className="btn btn-sm" title="Delete" onClick={() => { if (confirm('Delete this pregnancy record?')) deleteMutation.mutate(item.id); }}><Trash2 size={14} /></button>
+          <button className="btn btn-sm" title="Delete" onClick={async () => { if (await confirm('Delete this pregnancy record?')) deleteMutation.mutate(item.id); }} disabled={deleteMutation.isPending}><Trash2 size={14} /></button>
         </div>
       ),
     },

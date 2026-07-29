@@ -143,13 +143,13 @@ async function getAccountantDashboard() {
 }
 
 async function getAnimalDashboard() {
-  const [[{ total }]]: any = await pool.query("SELECT COUNT(*) as total FROM animals WHERE status='active'");
-  const [[{ female }]]: any = await pool.query("SELECT COUNT(*) as female FROM animals WHERE gender='female' AND status='active'");
-  const [[{ male }]]: any = await pool.query("SELECT COUNT(*) as male FROM animals WHERE gender='male' AND status='active'");
-  const [[{ cattle }]]: any = await pool.query("SELECT COUNT(*) as cattle FROM animals a JOIN animal_categories ac ON a.animal_category_id = ac.id WHERE LOWER(ac.name) = 'cattle' AND a.status='active'");
-  const [[{ pigs }]]: any = await pool.query("SELECT COUNT(*) as pigs FROM animals a JOIN animal_categories ac ON a.animal_category_id = ac.id WHERE LOWER(ac.name) IN ('pigs','pig') AND a.status='active'");
+  const [[{ total }]]: any = await pool.query("SELECT COUNT(*) as total FROM animals WHERE status='active' AND deleted_at IS NULL");
+  const [[{ female }]]: any = await pool.query("SELECT COUNT(*) as female FROM animals WHERE gender='female' AND status='active' AND deleted_at IS NULL");
+  const [[{ male }]]: any = await pool.query("SELECT COUNT(*) as male FROM animals WHERE gender='male' AND status='active' AND deleted_at IS NULL");
+  const [[{ cattle }]]: any = await pool.query("SELECT COUNT(*) as cattle FROM animals a JOIN animal_categories ac ON a.animal_category_id = ac.id WHERE LOWER(ac.name) = 'cattle' AND a.status='active' AND a.deleted_at IS NULL");
+  const [[{ pigs }]]: any = await pool.query("SELECT COUNT(*) as pigs FROM animals a JOIN animal_categories ac ON a.animal_category_id = ac.id WHERE LOWER(ac.name) IN ('pigs','pig') AND a.status='active' AND a.deleted_at IS NULL");
   const [[{ pregnant }]]: any = await pool.query("SELECT COUNT(*) as pregnant FROM pregnancies p JOIN animals a ON p.animal_id = a.id WHERE p.status = 'Pregnant' AND p.deleted_at IS NULL AND a.deleted_at IS NULL");
-  const [[{ sick }]]: any = await pool.query("SELECT COUNT(DISTINCT t.animal_id) as sick FROM treatments t WHERE t.deleted_at IS NULL");
+  const [[{ sick }]]: any = await pool.query("SELECT COUNT(DISTINCT t.animal_id) as sick FROM treatments t JOIN animals a ON t.animal_id = a.id WHERE t.deleted_at IS NULL AND a.deleted_at IS NULL");
   const [[{ vaccinationsDue }]]: any = await pool.query("SELECT COUNT(*) as vaccinationsDue FROM vaccinations WHERE next_due_date <= CURDATE() AND deleted_at IS NULL");
   const [[{ births }]]: any = await pool.query("SELECT COUNT(*) as births FROM birth_records WHERE deleted_at IS NULL");
   const [[{ deaths }]]: any = await pool.query("SELECT COUNT(*) as deaths FROM animal_deaths WHERE deleted_at IS NULL");

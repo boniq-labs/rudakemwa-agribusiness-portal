@@ -1,5 +1,6 @@
 import { useEffect, type ReactNode } from 'react';
 import { X } from 'lucide-react';
+import { lockBody, unlockBody } from '../utils/bodyScroll';
 
 interface ModalProps {
   open: boolean;
@@ -11,7 +12,7 @@ interface ModalProps {
 
 export default function Modal({ open, onClose, title, children, maxWidth = 520 }: ModalProps) {
   useEffect(() => {
-    if (open) { document.body.classList.add('modal-open'); return () => document.body.classList.remove('modal-open'); }
+    if (open) { lockBody(); return () => unlockBody(); }
   }, [open]);
   if (!open) return null;
   return (

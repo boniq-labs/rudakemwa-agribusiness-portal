@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import client from '../api/client';
 import { Plus, Edit2, Trash2, Search } from 'lucide-react';
+import { useConfirm } from '../components/ConfirmDialog';
 
 interface Role {
   id: number;
@@ -12,6 +13,7 @@ interface Role {
 }
 
 export default function RolesPage() {
+  const confirm = useConfirm();
   const queryClient = useQueryClient();
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState<Role | null>(null);
@@ -120,7 +122,7 @@ export default function RolesPage() {
                   <td>
                     <div className="actions">
                       <button className="btn btn-sm btn-ghost" onClick={() => openEdit(r)}><Edit2 size={16} /></button>
-                      <button className="btn btn-sm btn-danger" onClick={() => { if (confirm('Delete this role?')) deleteMutation.mutate(r.id); }}><Trash2 size={16} /></button>
+                      <button className="btn btn-sm btn-danger" onClick={async () => { if (await confirm('Delete this role?')) deleteMutation.mutate(r.id); }} disabled={deleteMutation.isPending}><Trash2 size={16} /></button>
                     </div>
                   </td>
                 </tr>

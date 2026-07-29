@@ -224,10 +224,30 @@ export const deleteAnimal = async (req: AuthRequest, res: Response) => {
     const [old]: any = await pool.query('SELECT * FROM animals WHERE id = ?', [req.params.id]);
     if (old.length === 0) return error(res, 'Animal not found', 404);
 
-    await pool.query('UPDATE animals SET deleted_at = NOW() WHERE id = ?', [req.params.id]);
-
-    await logAudit(req, createAuditEntry(req, 'Delete Animal', 'Animals', `Deleted animal ${old[0].tag_number}`, null, old[0]));
-    return success(res, null, 'Animal deleted');
+    const connection = await pool.getConnection();
+    try {
+      await connection.beginTransaction();
+      await connection.query('DELETE FROM birth_records WHERE mother_id = ? OR animal_id = ?', [req.params.id, req.params.id]);
+      await connection.query('DELETE FROM breeding_records WHERE mother_id = ? OR father_id = ?', [req.params.id, req.params.id]);
+      await connection.query('DELETE FROM pregnancies WHERE animal_id = ?', [req.params.id]);
+      await connection.query('DELETE FROM vaccinations WHERE animal_id = ?', [req.params.id]);
+      await connection.query('DELETE FROM treatments WHERE animal_id = ?', [req.params.id]);
+      await connection.query('DELETE FROM feeding_records WHERE animal_id = ?', [req.params.id]);
+      await connection.query('DELETE FROM weight_records WHERE animal_id = ?', [req.params.id]);
+      await connection.query('DELETE FROM animal_transfers WHERE animal_id = ?', [req.params.id]);
+      await connection.query('DELETE FROM animal_purchases WHERE animal_id = ?', [req.params.id]);
+      await connection.query('DELETE FROM animal_sales WHERE animal_id = ?', [req.params.id]);
+      await connection.query('DELETE FROM animal_deaths WHERE animal_id = ?', [req.params.id]);
+      await connection.query('DELETE FROM animals WHERE id = ?', [req.params.id]);
+      await connection.commit();
+      await logAudit(req, createAuditEntry(req, 'Delete Animal', 'Animals', `Deleted animal ${old[0].tag_number} and related records`, null, old[0]));
+      return success(res, null, 'Animal deleted permanently');
+    } catch (err: any) {
+      await connection.rollback();
+      return error(res, err.message);
+    } finally {
+      connection.release();
+    }
   } catch (err: any) { return error(res, err.message); }
 };
 

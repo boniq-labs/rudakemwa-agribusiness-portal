@@ -6,6 +6,7 @@ import FormField from '../../components/FormField';
 import client from '../../api/client';
 import { Plus, Edit2, Trash2, X } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useConfirm } from '../../components/ConfirmDialog';
 import type { Column } from '../../components/DataTable';
 
 const DEFAULT_TYPES = [
@@ -24,6 +25,7 @@ export default function LeaveTypesPage() {
   const [editing, setEditing] = useState<any>(null);
   const [form, setForm] = useState({ name: '', description: '', days_allowed: '' });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const confirm = useConfirm();
 
   const { data: leaveTypes, isLoading } = useQuery({
     queryKey: ['leave-types'],
@@ -108,7 +110,7 @@ export default function LeaveTypesPage() {
           <button className="btn btn-sm" style={{ background: 'var(--primary-light)', color: 'var(--primary)' }} onClick={() => openEdit(d)}>
             <Edit2 size={14} />
           </button>
-          <button className="btn btn-sm" style={{ background: '#fef2f2', color: 'var(--danger)' }} onClick={() => { if (confirm('Delete this leave type?')) deleteMutation.mutate(d.id); }}>
+          <button className="btn btn-sm" style={{ background: '#fef2f2', color: 'var(--danger)' }} onClick={async () => { if (await confirm('Delete this leave type?')) deleteMutation.mutate(d.id); }} disabled={deleteMutation.isPending}>
             <Trash2 size={14} />
           </button>
         </div>

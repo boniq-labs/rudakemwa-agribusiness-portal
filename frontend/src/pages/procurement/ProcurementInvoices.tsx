@@ -8,6 +8,7 @@ import { procurementAPI } from '../../api/endpoints';
 import { Plus, X, DollarSign, Edit2, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import type { Column } from '../../components/DataTable';
+import { useConfirm } from '../../components/ConfirmDialog';
 
 interface InvoiceForm { supplier_id: string; po_id: string; amount: string; due_date: string; }
 
@@ -19,6 +20,7 @@ export default function ProcurementInvoices() {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [form, setForm] = useState<InvoiceForm>(initialForm);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const confirm = useConfirm();
 
   const { data: invoices, isLoading } = useQuery({
     queryKey: ['procurement', 'invoices'],
@@ -160,8 +162,8 @@ export default function ProcurementInvoices() {
             </button>
           )}
           <button className="btn btn-sm" style={{ background: '#fef2f2', color: '#991b1b', border: 'none' }}
-            onClick={e => { e.stopPropagation(); if (confirm('Delete this invoice?')) deleteMutation.mutate(i.id); }}>
-            <Trash2 size={14} />
+            onClick={async e => { e.stopPropagation(); if (await confirm('Delete this invoice?')) deleteMutation.mutate(i.id); }} disabled={deleteMutation.isPending}>
+            <Trash2 size={14} />{deleteMutation.isPending && ' Deleting...'}
           </button>
         </div>
       ),

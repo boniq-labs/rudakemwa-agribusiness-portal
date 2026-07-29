@@ -7,22 +7,22 @@ import DataTable from '../../components/DataTable';
 import StatusBadge from '../../components/StatusBadge';
 import { Plus, Search, Camera } from 'lucide-react';
 import type { Column } from '../../components/DataTable';
+import { useConfirm } from '../../components/ConfirmDialog';
 
 export default function Cattle() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const confirm = useConfirm();
   const [search, setSearch] = useState('');
 
   const { data: animalsData, isLoading } = useQuery({
     queryKey: ['animals', 'cattle'],
     queryFn: async () => {
-      const [categories, animals] = await Promise.all([
-        animalAPI.getCategories().then(r => r.data.data || []),
-        animalAPI.getAll({}).then(r => r.data.data || []),
-      ]);
+      const categories = await animalAPI.getCategories().then(r => r.data.data || []);
       const cattleCat = categories.find((c: any) => c.name.toLowerCase() === 'cattle');
       if (!cattleCat) return [];
-      return animals.filter((a: any) => a.animal_category_id === cattleCat.id);
+      const response = await animalAPI.getAll({ animal_category_id: cattleCat.id, limit: 1000 });
+      return response.data.data || [];
     },
   });
 
@@ -62,7 +62,7 @@ export default function Cattle() {
         <div className="actions">
           <button className="btn btn-sm" style={{ background: 'var(--bg)', border: '1px solid var(--border)' }} onClick={(e) => { e.stopPropagation(); navigate(`/animals/profile/${c.id}`); }}>View</button>
           <button className="btn btn-sm" style={{ background: 'var(--bg)', border: '1px solid var(--border)' }} onClick={(e) => { e.stopPropagation(); navigate(`/animals/registration?edit=${c.id}`); }}>Edit</button>
-          <button className="btn btn-sm" style={{ color: 'var(--danger)', border: '1px solid var(--danger)' }} onClick={(e) => { e.stopPropagation(); if (confirm('Delete this animal?')) deleteMutation.mutate(c.id); }}>Delete</button>
+          <button className="btn btn-sm" style={{ color: 'var(--danger)', border: '1px solid var(--danger)' }} onClick={async (e) => { e.stopPropagation(); if (await confirm('Delete this animal?')) deleteMutation.mutate(c.id); }} disabled={deleteMutation.isPending}>Delete</button>
         </div>
       ),
     },

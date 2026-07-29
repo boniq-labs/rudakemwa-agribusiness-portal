@@ -8,6 +8,7 @@ import { stockAPI } from '../../api/endpoints';
 import { Plus, X, Wrench, Edit2, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import type { Column } from '../../components/DataTable';
+import { useConfirm } from '../../components/ConfirmDialog';
 
 interface FormData {
   name: string; serial_number: string; type: string; condition: string;
@@ -35,6 +36,7 @@ const MAINT_TYPES = ['Routine', 'Repair', 'Inspection', 'Emergency'];
 
 export default function EquipmentPage() {
   const queryClient = useQueryClient();
+  const confirm = useConfirm();
   const [statusTab, setStatusTab] = useState('All');
   const [showModal, setShowModal] = useState(false);
   const [showMaint, setShowMaint] = useState<{ show: boolean; equipId?: number }>({ show: false });
@@ -130,7 +132,7 @@ export default function EquipmentPage() {
             <Wrench size={14} />
           </button>
           <button className="btn btn-sm" onClick={(ev) => { ev.stopPropagation(); openEdit(e); }} style={{ background: 'var(--bg)', border: '1px solid var(--border)' }}><Edit2 size={14} /></button>
-          <button className="btn btn-sm" onClick={(ev) => { ev.stopPropagation(); if (confirm('Delete this equipment?')) deleteMutation.mutate(e.id); }} style={{ background: '#fef2f2', border: '1px solid #fecaca', color: 'var(--danger)' }}><Trash2 size={14} /></button>
+          <button className="btn btn-sm" onClick={async (ev) => { ev.stopPropagation(); if (await confirm('Delete this equipment?')) deleteMutation.mutate(e.id); }} style={{ background: '#fef2f2', border: '1px solid #fecaca', color: 'var(--danger)' }} disabled={deleteMutation.isPending}><Trash2 size={14} /></button>
         </div>
       ),
     },

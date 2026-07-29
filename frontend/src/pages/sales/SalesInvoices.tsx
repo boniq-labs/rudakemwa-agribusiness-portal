@@ -2,6 +2,7 @@ import { useState, useEffect, type FormEvent } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
+import { useConfirm } from '../../components/ConfirmDialog';
 import client from '../../api/client';
 import ModulePage from '../../components/ModulePage';
 import DataTable from '../../components/DataTable';
@@ -35,6 +36,7 @@ export default function SalesInvoices() {
   const [search, setSearch] = useState('');
   const [editId, setEditId] = useState<number | null>(null);
   const [form, setForm] = useState<InvoiceForm>(initialForm);
+  const confirm = useConfirm();
 
   useEffect(() => {
     if (searchParams.get('add') === 'true' && !editId) {
@@ -118,8 +120,8 @@ export default function SalesInvoices() {
     setShowModal(true);
   };
 
-  const handleDelete = (id: number) => {
-    if (confirm('Delete this invoice?')) deleteMutation.mutate(id);
+  const handleDelete = async (id: number) => {
+    if (await confirm('Delete this invoice?')) deleteMutation.mutate(id);
   };
 
   const columns: Column<any>[] = [

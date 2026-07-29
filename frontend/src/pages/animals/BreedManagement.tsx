@@ -6,9 +6,11 @@ import ModulePage from '../../components/ModulePage';
 import DataTable from '../../components/DataTable';
 import { Plus, Edit2, Trash2, Search } from 'lucide-react';
 import type { Column } from '../../components/DataTable';
+import { useConfirm } from '../../components/ConfirmDialog';
 
 export default function BreedManagement() {
   const queryClient = useQueryClient();
+  const confirm = useConfirm();
   const [search, setSearch] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [editItem, setEditItem] = useState<any>(null);
@@ -72,7 +74,7 @@ export default function BreedManagement() {
       render: (item) => (
         <div className="actions" style={{ display: 'flex', gap: 4 }}>
           <button className="btn btn-sm btn-secondary" onClick={() => openEdit(item)}><Edit2 size={14} /> Edit</button>
-          <button className="btn btn-sm" style={{ color: 'var(--danger)', border: '1px solid var(--danger)' }} onClick={() => { if (confirm('Delete this breed?')) deleteMutation.mutate(item.id); }}>
+          <button className="btn btn-sm" style={{ color: 'var(--danger)', border: '1px solid var(--danger)' }} onClick={async () => { if (await confirm('Delete this breed?')) deleteMutation.mutate(item.id); }} disabled={deleteMutation.isPending}>
             <Trash2 size={14} /> Delete
           </button>
         </div>

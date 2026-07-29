@@ -8,6 +8,7 @@ import client from '../../api/client';
 import { formatAmount } from '../../services/currency';
 import { Plus, Edit2, Trash2, X, Receipt, TrendingDown, Calendar } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useConfirm } from '../../components/ConfirmDialog';
 import type { Column } from '../../components/DataTable';
 
 const CATEGORIES = ['Feed', 'Veterinary', 'Utilities', 'Salaries', 'Transport', 'Maintenance', 'Supplies', 'Other'];
@@ -23,6 +24,7 @@ export default function ExpensesPage() {
   const [dateTo, setDateTo] = useState(() => new Date().toISOString().split('T')[0]);
   const [form, setForm] = useState({ amount: '', category: '', date: new Date().toISOString().split('T')[0], description: '', payment_method: 'Cash', vendor: '', notes: '' });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const confirm = useConfirm();
 
   const { data: expenses, isLoading } = useQuery({
     queryKey: ['accounting-expenses', dateFrom, dateTo],
@@ -114,7 +116,7 @@ export default function ExpensesPage() {
           <button className="btn btn-sm" style={{ background: 'var(--primary-light)', color: 'var(--primary)' }} onClick={() => openEdit(e)}>
             <Edit2 size={14} />
           </button>
-          <button className="btn btn-sm" style={{ background: '#fef2f2', color: 'var(--danger)' }} onClick={() => { if (confirm('Delete this expense?')) deleteMutation.mutate(e.id); }}>
+          <button className="btn btn-sm" style={{ background: '#fef2f2', color: 'var(--danger)' }} disabled={deleteMutation.isPending} onClick={async () => { if (await confirm('Delete this expense?')) deleteMutation.mutate(e.id); }}>
             <Trash2 size={14} />
           </button>
         </div>

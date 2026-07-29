@@ -5,6 +5,7 @@ import DataTable from '../../components/DataTable';
 import FormField from '../../components/FormField';
 import { positionsAPI, departmentsAPI } from '../../api/endpoints';
 import { Plus, Edit2, Trash2, X } from 'lucide-react';
+import { useConfirm } from '../../components/ConfirmDialog';
 import type { Column } from '../../components/DataTable';
 
 export default function PositionsPage() {
@@ -13,6 +14,7 @@ export default function PositionsPage() {
   const [editing, setEditing] = useState<any>(null);
   const [form, setForm] = useState({ name: '', department_id: '', description: '' });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const confirm = useConfirm();
 
   const { data: positions, isLoading } = useQuery({
     queryKey: ['positions'],
@@ -98,7 +100,7 @@ export default function PositionsPage() {
           <button className="btn btn-sm" style={{ background: 'var(--primary-light)', color: 'var(--primary)' }} onClick={() => openEdit(p)}>
             <Edit2 size={14} />
           </button>
-          <button className="btn btn-sm" style={{ background: '#fef2f2', color: 'var(--danger)' }} onClick={() => { if (confirm('Delete this position?')) deleteMutation.mutate(p.id); }}>
+          <button className="btn btn-sm" style={{ background: '#fef2f2', color: 'var(--danger)' }} onClick={async () => { if (await confirm('Delete this position?')) deleteMutation.mutate(p.id); }} disabled={deleteMutation.isPending}>
             <Trash2 size={14} />
           </button>
         </div>

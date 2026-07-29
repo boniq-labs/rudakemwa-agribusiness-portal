@@ -6,6 +6,7 @@ import { accountingAPI, departmentsAPI } from '../../api/endpoints';
 import { formatAmount } from '../../services/currency';
 import { Plus, X, PieChart, Edit2, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useConfirm } from '../../components/ConfirmDialog';
 import type { Column } from '../../components/DataTable';
 
 export default function BudgetsPage() {
@@ -18,6 +19,7 @@ export default function BudgetsPage() {
     items: [{ expense_category_id: '', planned_amount: '' }],
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const confirm = useConfirm();
 
   const { data: budgets, isLoading } = useQuery({
     queryKey: ['accounting-budgets'],
@@ -159,7 +161,7 @@ export default function BudgetsPage() {
           <button className="btn btn-sm btn-ghost" onClick={(e) => { e.stopPropagation(); openEdit(b); }}>
             <Edit2 size={14} /> Edit
           </button>
-          <button className="btn btn-sm btn-danger" onClick={(e) => { e.stopPropagation(); if (confirm('Delete this budget?')) deleteMutation.mutate(b.id); }}>
+          <button className="btn btn-sm btn-danger" disabled={deleteMutation.isPending} onClick={async (e) => { e.stopPropagation(); if (await confirm('Delete this budget?')) deleteMutation.mutate(b.id); }}>
             <Trash2 size={14} /> Delete
           </button>
         </div>

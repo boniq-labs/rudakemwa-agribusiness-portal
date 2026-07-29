@@ -7,6 +7,7 @@ import DataTable from '../../components/DataTable';
 import StatsCard from '../../components/StatsCard';
 import type { Column } from '../../components/DataTable';
 import { Plus, Moon, Edit2 } from 'lucide-react';
+import { useConfirm } from '../../components/ConfirmDialog';
 
 const initialForm = { collection_date: new Date().toISOString().split('T')[0], collector_name: '', quantity_liters: '', number_of_animals: '', notes: '' };
 
@@ -15,6 +16,7 @@ export default function EveningProduction() {
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState(initialForm);
   const [editingId, setEditingId] = useState<number | null>(null);
+  const confirm = useConfirm();
 
   const { data, isLoading } = useQuery({
     queryKey: ['milk-evening'],
@@ -91,7 +93,7 @@ export default function EveningProduction() {
       render: (c: any) => (
         <div className="actions">
           <button className="btn btn-sm" onClick={() => openEdit(c)} style={{ background: 'var(--bg)', border: '1px solid var(--border)' }}><Edit2 size={14} /></button>
-          <button className="btn btn-sm btn-danger" onClick={() => { if (confirm('Delete?')) deleteMutation.mutate(c.id); }} disabled={deleteMutation.isPending}>Delete</button>
+          <button className="btn btn-sm btn-danger" onClick={async () => { if (await confirm('Delete?')) deleteMutation.mutate(c.id); }} disabled={deleteMutation.isPending}>Delete</button>
         </div>
       ),
     },

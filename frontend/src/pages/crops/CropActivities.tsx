@@ -6,6 +6,7 @@ import FormField from '../../components/FormField';
 import StatusBadge from '../../components/StatusBadge';
 import client from '../../api/client';
 import { Plus, Search, X, Edit2, Trash2 } from 'lucide-react';
+import { useConfirm } from '../../components/ConfirmDialog';
 import { useSearchParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import type { Column } from '../../components/DataTable';
@@ -84,6 +85,8 @@ export default function CropActivities() {
     },
   });
 
+  const confirm = useConfirm();
+
   const deleteMutation = useMutation({
     mutationFn: (id: number) => client.delete(`/crops/activities/${id}`),
     onSuccess: () => {
@@ -153,8 +156,8 @@ export default function CropActivities() {
     }
   };
 
-  const handleDelete = (item: any) => {
-    if (window.confirm(`Delete this crop activity?`)) {
+  const handleDelete = async (item: any) => {
+    if (await confirm(`Delete this crop activity?`)) {
       deleteMutation.mutate(item.id);
     }
   };
@@ -181,8 +184,8 @@ export default function CropActivities() {
             onClick={e => { e.stopPropagation(); openEdit(a); }}>
             <Edit2 size={14} />
           </button>
-          <button className="btn btn-sm" style={{ background: '#fef2f2', color: '#991b1b', border: 'none' }}
-            onClick={e => { e.stopPropagation(); handleDelete(a); }}>
+           <button className="btn btn-sm" style={{ background: '#fef2f2', color: '#991b1b', border: 'none' }} disabled={deleteMutation.isPending}
+             onClick={e => { e.stopPropagation(); handleDelete(a); }}>
             <Trash2 size={14} />
           </button>
         </div>

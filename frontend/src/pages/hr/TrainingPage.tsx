@@ -7,6 +7,7 @@ import FormField from '../../components/FormField';
 import { trainingAPI } from '../../api/endpoints';
 import { Plus, Users, Edit2, Trash2, X } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import { useConfirm } from '../../components/ConfirmDialog';
 import type { Column } from '../../components/DataTable';
 
 export default function TrainingPage() {
@@ -15,6 +16,7 @@ export default function TrainingPage() {
   const [editing, setEditing] = useState<any>(null);
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [form, setForm] = useState({ title: '', description: '', start_date: '', end_date: '', status: 'planned' });
+  const confirm = useConfirm();
 
   const { data: trainings, isLoading } = useQuery({
     queryKey: ['training'],
@@ -108,7 +110,7 @@ export default function TrainingPage() {
                   <button className="btn btn-sm" style={{ background: 'var(--primary-light)', color: 'var(--primary)' }} onClick={(e) => { e.stopPropagation(); openEdit(t); }}>
                     <Edit2 size={14} />
                   </button>
-                  <button className="btn btn-sm" style={{ background: '#fef2f2', color: 'var(--danger)' }} onClick={(e) => { e.stopPropagation(); if (confirm('Cancel this training?')) deleteMutation.mutate(t.id); }}>
+                  <button className="btn btn-sm" style={{ background: '#fef2f2', color: 'var(--danger)' }} onClick={async (e) => { e.stopPropagation(); if (await confirm('Cancel this training?')) deleteMutation.mutate(t.id); }} disabled={deleteMutation.isPending}>
                     <Trash2 size={14} />
                   </button>
                 </div>

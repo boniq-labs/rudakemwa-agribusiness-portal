@@ -7,6 +7,7 @@ import StatusBadge from '../../components/StatusBadge';
 import type { Column } from '../../components/DataTable';
 import { salesAPI } from '../../api/endpoints';
 import toast from 'react-hot-toast';
+import { useConfirm } from '../../components/ConfirmDialog';
 
 interface Customer {
   id: number;
@@ -40,6 +41,7 @@ export default function MilkCustomers() {
   const [form, setForm] = useState<FormData>(INITIAL_FORM);
   const [editingId, setEditingId] = useState<number | null>(null);
   const queryClient = useQueryClient();
+  const confirm = useConfirm();
 
   const { data, isLoading } = useQuery({
     queryKey: ['sales-customers'],
@@ -123,7 +125,7 @@ export default function MilkCustomers() {
     { key: 'actions', label: 'Actions', render: (c) => (
       <div className="actions">
         <button className="btn btn-sm" onClick={(e) => { e.stopPropagation(); openEdit(c); }} style={{ background: 'var(--bg)', border: '1px solid var(--border)' }}><Edit2 size={14} /></button>
-        <button className="btn btn-sm" onClick={(e) => { e.stopPropagation(); if (confirm('Delete this customer?')) deleteMutation.mutate(c.id); }} style={{ background: '#fef2f2', border: '1px solid #fecaca', color: 'var(--danger)' }}><Trash2 size={14} /></button>
+        <button className="btn btn-sm" onClick={async (e) => { e.stopPropagation(); if (await confirm('Delete this customer?')) deleteMutation.mutate(c.id); }} style={{ background: '#fef2f2', border: '1px solid #fecaca', color: 'var(--danger)' }} disabled={deleteMutation.isPending}><Trash2 size={14} /></button>
       </div>
     )},
   ];

@@ -81,6 +81,7 @@ export default function AnimalRegistration() {
     mutationFn: (data: any) => client.post('/animals', data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['animals'] });
+      queryClient.invalidateQueries({ queryKey: ['animal-dashboard-stats'] });
       toast.success('Animal registered successfully');
       const categoryId = Number(form.animal_category_id);
       navigate(getCategoryPath(categoryId));

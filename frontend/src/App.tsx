@@ -2,9 +2,11 @@ import { Suspense, lazy, useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AnimatePresence } from 'framer-motion';
+import { Toaster } from 'react-hot-toast';
 import SplashScreen from './components/SplashScreen';
 import { AuthProvider } from './contexts/AuthContext';
 import { useAuth } from './contexts/AuthContext';
+import { ConfirmProvider } from './components/ConfirmDialog';
 import AppLayout from './layouts/AppLayout';
 
 // Auth
@@ -318,14 +320,15 @@ export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
+        <Toaster position="top-right" toastOptions={{ duration: 3000, style: { fontSize: '0.9rem', borderRadius: 8 }, success: { iconTheme: { primary: '#16a34a', secondary: '#fff' } }, error: { iconTheme: { primary: '#dc2626', secondary: '#fff' } } }} />
         <AnimatePresence mode="wait">
           {showSplash ? (
-            // Render ONLY the splash screen — no router, no auth spinner, nothing else.
             <SplashScreen key="splash" onComplete={() => setShowSplash(false)} />
           ) : (
-            // Mount the full app AFTER the splash finishes.
             <AuthProvider key="app">
-              <AppRoutes />
+              <ConfirmProvider>
+                <AppRoutes />
+              </ConfirmProvider>
             </AuthProvider>
           )}
         </AnimatePresence>
