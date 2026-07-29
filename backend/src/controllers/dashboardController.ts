@@ -100,8 +100,8 @@ async function getAdminDashboard() {
   const [[{ totalUsers }]]: any = await pool.query('SELECT COUNT(*) as totalUsers FROM users WHERE deleted_at IS NULL');
   const [[{ totalEmployees }]]: any = await pool.query("SELECT COUNT(*) as totalEmployees FROM employees WHERE deleted_at IS NULL AND status = 'active'");
   const [[{ totalAnimals }]]: any = await pool.query("SELECT COUNT(*) as totalAnimals FROM animals WHERE status='active'");
-  const [[{ income }]]: any = await pool.query("SELECT COALESCE(SUM(amount),0) as income FROM income_records WHERE MONTH(date)=MONTH(CURDATE())");
-  const [[{ expenses }]]: any = await pool.query("SELECT COALESCE(SUM(amount),0) as expenses FROM expense_records WHERE MONTH(date)=MONTH(CURDATE())");
+  const [[{ income }]]: any = await pool.query("SELECT COALESCE(SUM(amount),0) as income FROM income_records WHERE MONTH(date)=MONTH(CURDATE()) AND YEAR(date)=YEAR(CURDATE())");
+  const [[{ expenses }]]: any = await pool.query("SELECT COALESCE(SUM(amount),0) as expenses FROM expense_records WHERE MONTH(date)=MONTH(CURDATE()) AND YEAR(date)=YEAR(CURDATE())");
   const [[{ milk }]]: any = await pool.query("SELECT COALESCE(SUM(quantity_liters),0) as milk FROM milk_collections WHERE DATE(collection_date)=CURDATE()");
   const [[{ lowStockItems }]]: any = await pool.query("SELECT COUNT(*) as lowStockItems FROM inventory_items WHERE quantity <= min_stock_level");
   const [[{ feedItems }]]: any = await pool.query("SELECT COUNT(*) as feedItems FROM feed_items");

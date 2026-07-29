@@ -136,7 +136,7 @@ export default function Feeding() {
       render: (item: any) => (
         <div className="actions">
           <button className="btn btn-sm" title="Edit" onClick={() => openEdit(item)}><Edit2 size={14} /></button>
-          <button className="btn btn-sm" title="Delete" onClick={() => { if (confirm('Delete this feeding record?')) deleteMutation.mutate(item.id); }}><Trash2 size={14} /></button>
+          <button className="btn btn-sm" title="Delete" onClick={(e) => { e.stopPropagation(); if (confirm('Delete this feeding record?')) deleteMutation.mutate(item.id); }}><Trash2 size={14} /></button>
         </div>
       ),
     },

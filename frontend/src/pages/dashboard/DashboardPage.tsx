@@ -60,22 +60,30 @@ export default function DashboardPage() {
   const { data: main, isLoading: mainLoading } = useQuery({
     queryKey: ['dashboard'],
     queryFn: async () => { const r = await dashboardApi.get(); return r.data.data; },
+    refetchOnMount: true,
+    staleTime: 0,
   });
   const { data: overview, isLoading: ovLoading } = useQuery({
     queryKey: ['dashboard-overview'],
     queryFn: async () => { const r = await dashboardApi.overview(); return r.data.data; },
+    refetchOnMount: true,
+    staleTime: 0,
   });
 
   const { data: latestEmployees } = useQuery({
     queryKey: ['latest-employees'],
     queryFn: () => client.get('/dashboard/latest-employees').then(r => r.data.data || r.data),
     enabled: role === 'owner' || role === 'admin',
+    refetchOnMount: true,
+    staleTime: 0,
   });
 
   const { data: latestAnimals } = useQuery({
     queryKey: ['latest-animals'],
     queryFn: () => client.get('/dashboard/latest-animals').then(r => r.data.data || r.data),
     enabled: role === 'owner' || role === 'admin',
+    refetchOnMount: true,
+    staleTime: 0,
   });
 
   const isLoading = mainLoading || ovLoading;

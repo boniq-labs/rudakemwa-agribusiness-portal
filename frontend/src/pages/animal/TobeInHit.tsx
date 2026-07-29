@@ -126,7 +126,7 @@ export default function TobeInHit() {
       <input className="input" placeholder="Search..." value={search} onChange={e => { setSearch(e.target.value); setPage(1); }} style={{ marginBottom: 16, maxWidth: 300 }} />
 
       <DataTable columns={columns} data={data?.data || []} isLoading={isLoading}
-        pagination={{ page, limit: 25, total: data?.meta?.total || 0, onPageChange: setPage }}
+        pagination={{ page, pages: data?.pagination?.pages || 1, total: data?.pagination?.total || 0, onPageChange: setPage }}
       />
 
       {open && (

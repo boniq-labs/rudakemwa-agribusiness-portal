@@ -40,6 +40,15 @@ interface Animal {
 const GENDER_OPTIONS: Record<string, string[]> = {
   Cattle: ['Bull', 'Cow'],
   Pigs: ['Male', 'Female'],
+  Dairy: ['Bull', 'Cow'],
+  Beef: ['Bull', 'Cow'],
+  Goat: ['Male', 'Female'],
+  Sheep: ['Male', 'Female'],
+  Chicken: ['Male', 'Female'],
+  Rabbit: ['Male', 'Female'],
+  Horse: ['Male', 'Female'],
+  Donkey: ['Male', 'Female'],
+  DEFAULT: ['Male', 'Female'],
 };
 
 export default function BirthRecords() {
@@ -71,7 +80,7 @@ export default function BirthRecords() {
   const animals: Animal[] = Array.isArray(animalsData) ? animalsData : [];
 
   const selectedCategory = categories.find((c: Category) => String(c.id) === form.category_id);
-  const genderOptions = GENDER_OPTIONS[selectedCategory?.name || ''] || [];
+  const genderOptions = GENDER_OPTIONS[selectedCategory?.name || ''] || GENDER_OPTIONS.DEFAULT;
 
   const filteredAnimals = form.category_id
     ? animals.filter((a: Animal) => String(a.animal_category_id) === form.category_id)
@@ -187,7 +196,7 @@ export default function BirthRecords() {
         <div className="actions">
           <button className="btn btn-sm" title="View" onClick={() => setViewItem(item)}><Eye size={14} /></button>
           <button className="btn btn-sm" title="Edit" onClick={() => openEdit(item)}><Edit2 size={14} /></button>
-          <button className="btn btn-sm" title="Delete" onClick={() => { if (confirm('Delete this birth record?')) deleteMutation.mutate(item.id); }}><Trash2 size={14} /></button>
+          <button className="btn btn-sm" title="Delete" onClick={(e) => { e.stopPropagation(); if (confirm('Delete this birth record?')) deleteMutation.mutate(item.id); }}><Trash2 size={14} /></button>
         </div>
       ),
     },

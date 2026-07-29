@@ -6,50 +6,50 @@ EFMS — Enterprise Farm Management System. Full-stack React + Vite frontend, Ex
 ## Session Context (Last Updated: 2026-07-29)
 
 ### Objective
-Fix 12 production issues: Animal Production birth records (category→animal dependency), mobile CRUD, dashboard death counts, new Tobe in hit module, Crop Manager sales permissions, Milk Production cleanup (remove customers/reports, fix dashboard), Milk Manager veterinary permissions, Accounting expense `payment_method` column, and mobile cross-module functionality.
+Fix production issues across all modules: Animal Production (birth records gender, TobeInHit, mobile CRUD), Admin Dashboard (stale data), mobile responsiveness (delete, touch targets, modals), and cross-module mobile audit.
 
 ### Important Details
-- **Cross-department permissions**: backend `authenticate` middleware merges permissions from `departmentRoleMap` (`departmentAccess.ts`) — e.g. `crops` role gets `sales.*`, `milk` gets `veterinary.*`.
-- **Birth Records fix**: `getAnimalsForSelect` SQL in `animalController.ts:234` added `a.animal_category_id` to SELECT — fixes category→animal dropdown dependency.
-- **Animal death deletion**: `deleteAnimalDeath` (`movementController.ts`) now also updates animal status back to `'active'` after soft-deleting the death record (previously left animal as `'dead'`, inflating dashboard death count).
-- **Expense `payment_method` column**: migration 013 (`alter_expense_records_add_columns`) + initial schema update added `payment_method`, `vendor`, `notes` to `expense_records` table.
-- **Milk Dashboard**: refactored to 4 real DB metric cards (Total Today, Morning, Evening, Avg/Animal) from `/dashboard/milk`.
-- **Tobe in Hit**: new module under Animal Production — backend CRUD controller, routes, `tobe_in_hit` table (migration 014 + initial schema), frontend page under `/animals/tobe-in-hit`, sidebar link.
+- **No `dateStrings: true`** in DB pool config — MySQL2 returns DATE/DATETIME as Date objects. `.substring(0,10)` on Date objects throws TypeError, crashing `openEdit` modals silently.
+- **Permissions bypass**: `owner` role bypasses all `authorize()` checks via `isSuperAdmin`.
+- **Validation middleware**: `POST` routes use `validate(schema)` — rejects `400` if body fields don't match schema.
+- **Build**: Backend `tsc` no strict mode, `allowJs: true`. Frontend Vite + TypeScript.
+- **Gender mapping (breedingController.ts)**: Uses `MALE_TYPES` array (`['Bull','Male','Boar','Ram','Buck','Stallion','Rooster','Tom','Jack']`) — anything else maps to `'female'`.
+- **Birth Records GENDER_OPTIONS**: Keyed by category name (Cattle, Pigs, Sheep, Goats, Horses, Poultry) with `DEFAULT` fallback.
+- **Mobile delete fix root cause**: `confirm()` blocks/fails silently in iOS PWA/standalone mode. Fix: `touch-action: manipulation` CSS + `e.stopPropagation()` on all delete buttons.
+- **Dashboard stale cache**: `refetchOnMount: true` + `staleTime: 0` required on all queries. SQL YEAR filter: `AND YEAR(date)=YEAR(CURDATE())`.
 
 ### Work State
 #### Completed
-- **getAnimalsForSelect** (`animalController.ts:234`): Added `a.animal_category_id` to SELECT.
-- **deleteAnimalDeath** (`movementController.ts`): Now restores animal status to `'active'` after death deletion.
-- **authenticate middleware** (`auth.ts`): Merges cross-department role permissions via `departmentRoleMap`.
-- **departmentAccess.ts**: Exported `departmentRoleMap` so `auth.ts` can import it.
-- **Expense `payment_method` column**: Migration 013 + initial schema update. Registered in `database/index.ts`.
-- **MilkDashboard.tsx**: Removed Revenue/Products/Recent Collections — 4 StatsCards from `/dashboard/milk`.
+- **MilkDashboard.tsx**: Refactored to 4 real DB metric cards (Total Today, Morning, Evening, Avg/Animal) from `/dashboard/milk`.
 - **Sidebar.tsx**: Removed Customers, Daily Reports from Milk Production section.
 - **App.tsx**: Removed MilkCustomers, MilkRoutes imports & routes. Added TobeInHit lazy import + route.
 - **Tobe in Hit module**: New table (`tobe_in_hit`), controller (`tobeInHitController.ts`), routes, frontend page (`TobeInHit.tsx`), sidebar link.
+- **Mobile CRUD audit (all 12 Animal Production pages)**: Wrapped action buttons in `.actions` class. Breeding.tsx radio buttons `flexWrap: 'wrap'` + `minHeight: 44`. Pagination buttons 44px touch targets on mobile. CSS `.actions { display: flex; flex-wrap: wrap; align-items: center; }`.
+- **Birth Records gender options**: `GENDER_OPTIONS` map expanded (Cattle: Bull/Cow, Pigs: Boar/Sow, Sheep: Ram/Ewe, Goats: Buck/Doe, Horses: Stallion/Mare, Poultry: Rooster/Hen, DEFAULT: Male/Female). Backend gender mapping uses `MALE_TYPES` array instead of `type === 'Bull' ? 'male' : 'female'`.
+- **TobeInHit pagination**: Fixed — added `pages: data?.meta?.pages || 1` to DataTable.
+- **Admin Dashboard stale cache**: Added `refetchOnMount: true` + `staleTime: 0` to all 4 dashboard queries. SQL YEAR filter added to income/expense aggregation queries.
+- **Delete on mobile**: Added `touch-action: manipulation; -webkit-touch-callout: none;` CSS to table buttons. Added `e.stopPropagation()` to ALL delete buttons (BirthRecords, AnimalDeaths, AnimalSales, Breeding, Vaccination, DiseaseManagement, Feeding).
+- **Mobile responsiveness Phase 5**: Sticky table headers (`.table thead { position: sticky; top: 0; }`). Body scroll lock for modals (`body.modal-open { overflow: hidden; }` + `useEffect` in `Modal.tsx`). Verified all charts use `ResponsiveContainer width="100%"`.
 - **Frontend build**: `npx vite build` — zero errors.
 - **Backend build**: `npx tsc --noEmit` — zero errors.
 
 #### Active
-- Mobile CRUD fixes (Issue 2/9): Not yet investigated — poultry/pig/cattle pages need touch event audit.
+- (none — all phases completed)
 
 #### Blocked
 - (none)
 
 ### Next Move
-1. Audit Animal Production pages (Pigs.tsx, Cattle.tsx, BirthRecords.tsx) for mobile touch/click issues.
-2. Restart backend + frontend servers to verify all fixes end-to-end.
+- No remaining tasks. Restart backend + frontend servers to verify end-to-end.
 
 ### Key Files
-- `backend/src/controllers/animal/animalController.ts:234` — getAnimalsForSelect added `animal_category_id`
-- `backend/src/controllers/animal/movementController.ts` — deleteAnimalDeath restores animal status
-- `backend/src/middlewares/auth.ts` — authenticate merges cross-department permissions
-- `backend/src/utils/departmentAccess.ts` — departmentRoleMap exported
-- `backend/src/controllers/animal/tobeInHitController.ts` — new Tobe in hit CRUD
-- `backend/src/routes/index.ts` — Tobe in hit routes registered
-- `backend/src/database/migrations/014_create_tobe_in_hit.ts` — new table
-- `backend/src/database/migrations/013_alter_expense_records_add_columns.ts` — expense columns
-- `frontend/src/pages/animal/TobeInHit.tsx` — new Tobe in hit page
-- `frontend/src/pages/milk/MilkDashboard.tsx` — refactored to 4 real metric cards
-- `frontend/src/App.tsx` — removed MilkCustomers/MilkReports routes, added TobeInHit route
-- `frontend/src/layouts/Sidebar.tsx` — removed Milk Customers/Reports, added Tobe in Hit
+- `frontend/src/pages/animals/BirthRecords.tsx` — GENDER_OPTIONS map + DEFAULT fallback
+- `backend/src/controllers/animal/breedingController.ts` — MALE_TYPES gender mapping
+- `backend/src/controllers/animal/tobeInHitController.ts` — Tobe in hit CRUD
+- `frontend/src/pages/animal/TobeInHit.tsx` — Tobe in hit page (pagination fixed)
+- `frontend/src/pages/admin/DashboardPage.tsx` — refetchOnMount + staleTime:0
+- `backend/src/controllers/admin/dashboardController.ts` — YEAR filter in SQL
+- `frontend/src/styles/index.css` — all mobile responsive rules, touch-action, sticky headers
+- `frontend/src/components/Modal.tsx` — body scroll lock via useEffect
+- `frontend/src/layouts/Sidebar.tsx` — Milk Customers/Reports removed
+- `frontend/src/App.tsx` — TobeInHit route added

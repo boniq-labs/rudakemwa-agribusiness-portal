@@ -211,7 +211,8 @@ export const createBirthRecord = async (req: AuthRequest, res: Response) => {
     const catId = category_id || mother[0]?.animal_category_id || null;
 
     const tagNum = tag_number || `${motherTag}-B${Date.now().toString().slice(-4)}`;
-    const gender = type === 'Bull' ? 'male' : 'female';
+    const MALE_TYPES = ['Bull', 'Male', 'Boar', 'Ram', 'Buck', 'Stallion', 'Rooster', 'Tom', 'Jack'];
+    const gender = MALE_TYPES.includes(type) ? 'male' : 'female';
 
     const [animalResult]: any = await connection.query(
       `INSERT INTO animals (tag_number, name, animal_category_id, gender, date_of_birth, weight, color, status, source, photo)

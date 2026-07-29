@@ -493,6 +493,12 @@ img {
   max-width: 100%;
 }
 
+/* Sticky table headers for mobile scroll */
+.table thead { position: sticky; top: 0; z-index: 2; }
+
+/* Body scroll lock when modal is open */
+body.modal-open { overflow: hidden; }
+
 /* Ensure modals have proper max-width and don't overflow viewport */
 .modal {
   max-width: calc(100vw - 32px) !important;
@@ -519,6 +525,8 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 /* Touch targets >= 44px */
 button, a, .nav-link, .sub-link, .dropdown-item, .btn, .option-btn, .dept-link, .switch { min-height: 44px; }
 .btn-sm { min-height: 36px; }
+/* Prevent double-tap zoom on buttons (mobile delete fix) */
+.table td button, .table td .btn, .actions button { touch-action: manipulation; -webkit-touch-callout: none; }
 .topbar-btn { min-height: 44px; min-width: 44px; }
 .topbar-hamburger { min-height: 44px; min-width: 44px; }
 .profile-btn { min-height: 44px; }

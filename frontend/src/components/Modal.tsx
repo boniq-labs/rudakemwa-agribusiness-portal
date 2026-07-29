@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useEffect, type ReactNode } from 'react';
 import { X } from 'lucide-react';
 
 interface ModalProps {
@@ -10,6 +10,9 @@ interface ModalProps {
 }
 
 export default function Modal({ open, onClose, title, children, maxWidth = 520 }: ModalProps) {
+  useEffect(() => {
+    if (open) { document.body.classList.add('modal-open'); return () => document.body.classList.remove('modal-open'); }
+  }, [open]);
   if (!open) return null;
   return (
     <div className="modal-overlay" onClick={onClose}>
