@@ -8,6 +8,7 @@ import { AuthProvider } from './contexts/AuthContext';
 import { useAuth } from './contexts/AuthContext';
 import { SettingsProvider } from './contexts/SettingsContext';
 import { ConfirmProvider } from './components/ConfirmDialog';
+import { departmentNameToRole } from './utils/departmentAccess';
 import AppLayout from './layouts/AppLayout';
 
 // Auth
@@ -148,7 +149,13 @@ function ProtectedRoute({ children, roles }: { children?: React.ReactNode; roles
       || roles.some(r => r === 'sales' && user.role === 'crops')
       || roles.some(r => r === 'hr' && user.role === 'logistics');
     if (!hasMappedAccess) {
-      return <div className="error-page"><h2>Access Denied</h2><p>You do not have permission to access this page.</p></div>;
+      const userDeptRoleSlugs = (user?.departments || [])
+        .map(d => departmentNameToRole[d.name.toLowerCase()])
+        .filter(Boolean);
+      const hasDeptAccess = roles.some(r => userDeptRoleSlugs.includes(r));
+      if (!hasDeptAccess) {
+        return <div className="error-page"><h2>Access Denied</h2><p>You do not have permission to access this page.</p></div>;
+      }
     }
   }
   return children ? <>{children}</> : <Outlet />;

@@ -27,3 +27,18 @@ export function canAccessDepartment(userRole: string, targetDepartmentRole: stri
   if (userRole === targetDepartmentRole) return true;
   return departmentRoleMap[userRole] === targetDepartmentRole;
 }
+
+export const departmentNameToRole: Record<string, string> = {
+  'animal production': 'animal',
+  'crop production': 'crops',
+  'crop': 'crops',
+  'finance': 'accountant',
+  'human resources': 'hr',
+  'logistics': 'logistics',
+  'management': 'admin',
+  'milk production': 'milk',
+  'procurement': 'procurement',
+  'sales': 'sales',
+  'stock management': 'stock',
+  'veterinary': 'veterinarian',
+};

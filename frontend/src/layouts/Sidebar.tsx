@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useSettings } from '../contexts/SettingsContext';
 import { ROLE_LABELS } from '../utils/constants';
 import { cn } from '../utils/cn';
-import { canAccessDepartment } from '../utils/departmentAccess';
+import { canAccessDepartment, departmentNameToRole } from '../utils/departmentAccess';
 import {
   LayoutDashboard, Users, UserCircle, UserCheck, DollarSign, ShoppingCart,
   Truck, Package, PawPrint, Milk, Settings, LogOut, Menu, X,
@@ -168,7 +168,9 @@ export default function Sidebar() {
   const navigate = useNavigate();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const farmLogo = settings.farm_logo || '/assets/logo.png';
+  const [farmLogoTs] = useState(() => Date.now());
+  const [avatarTs] = useState(() => Date.now());
+  const farmLogo = (settings.farm_logo ? `${settings.farm_logo}?t=${farmLogoTs}` : '/assets/logo.png');
   const systemName = settings.system_name || 'Portal';
 
   const handleLogout = () => { logout(); navigate('/login'); };
@@ -213,8 +215,10 @@ export default function Sidebar() {
               if (['owner', 'farm_owner', 'admin'].includes(user?.role || '')) return true;
               if (item.roles.includes(user?.role || '')) return true;
               if (item.roles.some(r => canAccessDepartment(user?.role || '', r))) return true;
-              const userDeptNames = (user?.departments || []).map(d => d.name.toLowerCase());
-              if (item.roles?.some(r => userDeptNames.includes(r))) return true;
+              const userDeptRoleSlugs = (user?.departments || [])
+                .map(d => departmentNameToRole[d.name.toLowerCase()])
+                .filter(Boolean);
+              if (item.roles?.some(r => userDeptRoleSlugs.includes(r))) return true;
               return false;
             })
             .map((item) => (
@@ -231,7 +235,11 @@ export default function Sidebar() {
         <div className="sidebar-footer">
           <div className="sidebar-user">
             <div className="sidebar-avatar">
-              {user?.firstName?.charAt(0)}{user?.lastName?.charAt(0)}
+              {user?.photo ? (
+                <img src={`${user.photo}?t=${avatarTs}`} alt="profile" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+              ) : (
+                <>{user?.firstName?.charAt(0)}{user?.lastName?.charAt(0)}</>
+              )}
             </div>
             {!collapsed && (
               <div className="sidebar-user-info">

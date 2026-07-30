@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { useSettings } from '../../contexts/SettingsContext';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -30,19 +31,16 @@ const ROLE_ROUTES: Record<string, string> = {
 
 export default function LoginPage() {
   const { login, user } = useAuth();
+  const { settings } = useSettings();
   const navigate = useNavigate();
   const [showPwd, setShowPwd] = useState(false);
   const [serverError, setServerError] = useState('');
   const [darkMode, setDarkMode] = useState(false);
-  const [settings, setSettings] = useState<any>({});
-
-  useEffect(() => {
-    api.get('/settings').then((r) => setSettings(r.data.data || {})).catch(() => {});
-  }, []);
+  const [logoTs] = useState(() => Date.now());
 
   const systemName = settings.system_name || 'RUDAKEMWA';
   const farmName = settings.farm_name || 'Rudakemwa Agribusiness Portal';
-  const farmLogo = settings.farm_logo || '/assets/logo.png';
+  const farmLogo = settings.farm_logo ? `${settings.farm_logo}?t=${logoTs}` : '/assets/logo.png';
 
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),

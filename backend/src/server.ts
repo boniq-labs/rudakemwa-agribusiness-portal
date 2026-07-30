@@ -1,5 +1,6 @@
 import express from 'express';
 import { createServer } from 'http';
+import path from 'path';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
@@ -40,7 +41,8 @@ app.use('/api/auth/login', authLimiter);
 app.use('/api', apiLimiter);
 
 // Static files for uploads
-app.use('/uploads', express.static('uploads'));
+const uploadDir = path.resolve(process.env.UPLOAD_DIR || './uploads');
+app.use('/uploads', express.static(uploadDir));
 
 // API routes
 app.use('/api', routes);

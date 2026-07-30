@@ -21,6 +21,7 @@ export default function Topbar() {
     window.dispatchEvent(new CustomEvent(SIDEBAR_TOGGLE_EVENT));
   };
   const [darkMode, setDarkMode] = useState(() => localStorage.getItem('theme') === 'dark');
+  const [avatarTs] = useState(() => Date.now());
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [showNotif, setShowNotif] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
@@ -159,7 +160,11 @@ export default function Topbar() {
         <div className="profile-wrapper" ref={profileRef}>
           <button className="profile-btn" onClick={() => setShowProfile(!showProfile)}>
             <div className="profile-avatar-sm">
-              {user?.firstName?.charAt(0)}{user?.lastName?.charAt(0)}
+              {user?.photo ? (
+                <img src={`${user.photo}?t=${avatarTs}`} alt="profile" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+              ) : (
+                <>{user?.firstName?.charAt(0)}{user?.lastName?.charAt(0)}</>
+              )}
             </div>
             <div className="profile-info">
               <div className="profile-name">{user?.firstName} {user?.lastName}</div>

@@ -10,6 +10,21 @@ for (const [prime, extra] of Object.entries(departmentRoleMap)) {
   reverseMap[extra] = prime;
 }
 
+export const departmentNameToRole: Record<string, string> = {
+  'animal production': 'animal',
+  'crop production': 'crops',
+  'crop': 'crops',
+  'finance': 'accountant',
+  'human resources': 'hr',
+  'logistics': 'logistics',
+  'management': 'admin',
+  'milk production': 'milk',
+  'procurement': 'procurement',
+  'sales': 'sales',
+  'stock management': 'stock',
+  'veterinary': 'veterinarian',
+};
+
 export function getAdditionalDepartments(role: string): string[] {
   const extra = departmentRoleMap[role];
   return extra ? [extra] : [];
@@ -26,4 +41,13 @@ export function getPrimaryRolesForDepartment(departmentRole: string): string[] {
 export function canAccessDepartment(userRole: string, targetDepartmentRole: string): boolean {
   if (userRole === targetDepartmentRole) return true;
   return departmentRoleMap[userRole] === targetDepartmentRole;
+}
+
+export function getUserDepartmentRoles(userDepts: { id: number; name: string }[]): string[] {
+  const slugs: string[] = [];
+  for (const dept of userDepts) {
+    const slug = departmentNameToRole[dept.name.toLowerCase()];
+    if (slug) slugs.push(slug);
+  }
+  return slugs;
 }

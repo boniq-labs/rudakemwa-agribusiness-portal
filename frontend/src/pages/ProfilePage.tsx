@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { authApi, uploadApi } from '../api';
 import { ROLE_LABELS } from '../utils/constants';
@@ -18,6 +18,7 @@ export default function ProfilePage() {
   const [err, setErr] = useState('');
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [photoVersion, setPhotoVersion] = useState(0);
 
   const saveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,7 +59,7 @@ export default function ProfilePage() {
       const s = localStorage.getItem('token') ? localStorage : sessionStorage;
       s.setItem('user', JSON.stringify(d));
       setUser(d);
-      setForm((prev) => ({ ...prev }));
+      setPhotoVersion(v => v + 1);
       toast.success('Profile photo updated');
     } catch { toast.error('Failed to upload photo'); }
     finally { setUploading(false); }
@@ -76,7 +77,7 @@ export default function ProfilePage() {
           <div className="profile-id">
             <div className="profile-avatar-lg" style={{ position: 'relative' }}>
               {user?.photo ? (
-                <img src={user.photo} alt="profile" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+                <img src={user.photo ? `${user.photo}?v=${photoVersion}` : ''} alt="profile" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
               ) : (
                 <>{user?.firstName?.charAt(0)}{user?.lastName?.charAt(0)}</>
               )}

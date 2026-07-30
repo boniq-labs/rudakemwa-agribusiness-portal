@@ -32,13 +32,15 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
 
   const applyFavicon = useCallback((url: string) => {
     if (!url) return;
-    let link = document.querySelector("link[rel*='icon']") as HTMLLinkElement;
-    if (!link) {
-      link = document.createElement('link');
-      link.rel = 'icon';
-      document.head.appendChild(link);
-    }
-    link.href = url;
+    document.querySelectorAll("link[rel*='icon'], link[rel*='apple-touch-icon']").forEach(el => el.remove());
+    const link = document.createElement('link');
+    link.rel = 'icon';
+    link.href = `${url}?v=${Date.now()}`;
+    document.head.appendChild(link);
+    const appleLink = document.createElement('link');
+    appleLink.rel = 'apple-touch-icon';
+    appleLink.href = `${url}?v=${Date.now()}`;
+    document.head.appendChild(appleLink);
   }, []);
 
   const refreshSettings = useCallback(async () => {
