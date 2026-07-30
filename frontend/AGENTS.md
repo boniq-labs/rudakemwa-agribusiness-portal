@@ -2,74 +2,63 @@
 
 ## Project: EFMS (Enterprise Farm Management System)
 
-### Session Focus: Animal Production bug fixes + Milk Production, Stock Management, Stock Reports, Logistics, Procurement
+### Session Focus: Admin Dashboard, Animal Dashboard, Veterinary CRUD, Responsive Audit, Cross-module CRUD validation
 
 #### Important Details
-- **No `dateStrings: true`** in DB pool config — MySQL2 returns DATE/DATETIME as Date objects. `.substring(0,10)` or `.split('T')[0]` on Date objects throws TypeError, crashing `openEdit` modals silently.
-- **Permissions bypass**: `owner` role bypasses all `authorize()` checks via `isSuperAdmin`. Non-owner roles may fail silently on operations requiring specific permissions if frontend lacks `onError` toast handlers.
-- **Validation middleware**: `POST` routes use `validate(schema)` which rejects requests with `400` if body fields don't match schema field names.
-- **Build strictness**: Backend `tsc` no strict mode, `allowJs: true`. Frontend uses Vite with TypeScript.
+- **No `dateStrings: true`** in DB pool config — MySQL2 returns DATE/DATETIME as Date objects. `.substring(0,10)` or `.split('T')[0]` on Date objects throws TypeError.
+- **Permissions bypass**: `owner` role bypasses all `authorize()` checks via `isSuperAdmin`.
+- **Validation middleware**: `POST` routes use `validate(schema)` — rejects 400 if body fields mismatch.
+- **Build**: Backend `tsc` no strict mode, `allowJs: true`. Frontend Vite + TypeScript.
+- **TanStack Query v5**: `invalidateQueries({ queryKey: ['animals'] })` invalidates ALL sub-keys including `['animals', 'select']`, `['animals', 'cattle']` (non-exact matching).
+- **CSS**: Tailwind v4 + heavy custom CSS in `index.css`. Responsive breakpoints at 375px, 480px, 768px, 1024px, 1280px, 1536px, 1920px, 2560px.
 
-#### Completed — Current Session (July 2026): Animal Production Comprehensive Fix
+#### Completed — Current Session (July 2026): Dashboard+Veterinary+Responsive
 
-- **Cattle/Pigs server-side filter fix**: Added `.trim()` to category name comparison to handle whitespace. Added client-side fallback: if category not found via `getCategories()`, filters animals by `category_name` from JOIN result. Query keys: `['animals', 'cattle']`, `['animals', 'pigs']`.
-- **Pagination max limit**: Backend `pagination.ts` `Math.min(100, ...)` → `Math.min(10000, ...)` so frontend `limit: 10000` is no longer capped to 100.
-- **AnimalDashboard perf**: Quick actions got `flexWrap: 'wrap'`. `categoryMap`, `pieData`, `monthlyBirths`, `barData`, `weightData`, `recentEvents` wrapped in `useMemo` to prevent recomputation on every render.
-- **Responsive CSS fix — BROKEN selectors**: CSS attribute selectors used JavaScript camelCase properties (`gridTemplateColumns`, `maxWidth`) with quotes, but React renders style attributes as hyphenated CSS (`grid-template-columns`, `max-width`) without quotes. All such selectors were completely ineffective on mobile. Fixed all occurrences in `index.css`.
-- **Mobile breakpoint**: Added `@media (max-width: 375px)` breakpoint in `index.css` with tighter padding/gaps, smaller fonts, `page-search: max-width: 100%`, reduced action button sizing for iPhone SE (320-375px).
-- **Build verification**: Frontend `✓ built in 4.65s` (0 errors). Backend `tsc --noEmit --skipLibCheck` (0 errors).
-
-#### Completed — Animal Production Fixes
-- **Issue 1 — HTTP 500 on animal APIs**: Root cause was `buildWhereClause` returning `WHERE key = ?` (with WHERE keyword) while every controller uses template `WHERE X IS NULL ${where}` creating duplicate `WHERE ... WHERE ...` SQL. Fixed by changing prefix to ` AND `. Affected all 81 callers across every module.
-- **Issue 2/3 — Animal list filters**: `getAnimals` controller now handles `animal_category_id` query param (sent by frontend) + backward-compatible `category_id`. Both stripped from auto-filters and handled as explicit manual filters with `a.` alias prefix.
-- **Issue 4 — BirthRecord dropdown**: Query key `['animals', 'select']` confirmed isolated. Cache invalidation cascades via `invalidateQueries(['animals'])` (partial match). `getAnimalsForSelect` returns all active non-dead non-sold animals with no LIMIT.
-- **Issue 5 — Cache invalidation audit**: All 14 animal pages correctly invalidate specific key + `['animals']` + `['animal-dashboard-stats']` on every mutation. No gaps.
-- **Issue 6 — Dashboard SQL**: All 6 queries in `getAnimalDashboard` verified with `AND a.deleted_at IS NULL`. Counts: DB=API=UI (3 pigs, 3 cattle).
-- **Issue 7 — DB consistency**: 18 FK constraints referencing `animals(id)` verified. Hard delete uses transaction across 11 child tables + FK cascade for rest.
-- **Issue 8 — Error logging**: Frontend axios interceptor now logs non-401 API errors to console. Backend `error()` utility logs all 4xx/5xx via Winston (file + console).
-- **Hard delete**: Transactional hard delete across 11 child tables.
-- **Dashboard stats**: `AND a.deleted_at IS NULL` added to 6 dashboard queries.
-- **Cattle/Pigs**: Server-side filtering with `{ animal_category_id, limit: 1000 }` — no more client-side filter on truncated list.
-- **BirthRecords query key**: Changed to `['animals', 'select']` to avoid cache collision.
-
-#### Completed — Milk Production & Stock Management
-- **Milk Collectors**: Collector select changed from `/users?is_active=1` to dedicated `GET /milk/collectors` — queries users with employee JOIN.
-- **Morning/Evening Production**: `openEdit` now strips `id` from PUT payload (`id: undefined`) to avoid SQL error.
-- **Milk Products**: Backend auto-generates `code` when not provided (`MP-{timestamp}-{random}`); `quantity` added to INSERT/UPDATE.
-- **Stock Medicine**: Added `deleteMedicine` controller + DELETE route; frontend payload resolves `category_id` → name string before sending.
-- **Stock Categories**: Added `deleteInventoryCategory` controller + DELETE route.
-- **Stock Transfer History**: `getStockMovements` uses `LEFT JOIN stock_locations` with `COALESCE(sl.name, st.from_location_id)` to resolve location IDs to names.
-- **Stock Adjustment History**: Stores adjustment data as `JSON.stringify({reason, previous_quantity, new_quantity, notes})` in `notes` column.
-
-#### Completed — Stock Reports
-- **Inventory Report**: Uses `category_name` column for grouping.
-- **Movement Report**: Uses `created_at` with `.toLocaleDateString()` for date formatting.
-- **Medicine/Equipment Reports**: Uses correct column names (`brand`, `category`, `model`, `item_condition`).
-- **Export CSV**: Keys aligned to DB column names.
-
-#### Completed — Logistics
-- **Maintenance Edit**: Added `toDateStr()` helper to safely convert Date/string to YYYY-MM-DD — fixes `item.date.substring(0,10)` TypeError crash on `openEdit`. Backend UPDATE now preserves existing `service_provider` when column may not be in table.
-- **Transport Requests**: Added `onSuccess` toast + `onError` handler to approve/reject mutations (were silent). Frontend now sends `rejection_reason` (was `reason`) matching backend expectation.
-- **Add Vehicle**: Validation schema `createVehicleSchema` now requires `name` instead of `vehicle_name` — matches frontend payload field.
-- **Column display fixes**: `department_name`, `type_name`, `vehicle_name`, `driver_name`, `trip_number`/`trip_destination` fixed across pages.
-- **Backend routes**: DELETE `/logistics/requests/:id`, PUT/DELETE `/logistics/maintenance/:id`.
-
-#### Completed — Procurement
-- **Contracts Edit**: Backend `updateProcurementContract` uses `status ?? old[0].status` to preserve existing status when frontend doesn't send it.
-- **Invoices Edit**: Added `toDateStr()` helper — fixes `item.due_date.substring(0,10)` TypeError crash on `openEdit`.
-- **Contracts Edit**: Added `toDateStr()` helper — fixes `contract.start_date.split('T')[0]` TypeError crash on `openEdit`.
-- **Backend routes**: PUT/DELETE `/procurement/invoices/:id`, DELETE `/procurement/contracts/:id`.
-- **Purchase Requests**: Added `status` to `handleSubmit` payload.
+- **Phase 1 — Admin Dashboard zero income/expenses**: `getOwnerDashboard()` was querying `supplier_invoices` / `fuel_records` instead of `income_records` / `expense_records`. Rewritten to use accounting tables with `AND deleted_at IS NULL`. ✅
+- **Phase 1 — Admin/Accountant dashboard deleted_at**: Added `AND deleted_at IS NULL` to all income/expense SQL in `getAdminDashboard()` and `getAccountantDashboard()`. ✅
+- **Phase 2 — Animal Dashboard cattle zero**: Added `LOWER(TRIM(ac.name))` and `AND ac.deleted_at IS NULL` to category-join queries. ✅
+- **Phase 3 — "Unknown column 'status'" root cause**: Migration `001_initial_schema.ts:1546-1557` creates `animal_health_records` WITHOUT `status` column, but all 5 backend queries reference it. Column existed only on live DB (manual add). Created migration `015_alter_animal_health_records_status.ts` using `addColumnIfNotExists`. ✅
+- **Phase 4 — Vet cache invalidation**: Fixed `['animals-select']` → `['animals', 'select']` in all 4 vet pages (HealthRecords, VetVaccinations, TreatmentRecords, Prescriptions). Added `['animal-dashboard-stats']` invalidation to all vet mutations. ✅
+- **Phase 5 — Date handling**: Replaced `.split('T')[0]` on Date objects with safe `toDateStr` helper in all 3 vet edit handlers. Fixed `r.date` → `r.checkup_date` in HealthRecords. ✅
+- **Phase 6 — Build verification**: Frontend `vite build` — 0 errors (12.95s). Backend `tsc --noEmit` — 0 errors. ✅
+- **Phase 7 — Responsive Audit**: Fixed 22 responsive issues across 15 pages:
+  - **Fixed-width modals**: `IncomePage.tsx:159`, `ExpensesPage.tsx:160`, `EmployeeDashboard.tsx:376` — changed `width: 500/480` → `width: '100%', maxWidth: 500/480`
+  - **Missing flexWrap**: Added `flexWrap: 'wrap'` to 14 containers across VetDashboard, HealthRecords, TreatmentRecords, VetVaccinations, Prescriptions, CropDashboard, AccountingDashboard, AccountingReports, IncomePage, ExpensesPage
+  - **Inline grids**: Added CSS override for `[style*="grid-template-columns:"]` to force 1fr at ≤640px (covers DashboardPage, AnimalRegistration, MilkDashboard, and any other inline grid)
+  - **CSS overrides**: Enhanced `.page`, `.modal`, `.card` and bare `[style*="grid-template-columns:"]` selectors. Added MilkDashboard-specific `2fr 1fr` → 1fr override at 768px
+- **Phase 8 — Cross-module CRUD validation**: DB-level create+verify+cleanup for all modules:
+  - Accounting: Income (500) + Expense (300) → Owner Dashboard (3500 income, 1100 expenses) ✅
+  - Animal: Cattle (id 18) + Pig (id 19) → Dashboard (0 total, 6 cattle, 0 pigs after cleanup) ✅
+  - Veterinary: Health + Vaccination + Treatment + Prescription → All created and verified ✅
+  - All test data cleaned up successfully ✅
+- **Production validation**: All 15+ API endpoints tested via HTTP — all return 200 with correct data ✅
 
 ### Build Status
-- Frontend `vite build`: zero errors
-- Backend `tsc --noEmit`: zero errors
+- Frontend `vite build`: zero errors (12.95s)
+- Backend `tsc --noEmit --skipLibCheck`: zero errors
 
 ### Tech Stack
 - React + TypeScript + Vite (frontend, port 5173)
 - Express + MySQL2 + JWT auth (backend, port 5000)
 - TanStack Query, Lucide icons, react-hot-toast
-- Tailwind v4
+- Tailwind v4 + custom CSS
 
 ### Pending
 - No pending items
+
+### Files Modified (Current Session)
+- `backend/src/controllers/dashboardController.ts` — Owner/Admin/Animal dashboard queries
+- `backend/src/database/migrations/015_alter_animal_health_records_status.ts` — new migration
+- `backend/src/database/index.ts` — registered migration 015
+- `frontend/src/styles/index.css` — responsive overrides, MilkDashboard grid
+- `frontend/src/pages/veterinary/VetDashboard.tsx` — flexWrap
+- `frontend/src/pages/veterinary/HealthRecords.tsx` — flexWrap × 2
+- `frontend/src/pages/veterinary/TreatmentRecords.tsx` — flexWrap × 2
+- `frontend/src/pages/veterinary/VetVaccinations.tsx` — flexWrap × 2
+- `frontend/src/pages/veterinary/Prescriptions.tsx` — flexWrap × 2
+- `frontend/src/pages/crops/CropDashboard.tsx` — flexWrap
+- `frontend/src/pages/accounting/AccountingDashboard.tsx` — flexWrap + gap
+- `frontend/src/pages/accounting/AccountingReports.tsx` — flexWrap × 2
+- `frontend/src/pages/accounting/IncomePage.tsx` — width 500 → maxWidth 500 + flexWrap
+- `frontend/src/pages/accounting/ExpensesPage.tsx` — width 500 → maxWidth 500 + flexWrap × 2
+- `frontend/src/pages/employee/EmployeeDashboard.tsx` — width 480 → maxWidth 480

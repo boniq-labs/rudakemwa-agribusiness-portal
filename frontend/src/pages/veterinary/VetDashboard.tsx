@@ -20,7 +20,7 @@ export default function VetDashboard() {
       title="Veterinary Dashboard"
       subtitle="Overview of animal health and veterinary operations"
       actions={
-        <div style={{ display: 'flex', gap: 8 }}>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           <button className="btn btn-primary" onClick={() => navigate('/veterinary/health-records')}>
             <Activity size={16} /> New Health Record
           </button>

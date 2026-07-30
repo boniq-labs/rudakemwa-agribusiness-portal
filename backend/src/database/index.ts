@@ -14,6 +14,7 @@ import * as m011 from './migrations/011_alter_employee_code_length';
 import * as m012 from './migrations/012_alter_sales_orders_deleted_at';
 import * as m013 from './migrations/013_alter_expense_records_add_columns';
 import * as m014 from './migrations/014_create_tobe_in_hit';
+import * as m015 from './migrations/015_alter_animal_health_records_status';
 
 const migrations = [
   { name: m001.name, up: m001.up },
@@ -30,6 +31,7 @@ const migrations = [
   { name: m012.name, up: m012.up },
   { name: m013.name, up: m013.up },
   { name: m014.name, up: m014.up },
+  { name: m015.name, up: m015.up },
 ];
 
 export async function runMigrations(conn: mysql.Connection): Promise<void> {

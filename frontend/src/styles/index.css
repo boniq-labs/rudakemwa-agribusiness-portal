@@ -488,6 +488,7 @@ body { font-family: 'Inter', system-ui, -apple-system, sans-serif; background: v
 /* Fix inline grid-template-columns in forms and modals - force 1 col on mobile */
 /* React renders camelCase as hyphenated, no quotes: grid-template-columns: 1fr 1fr */
 @media (max-width: 640px) {
+  [style*="grid-template-columns:"],
   .page [style*="grid-template-columns:"],
   .modal [style*="grid-template-columns:"],
   .card [style*="grid-template-columns:"] {
@@ -527,6 +528,13 @@ body.modal-open { overflow: hidden; }
 /* Revenue summary grid responsive */
 @media (max-width: 640px) {
   .revenue-summary-grid { grid-template-columns: 1fr !important; }
+}
+
+/* Milk dashboard 2fr 1fr grid -> single column on mobile */
+@media (max-width: 768px) {
+  .page [style*="grid-template-columns: 2fr 1fr"] {
+    grid-template-columns: 1fr !important;
+  }
 }
 
 /* Form responsive - desktop multi-column */

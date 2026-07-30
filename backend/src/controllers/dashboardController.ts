@@ -87,8 +87,8 @@ async function getOwnerDashboard() {
   const [[{ totalUsers }]]: any = await pool.query('SELECT COUNT(*) as totalUsers FROM users WHERE deleted_at IS NULL');
   const [[{ totalEmployees }]]: any = await pool.query("SELECT COUNT(*) as totalEmployees FROM employees WHERE deleted_at IS NULL AND status = 'active'");
   const [[{ totalAnimals }]]: any = await pool.query("SELECT COUNT(*) as totalAnimals FROM animals WHERE status='active' AND deleted_at IS NULL");
-  const [[{ income }]]: any = await pool.query("SELECT COALESCE(SUM(total),0) as income FROM supplier_invoices WHERE status='paid' AND MONTH(created_at)=MONTH(CURDATE())");
-  const [[{ expenses }]]: any = await pool.query("SELECT COALESCE(SUM(cost),0) as expenses FROM fuel_records WHERE MONTH(date)=MONTH(CURDATE())");
+  const [[{ income }]]: any = await pool.query("SELECT COALESCE(SUM(amount),0) as income FROM income_records WHERE MONTH(date)=MONTH(CURDATE()) AND YEAR(date)=YEAR(CURDATE()) AND deleted_at IS NULL");
+  const [[{ expenses }]]: any = await pool.query("SELECT COALESCE(SUM(amount),0) as expenses FROM expense_records WHERE MONTH(date)=MONTH(CURDATE()) AND YEAR(date)=YEAR(CURDATE()) AND deleted_at IS NULL");
   const [[{ milk }]]: any = await pool.query("SELECT COALESCE(SUM(quantity_liters),0) as milk FROM milk_collections WHERE DATE(collection_date)=CURDATE()");
   const [[{ pendingOrders }]]: any = await pool.query("SELECT COUNT(*) as pendingOrders FROM purchase_orders WHERE status='draft' OR status='sent'");
   const [[{ lowStockItems }]]: any = await pool.query("SELECT COUNT(*) as lowStockItems FROM inventory_items WHERE quantity <= min_stock_level");
@@ -100,8 +100,8 @@ async function getAdminDashboard() {
   const [[{ totalUsers }]]: any = await pool.query('SELECT COUNT(*) as totalUsers FROM users WHERE deleted_at IS NULL');
   const [[{ totalEmployees }]]: any = await pool.query("SELECT COUNT(*) as totalEmployees FROM employees WHERE deleted_at IS NULL AND status = 'active'");
   const [[{ totalAnimals }]]: any = await pool.query("SELECT COUNT(*) as totalAnimals FROM animals WHERE status='active' AND deleted_at IS NULL");
-  const [[{ income }]]: any = await pool.query("SELECT COALESCE(SUM(amount),0) as income FROM income_records WHERE MONTH(date)=MONTH(CURDATE()) AND YEAR(date)=YEAR(CURDATE())");
-  const [[{ expenses }]]: any = await pool.query("SELECT COALESCE(SUM(amount),0) as expenses FROM expense_records WHERE MONTH(date)=MONTH(CURDATE()) AND YEAR(date)=YEAR(CURDATE())");
+  const [[{ income }]]: any = await pool.query("SELECT COALESCE(SUM(amount),0) as income FROM income_records WHERE MONTH(date)=MONTH(CURDATE()) AND YEAR(date)=YEAR(CURDATE()) AND deleted_at IS NULL");
+  const [[{ expenses }]]: any = await pool.query("SELECT COALESCE(SUM(amount),0) as expenses FROM expense_records WHERE MONTH(date)=MONTH(CURDATE()) AND YEAR(date)=YEAR(CURDATE()) AND deleted_at IS NULL");
   const [[{ milk }]]: any = await pool.query("SELECT COALESCE(SUM(quantity_liters),0) as milk FROM milk_collections WHERE DATE(collection_date)=CURDATE()");
   const [[{ lowStockItems }]]: any = await pool.query("SELECT COUNT(*) as lowStockItems FROM inventory_items WHERE quantity <= min_stock_level");
   const [[{ feedItems }]]: any = await pool.query("SELECT COUNT(*) as feedItems FROM feed_items");
@@ -130,8 +130,8 @@ async function getHrDashboard() {
 }
 
 async function getAccountantDashboard() {
-  const [[{ totalMonthlyIncome }]]: any = await pool.query("SELECT COALESCE(SUM(amount),0) as totalMonthlyIncome FROM income_records WHERE MONTH(date)=MONTH(CURDATE()) AND YEAR(date)=YEAR(CURDATE())");
-  const [[{ totalMonthlyExpenses }]]: any = await pool.query("SELECT COALESCE(SUM(amount),0) as totalMonthlyExpenses FROM expense_records WHERE MONTH(date)=MONTH(CURDATE()) AND YEAR(date)=YEAR(CURDATE())");
+  const [[{ totalMonthlyIncome }]]: any = await pool.query("SELECT COALESCE(SUM(amount),0) as totalMonthlyIncome FROM income_records WHERE MONTH(date)=MONTH(CURDATE()) AND YEAR(date)=YEAR(CURDATE()) AND deleted_at IS NULL");
+  const [[{ totalMonthlyExpenses }]]: any = await pool.query("SELECT COALESCE(SUM(amount),0) as totalMonthlyExpenses FROM expense_records WHERE MONTH(date)=MONTH(CURDATE()) AND YEAR(date)=YEAR(CURDATE()) AND deleted_at IS NULL");
   const [[{ totalInvoices }]]: any = await pool.query("SELECT COUNT(*) as totalInvoices FROM invoices");
   const [incomeVsExpenses]: any = await pool.query(
     "SELECT DATE_FORMAT(m.date,'%b') as month, COALESCE(SUM(i.amount),0) as income, COALESCE(SUM(e.amount),0) as expenses FROM (SELECT DISTINCT LAST_DAY(DATE_ADD(CURDATE(), INTERVAL -n MONTH)) as date FROM (SELECT 0 n UNION SELECT 1 UNION SELECT 2 UNION SELECT 3 UNION SELECT 4 UNION SELECT 5) d) m LEFT JOIN income_records i ON MONTH(i.date)=MONTH(m.date) AND YEAR(i.date)=YEAR(m.date) LEFT JOIN expense_records e ON MONTH(e.date)=MONTH(m.date) AND YEAR(e.date)=YEAR(m.date) GROUP BY m.date ORDER BY m.date"
@@ -146,8 +146,8 @@ async function getAnimalDashboard() {
   const [[{ total }]]: any = await pool.query("SELECT COUNT(*) as total FROM animals WHERE status='active' AND deleted_at IS NULL");
   const [[{ female }]]: any = await pool.query("SELECT COUNT(*) as female FROM animals WHERE gender='female' AND status='active' AND deleted_at IS NULL");
   const [[{ male }]]: any = await pool.query("SELECT COUNT(*) as male FROM animals WHERE gender='male' AND status='active' AND deleted_at IS NULL");
-  const [[{ cattle }]]: any = await pool.query("SELECT COUNT(*) as cattle FROM animals a JOIN animal_categories ac ON a.animal_category_id = ac.id WHERE LOWER(ac.name) = 'cattle' AND a.status='active' AND a.deleted_at IS NULL");
-  const [[{ pigs }]]: any = await pool.query("SELECT COUNT(*) as pigs FROM animals a JOIN animal_categories ac ON a.animal_category_id = ac.id WHERE LOWER(ac.name) IN ('pigs','pig') AND a.status='active' AND a.deleted_at IS NULL");
+  const [[{ cattle }]]: any = await pool.query("SELECT COUNT(*) as cattle FROM animals a JOIN animal_categories ac ON a.animal_category_id = ac.id WHERE LOWER(TRIM(ac.name)) = 'cattle' AND a.status='active' AND a.deleted_at IS NULL AND ac.deleted_at IS NULL");
+  const [[{ pigs }]]: any = await pool.query("SELECT COUNT(*) as pigs FROM animals a JOIN animal_categories ac ON a.animal_category_id = ac.id WHERE LOWER(TRIM(ac.name)) IN ('pigs','pig') AND a.status='active' AND a.deleted_at IS NULL AND ac.deleted_at IS NULL");
   const [[{ pregnant }]]: any = await pool.query("SELECT COUNT(*) as pregnant FROM pregnancies p JOIN animals a ON p.animal_id = a.id WHERE p.status = 'Pregnant' AND p.deleted_at IS NULL AND a.deleted_at IS NULL");
   const [[{ sick }]]: any = await pool.query("SELECT COUNT(DISTINCT t.animal_id) as sick FROM treatments t JOIN animals a ON t.animal_id = a.id WHERE t.deleted_at IS NULL AND a.deleted_at IS NULL");
   const [[{ vaccinationsDue }]]: any = await pool.query("SELECT COUNT(*) as vaccinationsDue FROM vaccinations WHERE next_due_date <= CURDATE() AND deleted_at IS NULL");

@@ -40,7 +40,7 @@ export default function TreatmentRecords() {
   });
 
   const { data: animals } = useQuery({
-    queryKey: ['animals-select'],
+    queryKey: ['animals', 'select'],
     queryFn: () => client.get('/animals/select').then(r => r.data.data || []),
   });
 
@@ -49,6 +49,7 @@ export default function TreatmentRecords() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['vet-treatments'] });
       queryClient.invalidateQueries({ queryKey: ['vet-dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['animal-dashboard-stats'] });
       toast.success('Treatment created');
       setShowModal(false);
       setForm(initialForm);
@@ -61,6 +62,7 @@ export default function TreatmentRecords() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['vet-treatments'] });
       queryClient.invalidateQueries({ queryKey: ['vet-dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['animal-dashboard-stats'] });
       toast.success('Treatment updated');
       setShowModal(false);
       setForm(initialForm);
@@ -76,6 +78,7 @@ export default function TreatmentRecords() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['vet-treatments'] });
       queryClient.invalidateQueries({ queryKey: ['vet-dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['animal-dashboard-stats'] });
       toast.success('Treatment deleted');
     },
     onError: (err: any) => toast.error(err.response?.data?.message || 'Failed to delete'),
@@ -97,14 +100,15 @@ export default function TreatmentRecords() {
   };
 
   const handleEdit = (t: any) => {
+    const toDateStr = (d: any) => { if (!d) return ''; const dt = new Date(d); return isNaN(dt.getTime()) ? '' : dt.toISOString().split('T')[0]; };
     setForm({
       animal_id: String(t.animal_id || ''),
       diagnosis: t.diagnosis || '',
       treatment: t.treatment || '',
       medicine: t.medicine || '',
-      date: t.date ? t.date.split('T')[0] : '',
+      date: toDateStr(t.treatment_date || t.date),
       veterinarian: t.veterinarian || '',
-      follow_up_date: t.follow_up_date ? t.follow_up_date.split('T')[0] : '',
+      follow_up_date: toDateStr(t.follow_up_date),
       notes: t.notes || '',
     });
     setEditId(t.id);
@@ -131,7 +135,7 @@ export default function TreatmentRecords() {
     {
       key: 'actions', label: 'Actions',
       render: (t: any) => (
-        <div style={{ display: 'flex', gap: 4 }}>
+        <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
           <button className="btn btn-sm" onClick={() => handleEdit(t)}>Edit</button>
           <button className="btn btn-sm btn-danger" onClick={() => handleDelete(t.id)} disabled={deleteMutation.isPending}>Delete</button>
         </div>
@@ -189,7 +193,7 @@ export default function TreatmentRecords() {
           <FormField label="Notes">
             <textarea className="form-input" value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} rows={2} />
           </FormField>
-          <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 20 }}>
+          <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 20, flexWrap: 'wrap' }}>
             <button type="button" className="btn" onClick={() => setShowModal(false)}>Cancel</button>
             <button type="submit" className="btn btn-primary" disabled={createMutation.isPending || updateMutation.isPending}>
               {editId ? 'Update' : 'Create'}

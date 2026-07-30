@@ -39,7 +39,7 @@ export default function VetVaccinations() {
   });
 
   const { data: animals } = useQuery({
-    queryKey: ['animals-select'],
+    queryKey: ['animals', 'select'],
     queryFn: () => client.get('/animals/select').then(r => r.data.data || []),
   });
 
@@ -48,6 +48,7 @@ export default function VetVaccinations() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['vet-vaccinations'] });
       queryClient.invalidateQueries({ queryKey: ['vet-dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['animal-dashboard-stats'] });
       toast.success('Vaccination recorded');
       setShowModal(false);
       setForm(initialForm);
@@ -60,6 +61,7 @@ export default function VetVaccinations() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['vet-vaccinations'] });
       queryClient.invalidateQueries({ queryKey: ['vet-dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['animal-dashboard-stats'] });
       toast.success('Vaccination updated');
       setShowModal(false);
       setForm(initialForm);
@@ -75,6 +77,7 @@ export default function VetVaccinations() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['vet-vaccinations'] });
       queryClient.invalidateQueries({ queryKey: ['vet-dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['animal-dashboard-stats'] });
       toast.success('Vaccination deleted');
     },
     onError: (err: any) => toast.error(err.response?.data?.message || 'Failed to delete'),
@@ -100,11 +103,12 @@ export default function VetVaccinations() {
   };
 
   const handleEdit = (v: any) => {
+    const toDateStr = (d: any) => { if (!d) return ''; const dt = new Date(d); return isNaN(dt.getTime()) ? '' : dt.toISOString().split('T')[0]; };
     setForm({
       animal_id: String(v.animal_id || ''),
       vaccine_name: v.vaccine_name || '',
-      vaccination_date: v.vaccination_date ? v.vaccination_date.split('T')[0] : '',
-      next_due_date: v.next_due_date ? v.next_due_date.split('T')[0] : '',
+      vaccination_date: toDateStr(v.vaccination_date),
+      next_due_date: toDateStr(v.next_due_date),
       veterinarian: v.veterinarian || '',
       cost: String(v.cost || ''),
       notes: v.notes || '',
@@ -139,7 +143,7 @@ export default function VetVaccinations() {
     {
       key: 'actions', label: 'Actions',
       render: (v: any) => (
-        <div style={{ display: 'flex', gap: 4 }}>
+        <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
           <button className="btn btn-sm" onClick={() => handleEdit(v)}>Edit</button>
           <button className="btn btn-sm btn-danger" onClick={() => handleDelete(v.id)} disabled={deleteMutation.isPending}>Delete</button>
         </div>
@@ -194,7 +198,7 @@ export default function VetVaccinations() {
           <FormField label="Notes">
             <textarea className="form-input" value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} rows={2} />
           </FormField>
-          <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 20 }}>
+          <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 20, flexWrap: 'wrap' }}>
             <button type="button" className="btn" onClick={() => setShowModal(false)}>Cancel</button>
             <button type="submit" className="btn btn-primary" disabled={createMutation.isPending || updateMutation.isPending}>
               {editId ? 'Update' : 'Create'}

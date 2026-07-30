@@ -156,7 +156,7 @@ export default function IncomePage() {
 
       {showModal && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }} onClick={closeModal}>
-          <div style={{ background: 'var(--card-bg)', borderRadius: 'var(--radius)', padding: 24, width: 500 }} onClick={e => e.stopPropagation()}>
+          <div style={{ background: 'var(--card-bg)', borderRadius: 'var(--radius)', padding: 24, width: '100%', maxWidth: 500 }} onClick={e => e.stopPropagation()}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
               <h2 style={{ fontSize: '1.2rem', fontWeight: 700 }}>{editing ? 'Edit Income' : 'Record Income'}</h2>
               <button onClick={closeModal} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)' }}><X size={20} /></button>
@@ -186,7 +186,7 @@ export default function IncomePage() {
                 <input name="reference" className="form-input" value={form.reference} onChange={handleChange} placeholder="e.g. INV-001" />
               </FormField>
               {errors.submit && <div className="alert alert-error">{errors.submit}</div>}
-              <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 20 }}>
+              <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 20, flexWrap: 'wrap' }}>
                 <button type="button" className="btn" onClick={closeModal}>Cancel</button>
                 <button type="submit" className="btn btn-primary" disabled={saveMutation.isPending}>
                   {saveMutation.isPending ? 'Saving...' : editing ? 'Update' : 'Record'}

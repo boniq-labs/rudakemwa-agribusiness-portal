@@ -128,7 +128,7 @@ export default function AccountingReports() {
 
       {activeReport === 'income' && (
         <div className="card">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexWrap: 'wrap', gap: 8 }}>
             <h3>Income by Source</h3>
             <button className="btn btn-sm" onClick={() => handleExport('Income Report')}>
               <Download size={14} /> Export
@@ -140,7 +140,7 @@ export default function AccountingReports() {
 
       {activeReport === 'expense' && (
         <div className="card">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16, flexWrap: 'wrap', gap: 8 }}>
             <h3>Expense by Category</h3>
             <button className="btn btn-sm" onClick={() => handleExport('Expense Report')}>
               <Download size={14} /> Export

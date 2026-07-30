@@ -35,7 +35,7 @@ export default function Prescriptions() {
   });
 
   const { data: animals } = useQuery({
-    queryKey: ['animals-select'],
+    queryKey: ['animals', 'select'],
     queryFn: () => client.get('/animals/select').then(r => r.data.data || []),
   });
 
@@ -44,6 +44,7 @@ export default function Prescriptions() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['vet-prescriptions'] });
       queryClient.invalidateQueries({ queryKey: ['vet-dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['animal-dashboard-stats'] });
       toast.success('Prescription created');
       setShowModal(false);
       setForm(initialForm);
@@ -56,6 +57,7 @@ export default function Prescriptions() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['vet-prescriptions'] });
       queryClient.invalidateQueries({ queryKey: ['vet-dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['animal-dashboard-stats'] });
       toast.success('Prescription updated');
       setShowModal(false);
       setForm(initialForm);
@@ -71,6 +73,7 @@ export default function Prescriptions() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['vet-prescriptions'] });
       queryClient.invalidateQueries({ queryKey: ['vet-dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['animal-dashboard-stats'] });
       toast.success('Prescription deleted');
     },
     onError: (err: any) => toast.error(err.response?.data?.message || 'Failed to delete'),
@@ -119,7 +122,7 @@ export default function Prescriptions() {
     {
       key: 'actions', label: 'Actions',
       render: (p: any) => (
-        <div style={{ display: 'flex', gap: 4 }}>
+        <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
           <button className="btn btn-sm" onClick={() => handleEdit(p)}>Edit</button>
           <button className="btn btn-sm btn-danger" onClick={() => handleDelete(p.id)} disabled={deleteMutation.isPending}>Delete</button>
         </div>
@@ -168,7 +171,7 @@ export default function Prescriptions() {
           <FormField label="Notes">
             <textarea className="form-input" value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} rows={3} />
           </FormField>
-          <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 20 }}>
+          <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 20, flexWrap: 'wrap' }}>
             <button type="button" className="btn" onClick={() => setShowModal(false)}>Cancel</button>
             <button type="submit" className="btn btn-primary" disabled={createMutation.isPending || updateMutation.isPending}>
               {editId ? 'Update' : 'Create'}

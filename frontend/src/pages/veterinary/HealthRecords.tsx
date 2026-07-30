@@ -39,7 +39,7 @@ export default function HealthRecords() {
   });
 
   const { data: animals } = useQuery({
-    queryKey: ['animals-select'],
+    queryKey: ['animals', 'select'],
     queryFn: () => client.get('/animals/select').then(r => r.data.data || []),
   });
 
@@ -48,6 +48,7 @@ export default function HealthRecords() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['vet-health-records'] });
       queryClient.invalidateQueries({ queryKey: ['vet-dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['animal-dashboard-stats'] });
       toast.success('Health record created');
       setShowModal(false);
       setForm(initialForm);
@@ -60,6 +61,7 @@ export default function HealthRecords() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['vet-health-records'] });
       queryClient.invalidateQueries({ queryKey: ['vet-dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['animal-dashboard-stats'] });
       toast.success('Health record updated');
       setShowModal(false);
       setForm(initialForm);
@@ -75,6 +77,7 @@ export default function HealthRecords() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['vet-health-records'] });
       queryClient.invalidateQueries({ queryKey: ['vet-dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['animal-dashboard-stats'] });
       toast.success('Health record deleted');
     },
     onError: (err: any) => toast.error(err.response?.data?.message || 'Failed to delete'),
@@ -96,12 +99,13 @@ export default function HealthRecords() {
   };
 
   const handleEdit = (r: any) => {
+    const toDateStr = (d: any) => { if (!d) return ''; const dt = new Date(d); return isNaN(dt.getTime()) ? '' : dt.toISOString().split('T')[0]; };
     setForm({
       animal_id: String(r.animal_id || ''),
       diagnosis: r.diagnosis || '',
       symptoms: r.symptoms || '',
       treatment: r.treatment || '',
-      date: r.date ? r.date.split('T')[0] : '',
+      date: toDateStr(r.checkup_date || r.date),
       veterinarian: r.veterinarian || '',
       status: r.status || 'open',
     });
@@ -129,7 +133,7 @@ export default function HealthRecords() {
     {
       key: 'actions', label: 'Actions',
       render: (r: any) => (
-        <div style={{ display: 'flex', gap: 4 }}>
+        <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
           <button className="btn btn-sm" onClick={() => handleEdit(r)}>Edit</button>
           <button className="btn btn-sm btn-danger" onClick={() => handleDelete(r.id)} disabled={deleteMutation.isPending}>Delete</button>
         </div>
@@ -189,7 +193,7 @@ export default function HealthRecords() {
           <FormField label="Veterinarian" required>
             <input className="form-input" value={form.veterinarian} onChange={e => setForm(p => ({ ...p, veterinarian: e.target.value }))} required />
           </FormField>
-          <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 20 }}>
+          <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 20, flexWrap: 'wrap' }}>
             <button type="button" className="btn" onClick={() => setShowModal(false)}>Cancel</button>
             <button type="submit" className="btn btn-primary" disabled={createMutation.isPending || updateMutation.isPending}>
               {editId ? 'Update' : 'Create'}

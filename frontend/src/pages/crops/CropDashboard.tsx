@@ -40,7 +40,7 @@ export default function CropDashboard() {
   return (
     <ModulePage title="Crop Dashboard" subtitle="Overview of crop production"
       actions={
-        <div style={{ display: 'flex', gap: 8 }}>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           {quickActions.map((action, i) => (
             <button key={i} className="btn btn-primary btn-sm" onClick={action.onClick} style={{ background: action.color }}>
               <action.icon size={16} /> {action.label}

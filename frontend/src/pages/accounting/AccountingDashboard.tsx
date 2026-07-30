@@ -101,7 +101,7 @@ export default function AccountingDashboard() {
               </div>
               <div className="text-secondary">Current Month</div>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-around', padding: '16px 0', borderTop: '1px solid var(--border)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-around', padding: '16px 0', borderTop: '1px solid var(--border)', flexWrap: 'wrap', gap: 12 }}>
               <div style={{ textAlign: 'center' }}>
                 <div style={{ fontWeight: 600, color: 'var(--success)' }}>{formatAmount(totalMonthlyIncome)}</div>
                 <div className="text-secondary" style={{ fontSize: '0.85rem' }}>Income</div>
