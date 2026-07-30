@@ -66,6 +66,13 @@ export const login = async (req: AuthRequest, res: Response) => {
       [user.role_id]
     );
 
+    const [userDepts]: any = await pool.query(
+      `SELECT d.id, d.name FROM departments d
+       JOIN user_departments ud ON d.id = ud.department_id
+       WHERE ud.user_id = ? AND d.deleted_at IS NULL`,
+      [user.id]
+    );
+
     return success(res, {
       token, refreshToken,
       user: {
@@ -73,6 +80,7 @@ export const login = async (req: AuthRequest, res: Response) => {
         firstName: user.first_name, lastName: user.last_name, photo: user.photo,
         role: user.role, roleName: user.role_name,
         departmentId: user.department_id, departmentName: user.department_name,
+        departments: userDepts,
         permissions: permissions.map((p: any) => p.slug),
       },
     }, 'Login successful');
@@ -118,6 +126,14 @@ export const getProfile = async (req: AuthRequest, res: Response) => {
     );
     const u = users[0];
     if (!u) return error(res, 'User not found', 404);
+
+    const [userDepts]: any = await pool.query(
+      `SELECT d.id, d.name FROM departments d
+       JOIN user_departments ud ON d.id = ud.department_id
+       WHERE ud.user_id = ? AND d.deleted_at IS NULL`,
+      [u.id]
+    );
+
     const userData = {
       id: u.id, username: u.username, email: u.email,
       firstName: u.first_name, lastName: u.last_name, photo: u.photo,
@@ -125,6 +141,7 @@ export const getProfile = async (req: AuthRequest, res: Response) => {
       dateOfBirth: u.date_of_birth,
       role: u.role, roleName: u.role_name,
       departmentId: u.department_id, departmentName: u.department_name,
+      departments: userDepts,
       createdAt: u.created_at,
       permissions: u.permissions ? u.permissions.split(',') : [],
     };
@@ -172,11 +189,20 @@ export const updateProfile = async (req: AuthRequest, res: Response) => {
        LEFT JOIN departments d ON u.department_id = d.id WHERE u.id = ?`,
       [req.user!.id]
     );
+
+    const [userDepts]: any = await pool.query(
+      `SELECT d.id, d.name FROM departments d
+       JOIN user_departments ud ON d.id = ud.department_id
+       WHERE ud.user_id = ? AND d.deleted_at IS NULL`,
+      [req.user!.id]
+    );
+
     return success(res, {
       id: users[0].id, username: users[0].username, email: users[0].email,
       firstName: users[0].first_name, lastName: users[0].last_name, photo: users[0].photo,
       phone: users[0].phone, role: users[0].role, roleName: users[0].role_name,
       departmentId: users[0].department_id, departmentName: users[0].department_name,
+      departments: userDepts,
     }, 'Profile updated successfully');
   } catch (err: any) {
     return error(res, err.message);

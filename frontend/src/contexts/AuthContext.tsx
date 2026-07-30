@@ -10,6 +10,7 @@ interface AuthContextType {
   setUser: (user: User | null) => void;
   hasPermission: (perm: string) => boolean;
   hasRole: (...roles: string[]) => boolean;
+  fetchProfile: () => Promise<User | null>;
 }
 
 const store = (remember: boolean) => remember ? localStorage : sessionStorage;
@@ -69,6 +70,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return d.user;
   }, []);
 
+  const fetchProfile = useCallback(async () => {
+    try {
+      const res = await authApi.profile();
+      const u = res.data.data;
+      setUser(u);
+      const s = localStorage.getItem('token') ? localStorage : sessionStorage;
+      s.setItem('user', JSON.stringify(u));
+      return u;
+    } catch {
+      return null;
+    }
+  }, []);
+
   const logout = useCallback(() => {
     authApi.logout().catch(() => {});
     localStorage.removeItem('token');
@@ -91,7 +105,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, setUser, hasPermission, hasRole }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, setUser, hasPermission, hasRole, fetchProfile }}>
       {children}
     </AuthContext.Provider>
   );

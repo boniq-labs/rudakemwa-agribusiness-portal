@@ -6,6 +6,7 @@ import { Toaster } from 'react-hot-toast';
 import SplashScreen from './components/SplashScreen';
 import { AuthProvider } from './contexts/AuthContext';
 import { useAuth } from './contexts/AuthContext';
+import { SettingsProvider } from './contexts/SettingsContext';
 import { ConfirmProvider } from './components/ConfirmDialog';
 import AppLayout from './layouts/AppLayout';
 
@@ -130,6 +131,7 @@ const ReportReviewPage = lazy(() => import('./pages/manager/ReportReviewPage'));
 // Account / utility
 const ProfilePage = lazy(() => import('./pages/ProfilePage'));
 const SettingsPage = lazy(() => import('./pages/SettingsPage'));
+const DepartmentAssignment = lazy(() => import('./pages/settings/DepartmentAssignment'));
 const HelpPage = lazy(() => import('./pages/HelpPage'));
 
 const queryClient = new QueryClient({
@@ -305,6 +307,7 @@ function AppRoutes() {
 
           <Route path="profile" element={<ProfilePage />} />
           <Route path="settings" element={<SettingsPage />} />
+          <Route path="settings/departments" element={<ProtectedRoute roles={['owner', 'admin']}><DepartmentAssignment /></ProtectedRoute>} />
           <Route path="help" element={<HelpPage />} />
 
           <Route path="*" element={<Navigate to="/dashboard" />} />
@@ -326,9 +329,11 @@ export default function App() {
             <SplashScreen key="splash" onComplete={() => setShowSplash(false)} />
           ) : (
             <AuthProvider key="app">
-              <ConfirmProvider>
-                <AppRoutes />
-              </ConfirmProvider>
+              <SettingsProvider>
+                <ConfirmProvider>
+                  <AppRoutes />
+                </ConfirmProvider>
+              </SettingsProvider>
             </AuthProvider>
           )}
         </AnimatePresence>

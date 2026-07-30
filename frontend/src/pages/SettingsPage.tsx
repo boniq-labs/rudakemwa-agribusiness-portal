@@ -1,18 +1,17 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { settingsApi, uploadApi, authApi } from '../api';
+import { useSettings } from '../contexts/SettingsContext';
+import { uploadApi, authApi } from '../api';
 import { Moon, Sun, Settings as SettingsIcon, Save, User, Lock } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function SettingsPage() {
   const { user, setUser } = useAuth();
+  const { settings, updateSettings } = useSettings();
   const [dark, setDark] = useState(() => localStorage.getItem('theme') === 'dark');
   const isAdmin = user?.role === 'farm_owner' || user?.role === 'owner' || user?.role === 'admin';
 
-  const [settings, setSettings] = useState({
-    system_name: '', farm_name: '', farm_logo: '', favicon: '',
-    farm_address: '', phone_number: '', email: '', system_info: '',
-  });
+  const [localSettings, setLocalSettings] = useState({ ...settings });
   const [loading, setLoading] = useState(false);
 
   const [profileForm, setProfileForm] = useState({ firstName: '', lastName: '', email: '', phone: '' });
@@ -23,13 +22,8 @@ export default function SettingsPage() {
   const [changingPw, setChangingPw] = useState(false);
 
   useEffect(() => {
-    if (isAdmin) {
-      settingsApi.get().then((r) => {
-        const s = r.data.data || {};
-        setSettings((prev) => ({ ...prev, ...s }));
-      }).catch(() => {});
-    }
-  }, [isAdmin]);
+    setLocalSettings({ ...settings });
+  }, [settings]);
 
   useEffect(() => {
     if (user) {
@@ -52,11 +46,8 @@ export default function SettingsPage() {
     try {
       const res = await uploadApi.upload(file);
       const url = res.data.data.url;
-      setSettings((prev) => ({ ...prev, [key]: url }));
-      if (key === 'favicon') {
-        const link = document.querySelector("link[rel*='icon']") as HTMLLinkElement;
-        if (link) link.href = url;
-      }
+      setLocalSettings(prev => ({ ...prev, [key]: url }));
+      await updateSettings({ [key]: url });
       toast.success(`${key === 'farm_logo' ? 'Logo' : 'Favicon'} uploaded`);
     } catch { toast.error('Upload failed'); }
   };
@@ -64,12 +55,8 @@ export default function SettingsPage() {
   const saveSettings = async () => {
     setLoading(true);
     try {
-      await settingsApi.update(settings);
+      await updateSettings(localSettings);
       toast.success('Settings saved');
-      if (settings.favicon) {
-        const link = document.querySelector("link[rel*='icon']") as HTMLLinkElement;
-        if (link) link.href = settings.favicon;
-      }
     } catch { toast.error('Failed to save settings'); }
     finally { setLoading(false); }
   };
@@ -119,45 +106,45 @@ export default function SettingsPage() {
             <h3>System Settings</h3>
             <div className="form-group">
               <label>System Name</label>
-              <input value={settings.system_name} onChange={(e) => setSettings({ ...settings, system_name: e.target.value })} />
+              <input value={localSettings.system_name} onChange={(e) => setLocalSettings({ ...localSettings, system_name: e.target.value })} />
             </div>
             <div className="form-group">
               <label>Farm Name</label>
-              <input value={settings.farm_name} onChange={(e) => setSettings({ ...settings, farm_name: e.target.value })} />
+              <input value={localSettings.farm_name} onChange={(e) => setLocalSettings({ ...localSettings, farm_name: e.target.value })} />
             </div>
             <div className="form-row">
               <div className="form-group">
                 <label>Change Logo</label>
                 <div className="setting-upload-row">
-                  {settings.farm_logo && <img src={settings.farm_logo} alt="logo" className="setting-thumb" />}
+                  {localSettings.farm_logo && <img src={localSettings.farm_logo} alt="logo" className="setting-thumb" />}
                   <input type="file" accept="image/*" onChange={(e) => handleUpload('farm_logo', e.target.files?.[0] || null)} />
                 </div>
               </div>
               <div className="form-group">
                 <label>Change Favicon</label>
                 <div className="setting-upload-row">
-                  {settings.favicon && <img src={settings.favicon} alt="favicon" className="setting-thumb" />}
+                  {localSettings.favicon && <img src={localSettings.favicon} alt="favicon" className="setting-thumb" />}
                   <input type="file" accept="image/*" onChange={(e) => handleUpload('favicon', e.target.files?.[0] || null)} />
                 </div>
               </div>
             </div>
             <div className="form-group">
               <label>Farm Address</label>
-              <textarea rows={2} value={settings.farm_address} onChange={(e) => setSettings({ ...settings, farm_address: e.target.value })} />
+              <textarea rows={2} value={localSettings.farm_address} onChange={(e) => setLocalSettings({ ...localSettings, farm_address: e.target.value })} />
             </div>
             <div className="form-row">
               <div className="form-group">
               <label>Phone Number</label>
-              <input value={settings.phone_number} onChange={(e) => setSettings({ ...settings, phone_number: e.target.value })} />
+              <input value={localSettings.phone_number} onChange={(e) => setLocalSettings({ ...localSettings, phone_number: e.target.value })} />
               </div>
               <div className="form-group">
                 <label>Email</label>
-                <input type="email" value={settings.email} onChange={(e) => setSettings({ ...settings, email: e.target.value })} />
+                <input type="email" value={localSettings.email} onChange={(e) => setLocalSettings({ ...localSettings, email: e.target.value })} />
               </div>
             </div>
             <div className="form-group">
               <label>System Information</label>
-              <textarea rows={2} value={settings.system_info} onChange={(e) => setSettings({ ...settings, system_info: e.target.value })} />
+              <textarea rows={2} value={localSettings.system_info} onChange={(e) => setLocalSettings({ ...localSettings, system_info: e.target.value })} />
             </div>
             <button className="btn btn-primary" onClick={saveSettings} disabled={loading}>
               <Save size={16} /> {loading ? 'Saving...' : 'Save Settings'}

@@ -98,6 +98,7 @@ import { getLogisticsReports } from '../controllers/logistics/reportController';
 
 import { getVeterinaryHealth, getVeterinaryHealthById, createVeterinaryHealth, updateVeterinaryHealth, deleteVeterinaryHealth, getVaccinationSchedule, createVaccinationSchedule, getVetVaccinations, createVetVaccination, updateVetVaccination, deleteVetVaccination, getDueVaccinations, getPrescriptions, createPrescription, updatePrescription, deletePrescription } from '../controllers/veterinary/index';
 import { getTreatmentPrescriptions, createTreatmentPrescription } from '../controllers/veterinary/healthController';
+import { getUserDepartments, updateUserDepartments, getMyDepartments, getEmployeesWithRoles } from '../controllers/userDepartmentController';
 
 const router = Router();
 
@@ -115,6 +116,12 @@ router.post('/auth/logout', authenticate, logout);
 // Settings (admin/owner only)
 router.get('/settings', getSettings);
 router.put('/settings', authenticate, hasRole('owner', 'admin'), updateSettings);
+
+// Department assignment (owner/admin only)
+router.get('/users/employees', authenticate, hasRole('owner', 'admin'), getEmployeesWithRoles);
+router.get('/users/:id/departments', authenticate, hasRole('owner', 'admin'), getUserDepartments);
+router.put('/users/:id/departments', authenticate, hasRole('owner', 'admin'), updateUserDepartments);
+router.get('/user-departments/me', authenticate, getMyDepartments);
 
 // File upload
 router.post('/upload', authenticate, uploadSingle, uploadFile);

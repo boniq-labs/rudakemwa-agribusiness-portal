@@ -11,6 +11,18 @@ export interface User {
   photo: string | null;
   phone: string | null;
   permissions: string[];
+  departments?: { id: number; name: string }[];
+}
+
+export interface AppSettings {
+  system_name: string;
+  farm_name: string;
+  farm_logo: string;
+  favicon: string;
+  farm_address: string;
+  phone_number: string;
+  email: string;
+  system_info: string;
 }
 
 export interface Notification {

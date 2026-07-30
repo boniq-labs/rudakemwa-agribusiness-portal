@@ -1,8 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useSettings } from '../contexts/SettingsContext';
 import { ROLE_LABELS } from '../utils/constants';
-import { settingsApi } from '../api';
 import { cn } from '../utils/cn';
 import { canAccessDepartment } from '../utils/departmentAccess';
 import {
@@ -153,25 +153,23 @@ const navItems: NavItem[] = [
       { label: 'My Dashboard', path: '/employee/dashboard' },
     ],
   },
-  { label: 'Settings', icon: Settings, path: '/settings', roles: ['owner', 'admin'] },
+  {
+    label: 'Settings', icon: Settings, roles: ['owner', 'admin'], children: [
+      { label: 'System Settings', path: '/settings' },
+      { label: 'Department Assignment', path: '/settings/departments' },
+    ],
+  },
 ];
 
 export default function Sidebar() {
   const { user, logout } = useAuth();
+  const { settings } = useSettings();
   const location = useLocation();
   const navigate = useNavigate();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [farmLogo, setFarmLogo] = useState('/assets/logo.png');
-  const [systemName, setSystemName] = useState('Portal');
-
-  useEffect(() => {
-    settingsApi.get().then((r) => {
-      const s = r.data.data || {};
-      if (s.farm_logo) setFarmLogo(s.farm_logo);
-      if (s.system_name) setSystemName(s.system_name);
-    }).catch(() => {});
-  }, []);
+  const farmLogo = settings.farm_logo || '/assets/logo.png';
+  const systemName = settings.system_name || 'Portal';
 
   const handleLogout = () => { logout(); navigate('/login'); };
 
@@ -214,7 +212,10 @@ export default function Sidebar() {
               if (!item.roles) return true;
               if (['owner', 'farm_owner', 'admin'].includes(user?.role || '')) return true;
               if (item.roles.includes(user?.role || '')) return true;
-              return item.roles.some(r => canAccessDepartment(user?.role || '', r));
+              if (item.roles.some(r => canAccessDepartment(user?.role || '', r))) return true;
+              const userDeptNames = (user?.departments || []).map(d => d.name.toLowerCase());
+              if (item.roles?.some(r => userDeptNames.includes(r))) return true;
+              return false;
             })
             .map((item) => (
               <NavItemComponent
