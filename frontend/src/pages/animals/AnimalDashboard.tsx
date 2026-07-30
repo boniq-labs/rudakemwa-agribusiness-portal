@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { animalAPI, breedingAPI, healthAPI, movementAPI } from '../../api/endpoints';
@@ -65,34 +66,52 @@ export default function AnimalDashboard() {
   const totalBirths = stats.totalBirths ?? births.length;
   const totalDeaths = stats.totalDeaths ?? deaths.length;
 
-  const categoryMap: Record<string, number> = {};
-  animals.forEach((a: any) => {
-    const cat = a.category_name || a.animal_category_name || 'Uncategorized';
-    categoryMap[cat] = (categoryMap[cat] || 0) + 1;
-  });
-  const pieData = Object.entries(categoryMap).map(([name, value]) => ({ name, value }));
+  const categoryMap: Record<string, number> = useMemo(() => {
+    const map: Record<string, number> = {};
+    animals.forEach((a: any) => {
+      const cat = a.category_name || a.animal_category_name || 'Uncategorized';
+      map[cat] = (map[cat] || 0) + 1;
+    });
+    return map;
+  }, [animals]);
+  const pieData = useMemo(() =>
+    Object.entries(categoryMap).map(([name, value]) => ({ name, value })),
+    [categoryMap]
+  );
 
-  const monthlyBirths: Record<string, number> = {};
-  births.forEach((b: any) => {
-    const d = new Date(b.birth_date || b.date);
-    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-    monthlyBirths[key] = (monthlyBirths[key] || 0) + 1;
-  });
-  const barData = Object.entries(monthlyBirths).sort().slice(-6).map(([name, value]) => ({ name, value }));
+  const monthlyBirths: Record<string, number> = useMemo(() => {
+    const map: Record<string, number> = {};
+    births.forEach((b: any) => {
+      const d = new Date(b.birth_date || b.date);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      map[key] = (map[key] || 0) + 1;
+    });
+    return map;
+  }, [births]);
+  const barData = useMemo(() =>
+    Object.entries(monthlyBirths).sort().slice(-6).map(([name, value]) => ({ name, value })),
+    [monthlyBirths]
+  );
 
-  const weightData = weights.slice(-20).map((w: any) => ({
-    date: w.date ? new Date(w.date).toLocaleDateString() : '',
-    weight: w.weight,
-  }));
+  const weightData = useMemo(() =>
+    weights.slice(-20).map((w: any) => ({
+      date: w.date ? new Date(w.date).toLocaleDateString() : '',
+      weight: w.weight,
+    })),
+    [weights]
+  );
 
-  const recentEvents = [
-    ...births.slice(-5).map((b: any) => ({ type: 'birth', date: b.birth_date, text: `Birth: ${b.animal_name || 'Calf'}`, id: b.id })),
-    ...deaths.slice(-5).map((d: any) => ({ type: 'death', date: d.date, text: `Death: ${d.animal_name || 'Animal'}`, id: d.id })),
-    ...animals.filter((a: any) => a.source === 'purchased').slice(-5).map((a: any) => ({ type: 'purchase', date: a.created_at, text: `Purchased: ${a.tag_number}`, id: a.id })),
-  ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 8);
+  const recentEvents = useMemo(() =>
+    [
+      ...births.slice(-5).map((b: any) => ({ type: 'birth', date: b.birth_date, text: `Birth: ${b.animal_name || 'Calf'}`, id: b.id })),
+      ...deaths.slice(-5).map((d: any) => ({ type: 'death', date: d.date, text: `Death: ${d.animal_name || 'Animal'}`, id: d.id })),
+      ...animals.filter((a: any) => a.source === 'purchased').slice(-5).map((a: any) => ({ type: 'purchase', date: a.created_at, text: `Purchased: ${a.tag_number}`, id: a.id })),
+    ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 8),
+    [births, deaths, animals]
+  );
 
   const quickActions = (
-    <div style={{ display: 'flex', gap: 8 }}>
+    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
       <button className="btn btn-primary" onClick={() => navigate('/animals/registration')}>
         <Plus size={16} /> Register Animal
       </button>

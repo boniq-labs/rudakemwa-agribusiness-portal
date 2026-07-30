@@ -303,6 +303,34 @@ body { font-family: 'Inter', system-ui, -apple-system, sans-serif; background: v
 
 /* Responsive - All breakpoints */
 
+/* <= 375px (very small phones like iPhone SE) */
+@media (max-width: 375px) {
+  .content { padding: 8px; }
+  .stats-grid { gap: 8px; }
+  .stat-card { padding: 10px; gap: 10px; }
+  .stat-icon { width: 36px; height: 36px; }
+  .stat-value { font-size: 1rem; }
+  .stat-label { font-size: 0.7rem; }
+  .topbar { padding: 6px 8px; gap: 4px; }
+  .topbar-right { gap: 0; }
+  .search-bar { max-width: 100px; padding: 6px 10px; }
+  .search-bar input { font-size: 0.75rem; }
+  .notif-dropdown { width: calc(100vw - 16px); right: -30px; }
+  .table th, .table td { padding: 6px 8px; font-size: 0.75rem; }
+  .actions { gap: 4px; }
+  .actions .btn, .actions button { padding: 4px 8px; font-size: 0.7rem; min-width: 0; }
+  .card { padding: 10px; }
+  .modal { padding: 12px; }
+  .form-group input, .form-group select { padding: 8px 10px; font-size: 0.8rem; }
+  .page-header h1 { font-size: 1.1rem; }
+  .dashboard-header h1 { font-size: 1.1rem; }
+  .topbar-hamburger { width: 36px; height: 36px; min-width: 36px; min-height: 36px; }
+  .profile-btn { padding: 4px 8px 4px 4px; }
+  .profile-avatar-sm { width: 28px; height: 28px; font-size: 0.65rem; }
+  .profile-name { font-size: 0.75rem; }
+  .page-search { max-width: 100%; }
+}
+
 /* <= 480px (small phones) */
 @media (max-width: 480px) {
   .content { padding: 12px; }
@@ -447,24 +475,22 @@ body { font-family: 'Inter', system-ui, -apple-system, sans-serif; background: v
 }
 
 /* Fix inline maxWidth patterns in modals across all pages */
-.page [style*="maxWidth"]:not([style*="100%"]) {
+/* React renders camelCase as hyphenated: maxWidth -> max-width, no quotes */
+.page [style*="max-width:"]:not([style*="max-width: 100%"]) {
   max-width: 100% !important;
 }
 
 /* Fix any element inside .modal that has a fixex width */
-.modal [style*="width"]:not([style*="100%"]):not([style*="auto"]) {
+.modal [style*="width"]:not([style*="width: 100%"]):not([style*="auto"]):not([style*="min-width"]):not([style*="max-width"]) {
   max-width: 100% !important;
 }
 
-/* Fix inline gridTemplateColumns in forms and modals - force 1 col on mobile */
+/* Fix inline grid-template-columns in forms and modals - force 1 col on mobile */
+/* React renders camelCase as hyphenated, no quotes: grid-template-columns: 1fr 1fr */
 @media (max-width: 640px) {
-  .page [style*="gridTemplateColumns: '1fr 1fr"], 
-  .page [style*="gridTemplateColumns: '1fr 1fr 1fr"],
-  .page [style*="gridTemplateColumns: \"1fr 1fr"],
-  .page [style*="gridTemplateColumns: \"1fr 1fr 1fr"],
-  .modal [style*="gridTemplateColumns: '1fr 1fr"],
-  .modal [style*="gridTemplateColumns: '1fr 1fr 1fr"],
-  .card [style*="gridTemplateColumns"] {
+  .page [style*="grid-template-columns:"],
+  .modal [style*="grid-template-columns:"],
+  .card [style*="grid-template-columns:"] {
     grid-template-columns: 1fr !important;
   }
 }
@@ -474,12 +500,6 @@ body { font-family: 'Inter', system-ui, -apple-system, sans-serif; background: v
   .dashboard-grid {
     grid-template-columns: 1fr !important;
   }
-}
-
-/* Fix inline gridTemplateColumns with 2fr 1fr pattern (milk dashboard etc.) */
-@media (max-width: 768px) {
-  .page [style*="gridTemplateColumns: '2fr"]
-  { grid-template-columns: 1fr !important; }
 }
 
 /* Ensure images don't overflow */

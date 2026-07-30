@@ -10,6 +10,15 @@
 - **Validation middleware**: `POST` routes use `validate(schema)` which rejects requests with `400` if body fields don't match schema field names.
 - **Build strictness**: Backend `tsc` no strict mode, `allowJs: true`. Frontend uses Vite with TypeScript.
 
+#### Completed — Current Session (July 2026): Animal Production Comprehensive Fix
+
+- **Cattle/Pigs server-side filter fix**: Added `.trim()` to category name comparison to handle whitespace. Added client-side fallback: if category not found via `getCategories()`, filters animals by `category_name` from JOIN result. Query keys: `['animals', 'cattle']`, `['animals', 'pigs']`.
+- **Pagination max limit**: Backend `pagination.ts` `Math.min(100, ...)` → `Math.min(10000, ...)` so frontend `limit: 10000` is no longer capped to 100.
+- **AnimalDashboard perf**: Quick actions got `flexWrap: 'wrap'`. `categoryMap`, `pieData`, `monthlyBirths`, `barData`, `weightData`, `recentEvents` wrapped in `useMemo` to prevent recomputation on every render.
+- **Responsive CSS fix — BROKEN selectors**: CSS attribute selectors used JavaScript camelCase properties (`gridTemplateColumns`, `maxWidth`) with quotes, but React renders style attributes as hyphenated CSS (`grid-template-columns`, `max-width`) without quotes. All such selectors were completely ineffective on mobile. Fixed all occurrences in `index.css`.
+- **Mobile breakpoint**: Added `@media (max-width: 375px)` breakpoint in `index.css` with tighter padding/gaps, smaller fonts, `page-search: max-width: 100%`, reduced action button sizing for iPhone SE (320-375px).
+- **Build verification**: Frontend `✓ built in 4.65s` (0 errors). Backend `tsc --noEmit --skipLibCheck` (0 errors).
+
 #### Completed — Animal Production Fixes
 - **Issue 1 — HTTP 500 on animal APIs**: Root cause was `buildWhereClause` returning `WHERE key = ?` (with WHERE keyword) while every controller uses template `WHERE X IS NULL ${where}` creating duplicate `WHERE ... WHERE ...` SQL. Fixed by changing prefix to ` AND `. Affected all 81 callers across every module.
 - **Issue 2/3 — Animal list filters**: `getAnimals` controller now handles `animal_category_id` query param (sent by frontend) + backward-compatible `category_id`. Both stripped from auto-filters and handled as explicit manual filters with `a.` alias prefix.

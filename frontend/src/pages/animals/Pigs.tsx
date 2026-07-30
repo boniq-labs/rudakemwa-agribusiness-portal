@@ -19,10 +19,14 @@ export default function Pigs() {
     queryKey: ['animals', 'pigs'],
     queryFn: async () => {
       const categories = await animalAPI.getCategories().then(r => r.data.data || []);
-      const pigCat = categories.find((c: any) => c.name.toLowerCase() === 'pigs' || c.name.toLowerCase() === 'pig');
-      if (!pigCat) return [];
-      const response = await animalAPI.getAll({ animal_category_id: pigCat.id, limit: 10000 });
-      return response.data.data || [];
+      const pigCat = categories.find((c: any) => ['pigs', 'pig'].includes((c.name || '').trim().toLowerCase()));
+      if (pigCat) {
+        const response = await animalAPI.getAll({ animal_category_id: pigCat.id, limit: 10000 });
+        return response.data.data || [];
+      }
+      const response = await animalAPI.getAll({ limit: 10000 });
+      const all = response.data.data || [];
+      return all.filter((a: any) => ['pigs', 'pig'].includes((a.category_name || '').toLowerCase()));
     },
   });
 

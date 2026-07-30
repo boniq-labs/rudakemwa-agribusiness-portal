@@ -19,10 +19,14 @@ export default function Cattle() {
     queryKey: ['animals', 'cattle'],
     queryFn: async () => {
       const categories = await animalAPI.getCategories().then(r => r.data.data || []);
-      const cattleCat = categories.find((c: any) => c.name.toLowerCase() === 'cattle');
-      if (!cattleCat) return [];
-      const response = await animalAPI.getAll({ animal_category_id: cattleCat.id, limit: 10000 });
-      return response.data.data || [];
+      const cattleCat = categories.find((c: any) => (c.name || '').trim().toLowerCase() === 'cattle');
+      if (cattleCat) {
+        const response = await animalAPI.getAll({ animal_category_id: cattleCat.id, limit: 10000 });
+        return response.data.data || [];
+      }
+      const response = await animalAPI.getAll({ limit: 10000 });
+      const all = response.data.data || [];
+      return all.filter((a: any) => (a.category_name || '').toLowerCase() === 'cattle');
     },
   });
 
