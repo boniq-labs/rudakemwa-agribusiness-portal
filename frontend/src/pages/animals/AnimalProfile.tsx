@@ -9,6 +9,7 @@ import type { Column } from '../../components/DataTable';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Camera, Calendar, Activity, Info, X } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { resolveAssetUrl } from '../../utils/assetUrl';
 
 type Tab = 'health' | 'breeding' | 'weight' | 'history';
 
@@ -155,7 +156,7 @@ export default function AnimalProfile() {
               {previewPhoto ? (
                 <img src={previewPhoto} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               ) : animal.photo ? (
-                <img src={animal.photo} alt={animal.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                <img src={resolveAssetUrl(animal.photo)} alt={animal.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               ) : (
                 <Camera size={40} color="var(--primary)" />
               )}

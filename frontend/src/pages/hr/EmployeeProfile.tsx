@@ -6,6 +6,7 @@ import StatusBadge from '../../components/StatusBadge';
 import DataTable from '../../components/DataTable';
 import { ArrowLeft, Calendar, Mail, Phone, MapPin, Shield, Briefcase, Clock, User, Camera } from 'lucide-react';
 import type { Column } from '../../components/DataTable';
+import { resolveAssetUrl } from '../../utils/assetUrl';
 
 export default function EmployeeProfile() {
   const { id } = useParams();
@@ -88,7 +89,7 @@ export default function EmployeeProfile() {
           <div className="card" style={{ textAlign: 'center', padding: 24 }}>
             <div style={{ width: 120, height: 120, borderRadius: '50%', background: 'var(--primary-light)', margin: '0 auto 16px', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
               {employee.photo ? (
-                <img src={employee.photo} alt={employee.first_name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                <img src={resolveAssetUrl(employee.photo)} alt={employee.first_name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               ) : (
                 <Camera size={40} color="var(--primary)" />
               )}

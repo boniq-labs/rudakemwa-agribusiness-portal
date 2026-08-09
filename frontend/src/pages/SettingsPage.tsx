@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useSettings } from '../contexts/SettingsContext';
 import { uploadApi, authApi } from '../api';
+import { resolveAssetUrl } from '../utils/assetUrl';
 import { Moon, Sun, Settings as SettingsIcon, Save, User, Lock } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -116,14 +117,14 @@ export default function SettingsPage() {
               <div className="form-group">
                 <label>Change Logo</label>
                 <div className="setting-upload-row">
-                  {localSettings.farm_logo && <img src={localSettings.farm_logo} alt="logo" className="setting-thumb" />}
+                  {localSettings.farm_logo && <img src={resolveAssetUrl(localSettings.farm_logo)} alt="logo" className="setting-thumb" />}
                   <input type="file" accept="image/*" onChange={(e) => handleUpload('farm_logo', e.target.files?.[0] || null)} />
                 </div>
               </div>
               <div className="form-group">
                 <label>Change Favicon</label>
                 <div className="setting-upload-row">
-                  {localSettings.favicon && <img src={localSettings.favicon} alt="favicon" className="setting-thumb" />}
+                  {localSettings.favicon && <img src={resolveAssetUrl(localSettings.favicon)} alt="favicon" className="setting-thumb" />}
                   <input type="file" accept="image/*" onChange={(e) => handleUpload('favicon', e.target.files?.[0] || null)} />
                 </div>
               </div>
@@ -157,7 +158,7 @@ export default function SettingsPage() {
           <div className="form-group">
             <label>Profile Photo</label>
             <div className="setting-upload-row">
-              {(profilePic ? URL.createObjectURL(profilePic) : user?.photo) ? <img src={profilePic ? URL.createObjectURL(profilePic) : user?.photo || ''} alt="profile" className="setting-thumb" /> : null}
+              {(profilePic ? URL.createObjectURL(profilePic) : user?.photo) ? <img src={profilePic ? URL.createObjectURL(profilePic) : resolveAssetUrl(user?.photo)} alt="profile" className="setting-thumb" /> : null}
               <input type="file" accept="image/*" onChange={(e) => setProfilePic(e.target.files?.[0] || null)} />
             </div>
           </div>

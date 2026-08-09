@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
 import { settingsApi } from '../api';
 import type { AppSettings } from '../types';
+import { resolveAssetUrl } from '../utils/assetUrl';
 
 interface SettingsContextType {
   settings: AppSettings;
@@ -32,14 +33,15 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
 
   const applyFavicon = useCallback((url: string) => {
     if (!url) return;
+    const absoluteUrl = resolveAssetUrl(url);
     document.querySelectorAll("link[rel*='icon'], link[rel*='apple-touch-icon']").forEach(el => el.remove());
     const link = document.createElement('link');
     link.rel = 'icon';
-    link.href = `${url}?v=${Date.now()}`;
+    link.href = `${absoluteUrl}?v=${Date.now()}`;
     document.head.appendChild(link);
     const appleLink = document.createElement('link');
     appleLink.rel = 'apple-touch-icon';
-    appleLink.href = `${url}?v=${Date.now()}`;
+    appleLink.href = `${absoluteUrl}?v=${Date.now()}`;
     document.head.appendChild(appleLink);
   }, []);
 

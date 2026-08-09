@@ -8,6 +8,7 @@ import StatusBadge from '../../components/StatusBadge';
 import { Plus, Search, Camera } from 'lucide-react';
 import type { Column } from '../../components/DataTable';
 import { useConfirm } from '../../components/ConfirmDialog';
+import { resolveAssetUrl } from '../../utils/assetUrl';
 
 export default function Cattle() {
   const navigate = useNavigate();
@@ -50,7 +51,7 @@ export default function Cattle() {
     {
       key: 'photo', label: '',
       render: (c: any) => c.photo
-        ? <img src={c.photo} alt="" style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover' }} />
+        ? <img src={resolveAssetUrl(c.photo)} alt="" style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover' }} />
         : <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'var(--primary-light)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Camera size={16} color="var(--primary)" /></div>,
     },
     { key: 'name', label: 'Name', render: (c: any) => c.name || 'Unnamed' },

@@ -9,6 +9,7 @@ import {
   CheckCheck, ChevronDown, Menu,
 } from 'lucide-react';
 import { cn } from '../utils/cn';
+import { resolveAssetUrl } from '../utils/assetUrl';
 
 // Must match the sidebar's id for mobile toggle
 const SIDEBAR_TOGGLE_EVENT = 'sidebar:toggle';
@@ -161,7 +162,7 @@ export default function Topbar() {
           <button className="profile-btn" onClick={() => setShowProfile(!showProfile)}>
             <div className="profile-avatar-sm">
               {user?.photo ? (
-                <img src={`${user.photo}?t=${avatarTs}`} alt="profile" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+                <img src={`${resolveAssetUrl(user.photo)}?t=${avatarTs}`} alt="profile" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
               ) : (
                 <>{user?.firstName?.charAt(0)}{user?.lastName?.charAt(0)}</>
               )}

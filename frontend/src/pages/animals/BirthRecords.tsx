@@ -8,6 +8,7 @@ import type { Column } from '../../components/DataTable';
 import { Plus, Baby, Eye, Edit2, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useConfirm } from '../../components/ConfirmDialog';
+import { resolveAssetUrl } from '../../utils/assetUrl';
 
 interface BirthRecord {
   id: number;
@@ -260,7 +261,7 @@ export default function BirthRecords() {
               </div>
               <FormField label="Photo">
                 <input className="form-input" type="file" accept="image/*" capture="environment" onChange={handlePhoto} />
-                {form.photo && <img src={form.photo} alt="Preview" style={{ width: 80, height: 80, objectFit: 'cover', borderRadius: 8, marginTop: 8 }} />}
+                {form.photo && <img src={resolveAssetUrl(form.photo)} alt="Preview" style={{ width: 80, height: 80, objectFit: 'cover', borderRadius: 8, marginTop: 8 }} />}
               </FormField>
               <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 20 }}>
                 <button type="button" className="btn btn-secondary" onClick={() => { setShowModal(false); setEditingId(null); resetForm(); }}>Cancel</button>
@@ -288,7 +289,7 @@ export default function BirthRecords() {
               {viewItem.photo && (
                 <div style={{ gridColumn: '1 / -1' }}>
                   <strong>Photo:</strong><br />
-                  <img src={viewItem.photo} alt="Offspring" style={{ width: 120, height: 120, objectFit: 'cover', borderRadius: 8, marginTop: 4 }} />
+                  <img src={resolveAssetUrl(viewItem.photo)} alt="Offspring" style={{ width: 120, height: 120, objectFit: 'cover', borderRadius: 8, marginTop: 4 }} />
                 </div>
               )}
             </div>

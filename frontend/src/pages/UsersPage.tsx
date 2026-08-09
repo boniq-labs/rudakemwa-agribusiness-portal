@@ -6,6 +6,7 @@ import { Loader2, UserPlus, Search, Eye, EyeOff, Edit2, Trash2 } from 'lucide-re
 import toast from 'react-hot-toast';
 import client from '../api/client';
 import { useConfirm } from '../components/ConfirmDialog';
+import { resolveAssetUrl } from '../utils/assetUrl';
 
 export default function UsersPage() {
   const confirm = useConfirm();
@@ -251,7 +252,7 @@ export default function UsersPage() {
               {filtered?.length === 0 && <tr><td colSpan={9} className="text-center">No users found</td></tr>}
               {filtered?.map((u: any) => (
                 <tr key={u.id}>
-                  <td>{u.photo ? <img src={u.photo} alt="" className="user-avatar-sm" style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover' }} /> : <div className="user-avatar-sm">{u.first_name?.[0]}{u.last_name?.[0]}</div>}</td>
+                  <td>{u.photo ? <img src={resolveAssetUrl(u.photo)} alt="" className="user-avatar-sm" style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover' }} /> : <div className="user-avatar-sm">{u.first_name?.[0]}{u.last_name?.[0]}</div>}</td>
                   <td><div className="user-cell"><div className="user-avatar-sm" style={{ display: 'none' }}></div>{u.first_name} {u.last_name}</div></td>
                   <td>{u.employee_code || '-'}</td>
                   <td>{u.department_name || '-'}</td>

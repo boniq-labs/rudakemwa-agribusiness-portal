@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '../api/client';
+import { resolveAssetUrl } from '../utils/assetUrl';
 
 interface SplashScreenProps {
   onComplete: () => void;
@@ -17,7 +18,7 @@ export default function SplashScreen({ onComplete }: SplashScreenProps) {
 
   const systemName = settings.system_name || 'Rudakemwa Agribusiness Portal';
   const farmName = settings.farm_name || 'Rudakemwa Agribusiness Portal';
-  const farmLogo = settings.farm_logo ? `${settings.farm_logo}?t=${logoTs}` : '/assets/logo.png';
+  const farmLogo = settings.farm_logo ? `${resolveAssetUrl(settings.farm_logo)}?t=${logoTs}` : '/assets/logo.png';
 
   useEffect(() => {
     if (!imageLoaded) return;

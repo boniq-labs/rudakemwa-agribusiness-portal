@@ -2,6 +2,7 @@ import { useState, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { authApi, uploadApi } from '../api';
 import { ROLE_LABELS } from '../utils/constants';
+import { resolveAssetUrl } from '../utils/assetUrl';
 import { User, Mail, Phone, KeyRound, Save, Camera } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -77,7 +78,7 @@ export default function ProfilePage() {
           <div className="profile-id">
             <div className="profile-avatar-lg" style={{ position: 'relative' }}>
               {user?.photo ? (
-                <img src={user.photo ? `${user.photo}?v=${photoVersion}` : ''} alt="profile" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+                <img src={user.photo ? `${resolveAssetUrl(user.photo)}?v=${photoVersion}` : ''} alt="profile" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
               ) : (
                 <>{user?.firstName?.charAt(0)}{user?.lastName?.charAt(0)}</>
               )}

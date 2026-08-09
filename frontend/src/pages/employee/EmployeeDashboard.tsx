@@ -4,6 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import client from '../../api/client';
 import { activitiesAPI } from '../../api/endpoints';
 import { shiftsApi, authApi, uploadApi } from '../../api';
+import { resolveAssetUrl } from '../../utils/assetUrl';
 import toast from 'react-hot-toast';
 import {
   Clock, LogIn, LogOut, Bell, User, CalendarDays, Briefcase, Building2, Shield,
@@ -146,7 +147,7 @@ export default function EmployeeDashboard() {
         style={{ background: greenGradient }}
       >
         {photo ? (
-          <img src={photo} alt="" className="w-16 h-16 rounded-full object-cover border-2 border-white/30" />
+          <img src={resolveAssetUrl(photo)} alt="" className="w-16 h-16 rounded-full object-cover border-2 border-white/30" />
         ) : (
           <div className="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center text-2xl font-bold border-2 border-white/30">
             {initial}
@@ -382,7 +383,7 @@ export default function EmployeeDashboard() {
             <div className="form-group">
               <label>Profile Photo</label>
               <div className="setting-upload-row">
-                {(profPicFile ? URL.createObjectURL(profPicFile) : photo) ? <img src={profPicFile ? URL.createObjectURL(profPicFile) : photo || ''} alt="" style={{ width: 60, height: 60, borderRadius: '50%', objectFit: 'cover' }} /> : null}
+                {(profPicFile ? URL.createObjectURL(profPicFile) : photo) ? <img src={profPicFile ? URL.createObjectURL(profPicFile) : resolveAssetUrl(photo) || ''} alt="" style={{ width: 60, height: 60, borderRadius: '50%', objectFit: 'cover' }} /> : null}
                 <input ref={fileRef} type="file" accept="image/*" onChange={(e) => setProfPicFile(e.target.files?.[0] || null)} />
               </div>
             </div>

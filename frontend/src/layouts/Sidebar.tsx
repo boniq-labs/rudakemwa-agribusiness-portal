@@ -5,6 +5,7 @@ import { useSettings } from '../contexts/SettingsContext';
 import { ROLE_LABELS } from '../utils/constants';
 import { cn } from '../utils/cn';
 import { canAccessDepartment, departmentNameToRole } from '../utils/departmentAccess';
+import { resolveAssetUrl } from '../utils/assetUrl';
 import {
   LayoutDashboard, Users, UserCircle, UserCheck, DollarSign, ShoppingCart,
   Truck, Package, PawPrint, Milk, Settings, LogOut, Menu, X,
@@ -170,7 +171,7 @@ export default function Sidebar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [farmLogoTs] = useState(() => Date.now());
   const [avatarTs] = useState(() => Date.now());
-  const farmLogo = (settings.farm_logo ? `${settings.farm_logo}?t=${farmLogoTs}` : '/assets/logo.png');
+  const farmLogo = (settings.farm_logo ? `${resolveAssetUrl(settings.farm_logo)}?t=${farmLogoTs}` : '/assets/logo.png');
   const systemName = settings.system_name || 'Portal';
 
   const handleLogout = () => { logout(); navigate('/login'); };
@@ -236,7 +237,7 @@ export default function Sidebar() {
           <div className="sidebar-user">
             <div className="sidebar-avatar">
               {user?.photo ? (
-                <img src={`${user.photo}?t=${avatarTs}`} alt="profile" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+                <img src={`${resolveAssetUrl(user.photo)}?t=${avatarTs}`} alt="profile" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
               ) : (
                 <>{user?.firstName?.charAt(0)}{user?.lastName?.charAt(0)}</>
               )}

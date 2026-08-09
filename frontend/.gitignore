@@ -44,3 +44,5 @@ uploads/
 **/uploads/ 
 # Backend build
 backend/dist/
+.vercel
+.env*

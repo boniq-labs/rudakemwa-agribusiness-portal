@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../../api/client';
+import { resolveAssetUrl } from '../../utils/assetUrl';
 
 const loginSchema = z.object({
   username: z.string().min(1, 'Username or Email is required'),
@@ -40,7 +41,7 @@ export default function LoginPage() {
 
   const systemName = settings.system_name || 'RUDAKEMWA';
   const farmName = settings.farm_name || 'Rudakemwa Agribusiness Portal';
-  const farmLogo = settings.farm_logo ? `${settings.farm_logo}?t=${logoTs}` : '/assets/logo.png';
+  const farmLogo = settings.farm_logo ? `${resolveAssetUrl(settings.farm_logo)}?t=${logoTs}` : '/assets/logo.png';
 
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),

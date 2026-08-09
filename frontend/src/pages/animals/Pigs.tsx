@@ -8,6 +8,7 @@ import StatusBadge from '../../components/StatusBadge';
 import { Plus, Search, Camera } from 'lucide-react';
 import type { Column } from '../../components/DataTable';
 import { useConfirm } from '../../components/ConfirmDialog';
+import { resolveAssetUrl } from '../../utils/assetUrl';
 
 export default function Pigs() {
   const navigate = useNavigate();
@@ -50,7 +51,7 @@ export default function Pigs() {
     {
       key: 'photo', label: '',
       render: (p: any) => p.photo
-        ? <img src={p.photo} alt="" style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover' }} />
+        ? <img src={resolveAssetUrl(p.photo)} alt="" style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover' }} />
         : <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'var(--primary-light)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Camera size={16} color="var(--primary)" /></div>,
     },
     { key: 'name', label: 'Name', render: (p: any) => p.name || 'Unnamed' },
