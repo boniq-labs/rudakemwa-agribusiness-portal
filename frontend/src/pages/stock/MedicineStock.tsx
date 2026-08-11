@@ -11,13 +11,13 @@ import type { Column } from '../../components/DataTable';
 import { useConfirm } from '../../components/ConfirmDialog';
 
 interface FormData {
-  name: string; brand: string; category_id: string; unit: string;
+  name: string; brand: string; category: string; unit: string;
   quantity: string; unit_price: string; reorder_level: string;
   expiry_date: string; notes: string;
 }
 
 const initialForm: FormData = {
-  name: '', brand: '', category_id: '', unit: 'pcs', quantity: '',
+  name: '', brand: '', category: '', unit: 'pcs', quantity: '',
   unit_price: '', reorder_level: '', expiry_date: '', notes: '',
 };
 
@@ -30,7 +30,6 @@ export default function MedicineStock() {
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const { data: medicines, isLoading } = useQuery({ queryKey: ['stock-medicines'], queryFn: () => client.get('/stock/medicines').then(r => r.data.data || []) });
-  const { data: categories } = useQuery({ queryKey: ['stock-categories'], queryFn: () => client.get('/stock/categories').then(r => r.data.data || []) });
   const { data: expiring } = useQuery({ queryKey: ['stock-medicines-expiring'], queryFn: () => client.get('/stock/medicines/expiring').then(r => r.data.data || []) });
   const { data: expired } = useQuery({ queryKey: ['stock-medicines-expired'], queryFn: () => client.get('/stock/medicines/expired').then(r => r.data.data || []) });
 
@@ -51,7 +50,7 @@ export default function MedicineStock() {
   const deleteMutation = useMutation({
     mutationFn: (id: number) => client.delete(`/stock/medicines/${id}`),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['stock-medicines'] }); invalidateDashboard(); toast.success('Medicine deleted'); },
-    onError: () => toast.error('Failed to delete'),
+    onError: (err: any) => toast.error(err.response?.data?.message || 'Failed to delete'),
   });
 
   const closeModal = () => { setShowModal(false); setEditingId(null); setForm(initialForm); setErrors({}); };
@@ -63,11 +62,10 @@ export default function MedicineStock() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setErrors({});
-    const selectedCategory = (categories || []).find((c: any) => c.id === Number(form.category_id));
     const payload = {
       name: form.name,
       brand: form.brand,
-      category: selectedCategory?.name || form.category_id,
+      category: form.category,
       unit: form.unit,
       quantity: Number(form.quantity) || 0,
       unit_price: form.unit_price ? Number(form.unit_price) : undefined,
@@ -85,7 +83,7 @@ export default function MedicineStock() {
   const openEdit = (item: any) => {
     setForm({
       name: item.name || '', brand: item.brand || '',
-      category_id: String(item.category_id || item.category?.id || ''),
+      category: typeof item.category === 'object' ? (item.category?.name || '') : (item.category || ''),
       unit: item.unit || 'pcs', quantity: String(item.quantity || 0),
       unit_price: String(item.unit_price || ''), reorder_level: String(item.reorder_level || ''),
       expiry_date: item.expiry_date || '', notes: item.notes || '',
@@ -183,10 +181,7 @@ export default function MedicineStock() {
               </div>
               <div className="form-row">
                 <FormField label="Category" required>
-                  <select name="category_id" value={form.category_id} onChange={handleChange} required>
-                    <option value="">Select category</option>
-                    {(categories || []).map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
-                  </select>
+                  <input name="category" value={form.category} onChange={handleChange} placeholder="Enter category" required />
                 </FormField>
                 <FormField label="Unit" required>
                   <select name="unit" value={form.unit} onChange={handleChange} required>

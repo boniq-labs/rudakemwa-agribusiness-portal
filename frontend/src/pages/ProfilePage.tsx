@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { authApi, uploadApi } from '../api';
 import { ROLE_LABELS } from '../utils/constants';

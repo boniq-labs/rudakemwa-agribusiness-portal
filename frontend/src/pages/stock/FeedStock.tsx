@@ -49,7 +49,7 @@ export default function FeedStock() {
   const deleteMutation = useMutation({
     mutationFn: (id: number) => stockAPI.deleteFeed(id),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['stock-feed'] }); invalidateDashboard(); toast.success('Feed deleted'); },
-    onError: () => toast.error('Failed to delete feed'),
+    onError: (err: any) => toast.error(err.response?.data?.message || 'Failed to delete feed'),
   });
 
   const consumeMutation = useMutation({

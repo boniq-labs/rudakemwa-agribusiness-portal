@@ -20,6 +20,16 @@ export const createVehicleType = async (req: AuthRequest, res: Response) => {
   } catch (err: any) { return error(res, err.message); }
 };
 
+async function resolveTypeId(typeText?: string | null, typeId?: number | null): Promise<number | null> {
+  if (typeId) return Number(typeId);
+  const name = (typeText || '').trim();
+  if (!name) return null;
+  const [rows]: any = await pool.query('SELECT id FROM vehicle_types WHERE LOWER(name) = LOWER(?) LIMIT 1', [name]);
+  if (rows.length > 0) return rows[0].id;
+  const [result]: any = await pool.query('INSERT INTO vehicle_types (name) VALUES (?)', [name]);
+  return result.insertId;
+}
+
 export const getVehicles = async (req: AuthRequest, res: Response) => {
   try {
     const pag = getPagination(req);
@@ -39,9 +49,10 @@ export const createVehicle = async (req: AuthRequest, res: Response) => {
   try {
     const name = req.body.vehicle_name || req.body.name || '';
     const { plate_number, type_id, model, year, capacity, fuel_type, status } = req.body;
+    const resolvedTypeId = await resolveTypeId(req.body.type, type_id);
     const [result]: any = await pool.query(
       'INSERT INTO vehicles (vehicle_name, plate_number, type_id, model, year, capacity, fuel_type, status) VALUES (?,?,?,?,?,?,?,?)',
-      [name, plate_number, type_id, model, year, capacity, fuel_type || null, status || 'available']
+      [name, plate_number, resolvedTypeId, model, year, capacity, fuel_type || null, status || 'available']
     );
     await logAudit(req, createAuditEntry(req, 'Create Vehicle', 'Vehicles', `Vehicle ${name} created`));
     return created(res, { id: result.insertId }, 'Vehicle created');
@@ -54,9 +65,10 @@ export const updateVehicle = async (req: AuthRequest, res: Response) => {
     const { plate_number, type_id, model, year, capacity, fuel_type, status } = req.body;
     const [old]: any = await pool.query('SELECT * FROM vehicles WHERE id = ?', [req.params.id]);
     if (old.length === 0) return error(res, 'Vehicle not found', 404);
+    const resolvedTypeId = await resolveTypeId(req.body.type, type_id) ?? old[0].type_id;
     await pool.query(
       'UPDATE vehicles SET vehicle_name=?, plate_number=?, type_id=?, model=?, year=?, capacity=?, fuel_type=?, status=? WHERE id=?',
-      [name, plate_number, type_id, model, year, capacity, fuel_type || null, status, req.params.id]
+      [name, plate_number, resolvedTypeId, model, year, capacity, fuel_type || null, status, req.params.id]
     );
     return success(res, null, 'Vehicle updated');
   } catch (err: any) { return error(res, err.message); }

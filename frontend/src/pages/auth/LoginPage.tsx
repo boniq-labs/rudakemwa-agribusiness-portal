@@ -11,7 +11,6 @@ import {
   Sun, Moon, Tractor, Trees, Sprout, ChevronRight
 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import api from '../../api/client';
 import { resolveAssetUrl } from '../../utils/assetUrl';
 
 const loginSchema = z.object({

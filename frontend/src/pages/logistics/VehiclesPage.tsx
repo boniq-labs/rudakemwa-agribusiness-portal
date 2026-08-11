@@ -14,14 +14,14 @@ import type { Column } from '../../components/DataTable';
 interface VehicleForm {
   name: string;
   plate_number: string;
-  type_id: string;
+  type: string;
   status: string;
   fuel_type: string;
   capacity: string;
 }
 
 const initialForm: VehicleForm = {
-  name: '', plate_number: '', type_id: '', status: 'available', fuel_type: 'Diesel', capacity: '',
+  name: '', plate_number: '', type: '', status: 'available', fuel_type: 'Diesel', capacity: '',
 };
 
 const STATUS_OPTIONS = ['available', 'in-use', 'maintenance', 'out-of-service', 'retired'];
@@ -39,11 +39,6 @@ export default function VehiclesPage() {
   const { data: vehicles, isLoading } = useQuery({
     queryKey: ['logistics-vehicles'],
     queryFn: () => client.get('/logistics/vehicles').then(r => r.data.data),
-  });
-
-  const { data: types } = useQuery({
-    queryKey: ['logistics-vehicle-types'],
-    queryFn: () => client.get('/logistics/vehicle-types').then(r => r.data.data),
   });
 
   const createMutation = useMutation({
@@ -79,7 +74,7 @@ export default function VehiclesPage() {
       queryClient.invalidateQueries({ queryKey: ['logistics-dashboard'] });
       toast.success('Vehicle deleted');
     },
-    onError: () => toast.error('Failed to delete'),
+    onError: (err: any) => toast.error(err.response?.data?.message || 'Failed to delete'),
   });
 
   const filtered = (vehicles || []).filter((v: any) =>
@@ -107,7 +102,7 @@ export default function VehiclesPage() {
     setForm({
       name: item.vehicle_name || item.name || '',
       plate_number: item.plate_number || '',
-      type_id: String(item.type_id || (item.type?.id ?? '')),
+      type: item.type_name || item.type?.name || '',
       status: item.status || 'available',
       fuel_type: item.fuel_type || 'Diesel',
       capacity: String(item.capacity || ''),
@@ -124,7 +119,6 @@ export default function VehiclesPage() {
     e.preventDefault();
     const payload = {
       ...form,
-      type_id: form.type_id ? Number(form.type_id) : undefined,
       capacity: form.capacity ? Number(form.capacity) : undefined,
     };
     if (editing) {
@@ -203,10 +197,7 @@ export default function VehiclesPage() {
           </div>
           <div className="form-row">
             <FormField label="Type" required>
-              <select name="type_id" value={form.type_id} onChange={handleChange} required>
-                <option value="">Select type</option>
-                {(types || []).map((t: any) => <option key={t.id} value={t.id}>{t.name}</option>)}
-              </select>
+              <input name="type" value={form.type} onChange={handleChange} placeholder="Enter type of vehicle" required />
             </FormField>
             <FormField label="Status">
               <select name="status" value={form.status} onChange={handleChange}>

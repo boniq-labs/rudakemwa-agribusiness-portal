@@ -70,7 +70,7 @@ export default function EquipmentPage() {
   const deleteMutation = useMutation({
     mutationFn: (id: number) => stockAPI.deleteEquipment(id),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['stock-equipment'] }); invalidateDashboard(); toast.success('Equipment deleted'); },
-    onError: () => toast.error('Failed to delete equipment'),
+    onError: (err: any) => toast.error(err.response?.data?.message || 'Failed to delete equipment'),
   });
 
   const filtered = statusTab === 'All' ? (equipment || []) : (equipment || []).filter((e: any) => e.status === statusTab);

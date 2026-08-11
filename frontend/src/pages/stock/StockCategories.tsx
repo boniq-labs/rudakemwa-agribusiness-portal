@@ -61,7 +61,7 @@ export default function StockCategories() {
       queryClient.invalidateQueries({ queryKey: ['stock-categories'] });
       toast.success('Category deleted');
     },
-    onError: () => toast.error('Failed to delete'),
+    onError: (err: any) => toast.error(err.response?.data?.message || 'Failed to delete'),
   });
 
   const openAdd = () => {

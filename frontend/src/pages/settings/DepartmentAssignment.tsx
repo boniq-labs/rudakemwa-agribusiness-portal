@@ -26,7 +26,6 @@ export default function DepartmentAssignment() {
   const [departments, setDepartments] = useState<Department[]>([]);
   const [selectedUser, setSelectedUser] = useState<number | ''>('');
   const [selectedDepts, setSelectedDepts] = useState<number[]>([]);
-  const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
