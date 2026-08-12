@@ -3,100 +3,98 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import ModulePage from '../../components/ModulePage';
 import DataTable from '../../components/DataTable';
 import StatsCard from '../../components/StatsCard';
-import StatusBadge from '../../components/StatusBadge';
-import { accountingAPI } from '../../api/endpoints';
+import FormField from '../../components/FormField';
 import client from '../../api/client';
 import { formatAmount } from '../../services/currency';
-import { DollarSign, Users, CheckCircle, Clock, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, DollarSign, Users, Phone } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useConfirm } from '../../components/ConfirmDialog';
 import type { Column } from '../../components/DataTable';
 
+const PAYMENT_METHODS = ['Cash', 'Bank Transfer', 'Mobile Money', 'Cheque', 'Credit Card', 'Other'];
+
 export default function PayrollPage() {
   const queryClient = useQueryClient();
-  const [month, setMonth] = useState(() => new Date().toISOString().substring(0, 7));
   const confirm = useConfirm();
+  const [showModal, setShowModal] = useState(false);
+  const [editing, setEditing] = useState<any>(null);
+  const [form, setForm] = useState({ name: '', salary: '', date: new Date().toISOString().split('T')[0], phone: '', payment_method: 'Cash' });
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const { data: payroll, isLoading } = useQuery({
-    queryKey: ['accounting-payroll', month],
-    queryFn: () => accountingAPI.getPayroll({ month }).then(r => r.data.data),
+  const { data: payments, isLoading } = useQuery({
+    queryKey: ['accounting-salary-payments'],
+    queryFn: () => client.get('/accounting/expenses', { params: { category_id: (await client.get('/accounting/expense-categories').then(r => r.data.data || [])).find((c: any) => c.name === 'Salaries')?.id, start_date: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0], end_date: new Date().toISOString().split('T')[0] } }).then(r => r.data.data || []),
   });
 
   const createMutation = useMutation({
-    mutationFn: (data: any) => accountingAPI.createPayroll(data),
+    mutationFn: (data: any) => client.post('/accounting/payroll/salary-payment', data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['accounting-payroll'] });
+      queryClient.invalidateQueries({ queryKey: ['accounting-salary-payments'] });
       queryClient.invalidateQueries({ queryKey: ['accounting-dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['accounting-expenses'] });
+      closeModal();
+      toast.success('Salary payment recorded');
     },
-  });
-
-  const processMutation = useMutation({
-    mutationFn: (data: any) => accountingAPI.processPayroll(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['accounting-payroll'] });
-      queryClient.invalidateQueries({ queryKey: ['accounting-dashboard'] });
+    onError: (err: any) => {
+      setErrors({ submit: err.response?.data?.message || 'Failed to record salary payment' });
     },
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id: number) => client.delete(`/accounting/payroll/${id}`),
+    mutationFn: (id: number) => client.delete(`/accounting/expenses/${id}`),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['accounting-payroll'] });
+      queryClient.invalidateQueries({ queryKey: ['accounting-salary-payments'] });
       queryClient.invalidateQueries({ queryKey: ['accounting-dashboard'] });
-      toast.success('Payroll record deleted');
+      queryClient.invalidateQueries({ queryKey: ['accounting-expenses'] });
+      toast.success('Salary payment deleted');
     },
-    onError: (err: any) => {
-      toast.error(err.response?.data?.message || 'Failed to delete payroll record');
-    },
+    onError: (err: any) => toast.error(err.response?.data?.message || 'Failed to delete'),
   });
 
-  const employees = useMemo(() => {
-    if (!payroll) return [];
-    return payroll.employees || payroll.records || payroll || [];
-  }, [payroll]);
+  const closeModal = () => { setShowModal(false); setEditing(null); setForm({ name: '', salary: '', date: new Date().toISOString().split('T')[0], phone: '', payment_method: 'Cash' }); setErrors({}); };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrors({});
+    if (!form.name.trim()) { setErrors({ name: 'Name is required' }); return; }
+    if (!form.salary || Number(form.salary) <= 0) { setErrors({ salary: 'Valid salary amount is required' }); return; }
+    if (!form.date) { setErrors({ date: 'Date is required' }); return; }
+    if (!form.phone.trim()) { setErrors({ phone: 'Phone is required' }); return; }
+    if (!form.payment_method) { setErrors({ payment_method: 'Payment method is required' }); return; }
+    createMutation.mutate({ ...form, salary: Number(form.salary) });
+  };
+
+  const handleDelete = async (item: any) => {
+    if (await confirm('Delete this salary payment?')) deleteMutation.mutate(item.id);
+  };
 
   const totalPayroll = useMemo(() => {
-    return employees.reduce((s: number, e: any) => s + (Number(e.net_salary || e.net_salary || e.total) || 0), 0);
-  }, [employees]);
+    if (!payments) return 0;
+    return (Array.isArray(payments) ? payments : []).reduce((s: number, p: any) => s + (Number(p.amount) || 0), 0);
+  }, [payments]);
 
-  const paidCount = useMemo(() => {
-    return employees.filter((e: any) => e.status === 'paid').length;
-  }, [employees]);
-
-  const pendingCount = useMemo(() => {
-    return employees.filter((e: any) => e.status === 'pending' || e.status === 'draft').length;
-  }, [employees]);
-
-  const prevMonth = () => {
-    const [y, m] = month.split('-').map(Number);
-    const d = new Date(y, m - 2, 1);
-    setMonth(d.toISOString().substring(0, 7));
-  };
-
-  const nextMonth = () => {
-    const [y, m] = month.split('-').map(Number);
-    const d = new Date(y, m, 1);
-    setMonth(d.toISOString().substring(0, 7));
-  };
-
-  const monthLabel = new Date(month + '-01').toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  const paymentList = Array.isArray(payments) ? payments : [];
 
   const columns: Column<any>[] = [
-    { key: 'employee', label: 'Employee', render: (e: any) => {
-      const emp = typeof e.employee === 'object' ? e.employee : null;
-      return emp ? `${emp.first_name || ''} ${emp.last_name || ''}`.trim() || emp.name || '-' : e.employee_name || '-';
+    { key: 'name', label: 'Name', render: (p: any) => p.vendor || p.name || '-' },
+    { key: 'amount', label: 'Salary', render: (p: any) => <span style={{ fontWeight: 600, color: 'var(--primary)' }}>{formatAmount(Number(p.amount) || 0)}</span> },
+    { key: 'phone', label: 'Phone', render: (p: any) => {
+      const notes = p.notes || '';
+      const match = notes.match(/Phone: ([^)]+)/);
+      return match ? match[1] : '-';
     }},
-    { key: 'basic_salary', label: 'Basic Salary', render: (e: any) => formatAmount(Number(e.basic_salary) || 0) },
-    { key: 'allowances', label: 'Allowances', render: (e: any) => formatAmount(Number(e.allowances || e.allowance) || 0) },
-    { key: 'deductions', label: 'Deductions', render: (e: any) => formatAmount(Number(e.deductions || e.total_deductions) || 0) },
-    { key: 'net_salary', label: 'Net Salary', render: (e: any) => <span style={{ fontWeight: 600 }}>{formatAmount(Number(e.net_salary || e.total) || 0)}</span> },
-    { key: 'status', label: 'Status', render: (e: any) => <StatusBadge status={e.status} /> },
+    { key: 'payment_method', label: 'Payment Method', render: (p: any) => p.payment_method || '-' },
+    { key: 'date', label: 'Date', render: (p: any) => p.date ? new Date(p.date).toLocaleDateString() : '-' },
     {
-      key: 'actions', label: '',
-      render: (e: any) => (
+      key: 'actions', label: 'Actions',
+      render: (p: any) => (
         <div className="actions">
-          <button className="btn btn-sm btn-danger" disabled={deleteMutation.isPending} onClick={async (ev) => { ev.stopPropagation(); if (await confirm('Delete this payroll record?')) deleteMutation.mutate(e.id); }}>
-            <Trash2 size={14} /> Delete
+          <button className="btn btn-sm" style={{ background: '#fef2f2', color: 'var(--danger)' }} disabled={deleteMutation.isPending} onClick={async () => { if (await confirm('Delete this salary payment?')) deleteMutation.mutate(p.id); }}>
+            <Trash2 size={14} />
           </button>
         </div>
       ),
@@ -106,34 +104,56 @@ export default function PayrollPage() {
   return (
     <ModulePage
       title="Payroll"
-      subtitle="Manage employee payroll"
+      subtitle="Manage salary payments"
       actions={
-        <>
-          <button className="btn btn-primary" onClick={() => createMutation.mutate({ month })} disabled={createMutation.isPending}>
-            <DollarSign size={16} /> {createMutation.isPending ? 'Generating...' : 'Create Payroll'}
-          </button>
-          <button className="btn btn-primary" onClick={() => processMutation.mutate({ month })} disabled={processMutation.isPending}>
-            <CheckCircle size={16} /> {processMutation.isPending ? 'Processing...' : 'Process Payroll'}
-          </button>
-        </>
+        <button className="btn btn-primary" onClick={() => { setEditing(null); setForm({ name: '', salary: '', date: new Date().toISOString().split('T')[0], phone: '', payment_method: 'Cash' }); setErrors({}); setShowModal(true); }}>
+          <DollarSign size={16} /> Add Salary Payment
+        </button>
       }
     >
       <div className="stats-grid" style={{ marginBottom: 20 }}>
         <StatsCard title="Total Payroll" value={formatAmount(totalPayroll)} icon={DollarSign} color="var(--primary)" />
-        <StatsCard title="Paid" value={paidCount} icon={CheckCircle} color="var(--success)" />
-        <StatsCard title="Pending" value={pendingCount} icon={Clock} color="var(--warning)" />
-        <StatsCard title="Employees" value={employees.length} icon={Users} color="var(--info)" />
+        <StatsCard title="Payments" value={paymentList.length} icon={Users} color="var(--success)" />
       </div>
 
-      <div className="card" style={{ padding: 16, marginBottom: 20 }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
-          <button className="btn btn-sm" onClick={prevMonth}><ChevronLeft size={16} /></button>
-          <span style={{ fontWeight: 600, fontSize: '1.1rem' }}>{monthLabel}</span>
-          <button className="btn btn-sm" onClick={nextMonth}><ChevronRight size={16} /></button>
+      <DataTable columns={columns} data={paymentList} loading={isLoading} emptyMessage="No salary payments recorded yet" />
+
+      {showModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }} onClick={closeModal}>
+          <div style={{ background: 'var(--card-bg)', borderRadius: 'var(--radius)', padding: 24, width: '100%', maxWidth: 500 }} onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+              <h2 style={{ fontSize: '1.2rem', fontWeight: 700 }}>Add Salary Payment</h2>
+              <button onClick={closeModal} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)' }}><X size={20} /></button>
+            </div>
+            <form onSubmit={handleSubmit}>
+              <FormField label="Name" required error={errors.name}>
+                <input name="name" className="form-input" value={form.name} onChange={handleChange} required placeholder="Employee name" />
+              </FormField>
+              <FormField label="Salary" required error={errors.salary}>
+                <input name="salary" className="form-input" type="number" step="0.01" value={form.salary} onChange={handleChange} required placeholder="0.00" />
+              </FormField>
+              <FormField label="Date" required error={errors.date}>
+                <input name="date" className="form-input" type="date" value={form.date} onChange={handleChange} required />
+              </FormField>
+              <FormField label="Phone" required error={errors.phone}>
+                <input name="phone" className="form-input" value={form.phone} onChange={handleChange} required placeholder="Phone number" />
+              </FormField>
+              <FormField label="Payment Method" required error={errors.payment_method}>
+                <select name="payment_method" className="form-select" value={form.payment_method} onChange={handleChange} required>
+                  {PAYMENT_METHODS.map(m => <option key={m} value={m}>{m}</option>)}
+                </select>
+              </FormField>
+              {errors.submit && <div className="alert alert-error">{errors.submit}</div>}
+              <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 20, flexWrap: 'wrap' }}>
+                <button type="button" className="btn" onClick={closeModal}>Cancel</button>
+                <button type="submit" className="btn btn-primary" disabled={createMutation.isPending}>
+                  {createMutation.isPending ? 'Recording...' : 'Add Salary Payment'}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
-      </div>
-
-      <DataTable columns={columns} data={employees} loading={isLoading} emptyMessage="No payroll records for this month" />
+      )}
     </ModulePage>
   );
 }

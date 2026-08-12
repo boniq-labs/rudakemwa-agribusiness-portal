@@ -101,3 +101,42 @@ export const createSalaryRecord = async (req: AuthRequest, res: Response) => {
     return created(res, { id: result.insertId }, 'Salary record created');
   } catch (err: any) { return error(res, err.message); }
 };
+
+// Simple salary payment record - creates an expense record for payroll tracking
+export const createSalaryPayment = async (req: AuthRequest, res: Response) => {
+  try {
+    const { name, salary, date, phone, payment_method } = req.body;
+    
+    // Validate required fields
+    if (!name || !salary || !date || !phone || !payment_method) {
+      return error(res, 'All fields are required: name, salary, date, phone, payment_method', 400);
+    }
+    
+    const salaryAmount = Number(salary);
+    if (isNaN(salaryAmount) || salaryAmount <= 0) {
+      return error(res, 'Salary must be a positive number', 400);
+    }
+    
+    // Get or create Salaries expense category
+    let [categoryRows]: any = await pool.query('SELECT id FROM expense_categories WHERE name = ? LIMIT 1', ['Salaries']);
+    let categoryId: number;
+    if (categoryRows.length === 0) {
+      const [catResult]: any = await pool.query('INSERT INTO expense_categories (name, description) VALUES (?,?)', ['Salaries', 'Salary payments to employees']);
+      categoryId = catResult.insertId;
+    } else {
+      categoryId = categoryRows[0].id;
+    }
+    
+    // Create expense record for salary payment
+    const expenseNumber = `SAL-${Date.now()}`;
+    const paymentMethod = (payment_method || 'Cash').toLowerCase().replace(/\s+/g, '_');
+    
+    const [result]: any = await pool.query(
+      `INSERT INTO expense_records (expense_number, category_id, description, amount, payment_method, vendor, notes, date, department_id) VALUES (?,?,?,?,?,?,?,?,?)`,
+      [expenseNumber, categoryId, `Salary payment for ${name} (Phone: ${phone})`, salaryAmount, paymentMethod || null, name, `Salary payment for ${name}`, date, null]
+    );
+    
+    await logAudit(req, createAuditEntry(req, 'Create Salary Payment', 'Accounting', `Salary payment for ${name} recorded`, { name, salary: salaryAmount, date, phone, payment_method }));
+    return created(res, { id: result.insertId }, 'Salary payment recorded');
+  } catch (err: any) { return error(res, err.message); }
+};

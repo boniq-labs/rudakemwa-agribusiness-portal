@@ -77,13 +77,13 @@ import { getExpenseCategories, createExpenseCategory, updateExpenseCategory, get
 import { getInvoices, createInvoice, updateInvoice, deleteInvoice, updateInvoiceStatus, recordPayment, getInvoicePDF } from '../controllers/accounting/invoiceController';
 
 import { getBudgets, createBudget, updateBudget, deleteBudget, updateBudgetStatus, getBudgetVsActual } from '../controllers/accounting/budgetController';
-import { getPayrollRecords, createPayroll, processPayrollPayment, deletePayrollRecord, getSalaryRecords, createSalaryRecord } from '../controllers/accounting/payrollController';
+import { getPayrollRecords, createPayroll, processPayrollPayment, deletePayrollRecord, getSalaryRecords, createSalaryRecord, createSalaryPayment } from '../controllers/accounting/payrollController';
 import { getProfitLoss, getCashFlow, getFinancialSummary } from '../controllers/accounting/reportController';
 
 import { getSupplierCategories, createSupplierCategory, updateSupplierCategory, getSuppliers, createSupplier, updateSupplier, deleteSupplier, rateSupplier } from '../controllers/procurement/supplierController';
 import { getProcurementReports } from '../controllers/procurement/reportController';
 import { getPurchaseRequests, createPurchaseRequest, updatePurchaseRequest, deletePurchaseRequest, approvePurchaseRequest, rejectPurchaseRequest } from '../controllers/procurement/purchaseRequestController';
-import { getPurchaseOrders, createPurchaseOrder, updatePurchaseOrder, updatePurchaseOrderStatus, receivePurchaseOrder, deletePurchaseOrder } from '../controllers/procurement/purchaseOrderController';
+import { getPurchaseOrders, createPurchaseOrder, updatePurchaseOrder, updatePurchaseOrderStatus, receivePurchaseOrder, deletePurchaseOrder, getPurchases } from '../controllers/procurement/purchaseOrderController';
 import { getProcurementInvoices, createProcurementInvoice, updateProcurementInvoice, deleteProcurementInvoice, payProcurementInvoice } from '../controllers/procurement/invoiceController';
 import { getProcurementContracts, createProcurementContract, updateProcurementContract, deleteProcurementContract, getExpiringProcurementContracts } from '../controllers/procurement/contractController';
 
@@ -702,6 +702,9 @@ router.delete('/procurement/orders/:id', authenticate, authorize(['purchase_orde
 router.put('/procurement/orders/:id/status', authenticate, authorize(['purchase_orders.update']), updatePurchaseOrderStatus);
 router.post('/procurement/orders/:id/receive', authenticate, authorize(['purchase_orders.create']), receivePurchaseOrder);
 
+// Procurement - Purchases (completed orders)
+router.get('/procurement/purchases', authenticate, authorize(['purchase_orders.view']), getPurchases);
+
 // Procurement - Invoices
 router.get('/procurement/invoices', authenticate, authorize(['procurement.view']), getProcurementInvoices);
 router.post('/procurement/invoices', authenticate, authorize(['procurement.create']), createProcurementInvoice);
@@ -803,6 +806,7 @@ router.put('/accounting/invoices/:id/pay', authenticate, authorize(['invoices.up
 // Accounting - Payroll
 router.get('/accounting/payroll', authenticate, authorize(['payroll.view']), getPayrollRecords);
 router.post('/accounting/payroll', authenticate, authorize(['payroll.create']), createPayroll);
+router.post('/accounting/payroll/salary-payment', authenticate, authorize(['payroll.create']), createSalaryPayment);
 router.put('/accounting/payroll/:id/process', authenticate, authorize(['payroll.update']), processPayrollPayment);
 router.delete('/accounting/payroll/:id', authenticate, authorize(['payroll.delete']), deletePayrollRecord);
 

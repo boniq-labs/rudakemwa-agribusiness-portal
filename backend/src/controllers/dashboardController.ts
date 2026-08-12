@@ -132,14 +132,14 @@ async function getHrDashboard() {
 async function getAccountantDashboard() {
   const [[{ totalMonthlyIncome }]]: any = await pool.query("SELECT COALESCE(SUM(amount),0) as totalMonthlyIncome FROM income_records WHERE MONTH(date)=MONTH(CURDATE()) AND YEAR(date)=YEAR(CURDATE()) AND deleted_at IS NULL");
   const [[{ totalMonthlyExpenses }]]: any = await pool.query("SELECT COALESCE(SUM(amount),0) as totalMonthlyExpenses FROM expense_records WHERE MONTH(date)=MONTH(CURDATE()) AND YEAR(date)=YEAR(CURDATE()) AND deleted_at IS NULL");
-  const [[{ totalInvoices }]]: any = await pool.query("SELECT COUNT(*) as totalInvoices FROM invoices");
+  const [[{ totalPayroll }]]: any = await pool.query("SELECT COALESCE(SUM(amount),0) as totalPayroll FROM expense_records WHERE category_id = (SELECT id FROM expense_categories WHERE name = 'Salaries' LIMIT 1) AND MONTH(date)=MONTH(CURDATE()) AND YEAR(date)=YEAR(CURDATE()) AND deleted_at IS NULL");
   const [incomeVsExpenses]: any = await pool.query(
     "SELECT DATE_FORMAT(m.date,'%b') as month, COALESCE(SUM(i.amount),0) as income, COALESCE(SUM(e.amount),0) as expenses FROM (SELECT DISTINCT LAST_DAY(DATE_ADD(CURDATE(), INTERVAL -n MONTH)) as date FROM (SELECT 0 n UNION SELECT 1 UNION SELECT 2 UNION SELECT 3 UNION SELECT 4 UNION SELECT 5) d) m LEFT JOIN income_records i ON MONTH(i.date)=MONTH(m.date) AND YEAR(i.date)=YEAR(m.date) LEFT JOIN expense_records e ON MONTH(e.date)=MONTH(m.date) AND YEAR(e.date)=YEAR(m.date) GROUP BY m.date ORDER BY m.date"
   );
   const [expenseByCategory]: any = await pool.query(
     "SELECT ec.name, COALESCE(SUM(e.amount),0) as value FROM expense_categories ec LEFT JOIN expense_records e ON e.category_id = ec.id AND MONTH(e.date)=MONTH(CURDATE()) AND YEAR(e.date)=YEAR(CURDATE()) GROUP BY ec.id, ec.name"
   );
-  return { totalMonthlyIncome, totalMonthlyExpenses, totalInvoices, profit: totalMonthlyIncome - totalMonthlyExpenses, incomeVsExpenses, expenseByCategory };
+  return { totalMonthlyIncome, totalMonthlyExpenses, totalPayroll, profit: totalMonthlyIncome - totalMonthlyExpenses, incomeVsExpenses, expenseByCategory };
 }
 
 async function getAnimalDashboard() {
@@ -191,19 +191,16 @@ async function getLogisticsDashboard() {
 }
 
 async function getProcurementDashboard() {
-  const [[{ total_purchase_requests }]]: any = await pool.query("SELECT COUNT(*) as total_purchase_requests FROM purchase_requests WHERE deleted_at IS NULL");
-  const [[{ total_purchase_orders }]]: any = await pool.query("SELECT COUNT(*) as total_purchase_orders FROM purchase_orders WHERE deleted_at IS NULL");
-  const [[{ total_contracts }]]: any = await pool.query("SELECT COUNT(*) as total_contracts FROM supplier_contracts WHERE deleted_at IS NULL");
-  const [[{ total_invoices }]]: any = await pool.query("SELECT COUNT(*) as total_invoices FROM supplier_invoices WHERE deleted_at IS NULL");
+  const [[{ totalSuppliers }]]: any = await pool.query("SELECT COUNT(*) as totalSuppliers FROM suppliers WHERE deleted_at IS NULL");
+  const [[{ totalPurchases }]]: any = await pool.query("SELECT COALESCE(SUM(total_amount),0) as totalPurchases FROM purchase_orders WHERE status IN ('received','completed') AND deleted_at IS NULL");
   const [recent_orders]: any = await pool.query("SELECT po.*, s.supplier_name FROM purchase_orders po LEFT JOIN suppliers s ON po.supplier_id = s.id WHERE po.deleted_at IS NULL ORDER BY po.created_at DESC LIMIT 5");
-  return { total_purchase_requests, total_purchase_orders, total_contracts, total_invoices, recent_orders };
+  return { totalSuppliers, totalPurchases, recent_orders };
 }
 
 async function getSalesDashboard() {
-  const [[{ todaySales }]]: any = await pool.query("SELECT COALESCE(SUM(total_amount),0) as todaySales FROM sales_orders WHERE DATE(order_date)=CURDATE() AND status='completed'");
-  const [[{ monthSales }]]: any = await pool.query("SELECT COALESCE(SUM(total_amount),0) as monthSales FROM sales_orders WHERE MONTH(order_date)=MONTH(CURDATE()) AND status='completed'");
-  const [[{ pendingOrders }]]: any = await pool.query("SELECT COUNT(*) as pendingOrders FROM sales_orders WHERE status='pending'");
-  return { todaySales, monthlySales: monthSales, pendingOrders };
+  const [[{ totalCustomers }]]: any = await pool.query("SELECT COUNT(*) as totalCustomers FROM customers WHERE deleted_at IS NULL");
+  const [[{ totalProducts }]]: any = await pool.query("SELECT COUNT(*) as totalProducts FROM products WHERE deleted_at IS NULL");
+  return { totalCustomers, totalProducts };
 }
 
 async function getDefaultDashboard(userId: number) {

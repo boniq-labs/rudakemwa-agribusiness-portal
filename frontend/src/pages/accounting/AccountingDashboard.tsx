@@ -4,7 +4,7 @@ import DepartmentHeader from '../../components/DepartmentHeader';
 import ModulePage from '../../components/ModulePage';
 import StatsCard from '../../components/StatsCard';
 import client from '../../api/client';
-import { TrendingUp, TrendingDown, FileText, Plus, Receipt } from 'lucide-react';
+import { TrendingUp, TrendingDown, Plus, Receipt, DollarSign } from 'lucide-react';
 import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
 import { formatAmount } from '../../services/currency';
 
@@ -20,7 +20,7 @@ export default function AccountingDashboard() {
 
   const totalMonthlyIncome = dash?.totalMonthlyIncome ?? 0;
   const totalMonthlyExpenses = dash?.totalMonthlyExpenses ?? 0;
-  const totalInvoices = dash?.totalInvoices ?? 0;
+  const totalPayroll = dash?.totalPayroll ?? 0;
   const profit = dash?.profit ?? (totalMonthlyIncome - totalMonthlyExpenses);
   const incomeVsExpenses = dash?.incomeVsExpenses || [];
   const expenseByCategory = dash?.expenseByCategory || [];
@@ -32,22 +32,23 @@ export default function AccountingDashboard() {
       actions={
         <>
           <button className="btn btn-primary" onClick={() => navigate('/accounting/income?add=true')}>
-            <Plus size={16} /> Record Income
+            <Plus size={16} /> Add Income
           </button>
           <button className="btn btn-primary" onClick={() => navigate('/accounting/expenses?add=true')}>
-            <Receipt size={16} /> Record Expense
+            <Receipt size={16} /> Add Expense
           </button>
-          <button className="btn btn-primary" onClick={() => navigate('/accounting/invoices?add=true')}>
-            <FileText size={16} /> Create Invoice
+          <button className="btn btn-primary" onClick={() => navigate('/accounting/payroll?add=true')}>
+            <DollarSign size={16} /> Add Salary Payment
           </button>
         </>
       }
     >
       <DepartmentHeader />
       <div className="stats-grid">
-        <StatsCard title="Total Monthly Income" value={formatAmount(totalMonthlyIncome)} icon={TrendingUp} color="var(--success)" />
-        <StatsCard title="Total Monthly Expenses" value={formatAmount(totalMonthlyExpenses)} icon={TrendingDown} color="var(--danger)" />
-        <StatsCard title="Total Invoices" value={totalInvoices} icon={FileText} color="var(--primary)" />
+        <StatsCard title="Total Income" value={formatAmount(totalMonthlyIncome)} icon={TrendingUp} color="var(--success)" />
+        <StatsCard title="Total Expenses" value={formatAmount(totalMonthlyExpenses)} icon={TrendingDown} color="var(--danger)" />
+        <StatsCard title="Total Payroll" value={formatAmount(totalPayroll)} icon={DollarSign} color="var(--primary)" />
+        <StatsCard title="Profit" value={formatAmount(profit)} icon={profit >= 0 ? TrendingUp : TrendingDown} color={profit >= 0 ? 'var(--success)' : 'var(--danger)'} />
       </div>
 
       <div className="dashboard-grid">

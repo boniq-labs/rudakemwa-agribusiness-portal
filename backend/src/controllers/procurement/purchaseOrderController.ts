@@ -89,6 +89,45 @@ export const receivePurchaseOrder = async (req: AuthRequest, res: Response) => {
         }
       }
     }
+    // Create expense record for received purchase
+    const [po]: any = await pool.query('SELECT * FROM purchase_orders WHERE id = ?', [req.params.id]);
+    const [supplier]: any = await pool.query('SELECT supplier_name FROM suppliers WHERE id = ?', [po[0].supplier_id]);
+    const totalCost = items[0].reduce((sum: number, item: any) => sum + Number(item.total_price || 0), 0);
+    if (totalCost > 0) {
+      // Get or create Purchases expense category
+      let [catRows]: any = await pool.query('SELECT id FROM expense_categories WHERE name = ? LIMIT 1', ['Purchases']);
+      let categoryId: number;
+      if (catRows.length === 0) {
+        const [catResult]: any = await pool.query('INSERT INTO expense_categories (name, description) VALUES (?,?)', ['Purchases', 'Procurement purchases from suppliers']);
+        categoryId = catResult.insertId;
+      } else {
+        categoryId = catRows[0].id;
+      }
+      const expenseNumber = `EXP-PUR-${Date.now()}`;
+      await pool.query(
+        `INSERT INTO expense_records (expense_number, category_id, description, amount, payment_method, vendor, notes, date, department_id, created_by) VALUES (?,?,?,?,?,?,?,?,?,?)`,
+        [`EXP-PUR-${Date.now()}`, categoryId, `Purchase from ${supplier[0]?.supplier_name || 'Supplier'}`, totalCost, 'Cash', supplier[0]?.supplier_name || 'Supplier', `Purchase order ${po[0].po_number} received`, new Date().toISOString().split('T')[0], po[0].department_id || null, req.user?.id]
+      );
+    }
     return success(res, null, 'Purchase order received');
+  } catch (err: any) { return error(res, err.message); }
+};
+
+export const getPurchases = async (req: AuthRequest, res: Response) => {
+  try {
+    const pag = getPagination(req);
+    const { where, params } = buildWhereClause(pag.filters, pag.search, ['po.po_number', 's.supplier_name']);
+    let filters = " AND po.status IN ('received','completed')";
+    if (req.query.department_id) { filters += ' AND po.department_id = ?'; params.push(req.query.department_id); }
+    if (req.query.supplier_id) { filters += ' AND po.supplier_id = ?'; params.push(req.query.supplier_id); }
+    const countQuery = `SELECT COUNT(*) as total FROM purchase_orders po LEFT JOIN suppliers s ON po.supplier_id = s.id WHERE po.deleted_at IS NULL ${where} ${filters}`;
+    const [[{ total }]]: any = await pool.query(countQuery, params);
+    const dataQuery = `SELECT po.*, s.supplier_name, d.name as department_name,
+        (SELECT COALESCE(SUM(total_price),0) FROM purchase_order_items WHERE po_id = po.id) as total_cost
+        FROM purchase_orders po LEFT JOIN suppliers s ON po.supplier_id = s.id
+        LEFT JOIN departments d ON po.department_id = d.id
+        WHERE po.deleted_at IS NULL ${where} ${filters} ORDER BY ${pag.sort} ${pag.order} LIMIT ? OFFSET ?`;
+    const [rows]: any = await pool.query(dataQuery, [...params, pag.limit, pag.offset]);
+    return paginated(res, rows, total, pag.page, pag.limit);
   } catch (err: any) { return error(res, err.message); }
 };
