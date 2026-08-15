@@ -132,6 +132,7 @@ export default function ShiftManagement() {
         {shiftsLoading ? <p>Loading...</p> : shifts?.length === 0 ? (
           <p className="text-muted">No shifts assigned yet.</p>
         ) : (
+          <div className="table-container">
           <table className="table">
             <thead>
               <tr>
@@ -168,6 +169,7 @@ export default function ShiftManagement() {
               })}
             </tbody>
           </table>
+          </div>
         )}
       </div>
     </div>

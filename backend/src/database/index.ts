@@ -20,6 +20,7 @@ import * as m017 from './migrations/017_alter_inventory_categories_create_prescr
 import * as m018 from './migrations/018_add_status_to_income_expense';
 import * as m019 from './migrations/019_alter_customer_payments_invoice_nullable';
 import * as m020 from './migrations/020_add_purchase_orders_total_cost';
+import * as m021 from './migrations/021_alter_suppliers_supplier_categories';
 
 const migrations = [
   { name: m001.name, up: m001.up },
@@ -42,6 +43,7 @@ const migrations = [
   { name: m018.name, up: m018.up },
   { name: m019.name, up: m019.up },
   { name: m020.name, up: m020.up },
+  { name: m021.name, up: m021.up },
 ];
 
 export async function runMigrations(conn: mysql.Connection): Promise<void> {
