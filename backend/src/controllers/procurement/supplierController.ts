@@ -40,10 +40,20 @@ export const getSuppliers = async (req: AuthRequest, res: Response) => {
   } catch (err: any) { return error(res, err.message); }
 };
 
+const resolveCategoryId = async (category_id: any, category_name: any): Promise<any> => {
+  if (category_id) return category_id;
+  if (!category_name) return null;
+  const [existing]: any = await pool.query('SELECT id FROM supplier_categories WHERE name = ? AND deleted_at IS NULL LIMIT 1', [category_name]);
+  if (existing.length > 0) return existing[0].id;
+  const [result]: any = await pool.query('INSERT INTO supplier_categories (name) VALUES (?)', [category_name]);
+  return result.insertId;
+};
+
 export const createSupplier = async (req: AuthRequest, res: Response) => {
   try {
     const supplier_name = req.body.supplier_name || req.body.name || '';
-    const { email, phone, address, category_id, contact_person } = req.body;
+    const { email, phone, address, contact_person } = req.body;
+    const category_id = await resolveCategoryId(req.body.category_id, req.body.category_name);
     const [result]: any = await pool.query(
       'INSERT INTO suppliers (supplier_name, email, phone, address, category_id, contact_person) VALUES (?,?,?,?,?,?)',
       [supplier_name, email, phone, address, category_id, contact_person || null]
@@ -56,7 +66,8 @@ export const createSupplier = async (req: AuthRequest, res: Response) => {
 export const updateSupplier = async (req: AuthRequest, res: Response) => {
   try {
     const supplier_name = req.body.supplier_name || req.body.name || '';
-    const { email, phone, address, category_id, contact_person } = req.body;
+    const { email, phone, address, contact_person } = req.body;
+    const category_id = await resolveCategoryId(req.body.category_id, req.body.category_name);
     const [old]: any = await pool.query('SELECT * FROM suppliers WHERE id = ?', [req.params.id]);
     if (old.length === 0) return error(res, 'Supplier not found', 404);
     await pool.query(

@@ -17,6 +17,12 @@ const initialForm: SupplierForm = {
   supplier_name: '', contact_person: '', phone: '', email: '', address: '', category_id: '',
 };
 
+const DEFAULT_CATEGORIES = [
+  'Raw Materials', 'Equipment', 'Services', 'Office Supplies', 'Animal Feed',
+  'Veterinary Supplies', 'Medicines', 'Farm Inputs', 'Seeds', 'Fertilizers',
+  'Packaging Materials', 'Fuel', 'Spare Parts', 'Transportation', 'Construction Materials', 'Other',
+];
+
 export default function SuppliersPage() {
   const queryClient = useQueryClient();
   const [showModal, setShowModal] = useState(false);
@@ -39,6 +45,14 @@ export default function SuppliersPage() {
   const filtered = (suppliers || []).filter((s: any) =>
     `${s.supplier_name || s.name || ''} ${s.contact_person || ''} ${s.phone || ''} ${s.email || ''}`.toLowerCase().includes(search.toLowerCase())
   );
+
+  const categoryOptions: { id: number | null; name: string }[] = (supplierCategories || []).map((c: any) => ({ id: c.id, name: c.name }));
+  const existingNames = new Set(categoryOptions.map(c => c.name?.trim().toLowerCase()));
+  DEFAULT_CATEGORIES.forEach(name => {
+    if (!existingNames.has(name.trim().toLowerCase())) {
+      categoryOptions.push({ id: null, name });
+    }
+  });
 
   const createMutation = useMutation({
     mutationFn: (data: any) => client.post('/procurement/suppliers', data),
@@ -67,9 +81,11 @@ export default function SuppliersPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setErrors({});
+    const selected = categoryOptions.find(c => String(c.id ?? c.name) === String(form.category_id));
     const payload = {
       ...form,
-      category_id: form.category_id ? Number(form.category_id) : undefined,
+      category_id: selected?.id ? Number(selected.id) : undefined,
+      category_name: selected && !selected?.id ? selected.name : undefined,
     };
     if (editingId) {
       updateMutation.mutate({ id: editingId, ...payload });
@@ -156,7 +172,7 @@ export default function SuppliersPage() {
               <FormField label="Category">
                 <select name="category_id" value={form.category_id} onChange={handleChange}>
                   <option value="">Select category</option>
-                  {(supplierCategories || []).map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                  {categoryOptions.map((c: any) => <option key={c.id ?? c.name} value={c.id ?? c.name}>{c.name}</option>)}
                 </select>
               </FormField>
               {errors.submit && <div className="alert alert-error">{errors.submit}</div>}
