@@ -119,11 +119,11 @@ export default function LogisticsReports() {
             </div>
             <div>
               <div className="stat-label">Total Cost</div>
-              <div className="stat-value">{fuelCost.toLocaleString()}</div>
+              <div className="stat-value">RWF {Number(fuelCost || 0).toLocaleString()}</div>
             </div>
             <div>
               <div className="stat-label">Avg Cost/L</div>
-              <div className="stat-value">{fuelConsumption > 0 ? (fuelCost / fuelConsumption).toFixed(2) : '-'}</div>
+              <div className="stat-value">{fuelConsumption > 0 ? `RWF ${(fuelCost / fuelConsumption).toLocaleString(undefined, { maximumFractionDigits: 2 })}` : '-'}</div>
             </div>
             <div>
               <div className="stat-label">Records</div>

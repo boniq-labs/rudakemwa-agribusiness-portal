@@ -255,7 +255,7 @@ export default function MilkProcessing() {
               <div key={p.id} style={{ padding: 16, border: '1px solid var(--border)', borderRadius: 8, position: 'relative' }}>
                 <div style={{ fontWeight: 600 }}>{p.name}</div>
                 <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{p.unit}</div>
-                <div style={{ fontSize: '1.1rem', fontWeight: 700, marginTop: 8 }}>${p.price}</div>
+                <div style={{ fontSize: '1.1rem', fontWeight: 700, marginTop: 8 }}>RWF {Number(p.price).toLocaleString()}</div>
                 {p.description && <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: 4 }}>{p.description}</div>}
                 <div style={{ display: 'flex', gap: 4, marginTop: 12 }}>
                   <button className="btn btn-sm" onClick={() => openEditProduct(p)} style={{ background: 'var(--bg)', border: '1px solid var(--border)', padding: '4px 8px' }}><Edit2 size={14} /></button>

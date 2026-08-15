@@ -116,7 +116,7 @@ export default function AnimalSales() {
     },
     {
       key: 'price', label: 'Price',
-      render: (item: any) => item.price ? `$${Number(item.price).toFixed(2)}` : '-',
+      render: (item: any) => item.price ? `RWF ${Number(item.price).toLocaleString()}` : '-',
     },
     {
       key: 'payment_status', label: 'Payment Status',

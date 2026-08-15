@@ -159,7 +159,7 @@ export default function FuelPage() {
       render: (f: any) => f.vehicle_name || '-',
     },
     { key: 'quantity', label: 'Liters', render: (f: any) => f.quantity ?? '-' },
-    { key: 'cost', label: 'Cost', render: (f: any) => f.cost ? Number(f.cost).toLocaleString() : '-' },
+    { key: 'cost', label: 'Cost', render: (f: any) => f.cost ? `RWF ${Number(f.cost).toLocaleString()}` : '-' },
     { key: 'date', label: 'Date', render: (f: any) => f.date ? new Date(f.date).toLocaleDateString() : '-' },
     { key: 'fuel_type', label: 'Station', render: (f: any) => f.fuel_type || '-' },
     {
@@ -191,7 +191,7 @@ export default function FuelPage() {
     >
       <div className="stats-grid">
         <StatsCard title="Total Fuel" value={`${totalLiters.toFixed(1)} L`} icon={Fuel} color="var(--primary)" />
-        <StatsCard title="Total Cost" value={totalCost.toLocaleString()} icon={DollarSign} color="var(--danger)" />
+        <StatsCard title="Total Cost" value={`RWF ${Number(totalCost || 0).toLocaleString()}`} icon={DollarSign} color="var(--danger)" />
       </div>
 
       <div style={{ display: 'flex', gap: 12, marginBottom: 20, alignItems: 'flex-end', flexWrap: 'wrap' }}>

@@ -10,23 +10,27 @@ import FormField from '../../components/FormField';
 import type { Column } from '../../components/DataTable';
 import { Plus, Search, ChevronDown } from 'lucide-react';
 
-const CATEGORY_OPTIONS = ['Milk Products', 'Crop Sales', 'Animal Sales'];
+const CATEGORY_OPTIONS = ['Milk Products'];
 
 interface ProductForm {
   name: string;
   category_name: string;
   price: string;
   unit: string;
-  quantity_available: string;
   description: string;
 }
 
-const initialForm: ProductForm = { name: '', category_name: '', price: '', unit: '', quantity_available: '', description: '' };
+const initialForm: ProductForm = { name: '', category_name: '', price: '', unit: '', description: '' };
 
 function SearchableCategorySelect({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const ref = useRef<HTMLDivElement>(null);
+
+  const { data: categories } = useQuery({
+    queryKey: ['sales-product-categories'],
+    queryFn: () => client.get('/sales/product-categories').then(r => r.data.data || []),
+  });
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -36,7 +40,12 @@ function SearchableCategorySelect({ value, onChange }: { value: string; onChange
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  const filtered = CATEGORY_OPTIONS.filter(c => c.toLowerCase().includes(query.toLowerCase()));
+  const categoryNames = CATEGORY_OPTIONS.concat(
+    (categories || []).map((c: any) => c.name).filter((n: string) => n && !CATEGORY_OPTIONS.includes(n))
+  );
+  const q = query.trim();
+  const filtered = categoryNames.filter(c => c.toLowerCase().includes(q.toLowerCase()));
+  const exactMatch = categoryNames.some(c => c.toLowerCase() === q.toLowerCase());
 
   return (
     <div ref={ref} style={{ position: 'relative' }}>
@@ -59,7 +68,17 @@ function SearchableCategorySelect({ value, onChange }: { value: string; onChange
             />
           </div>
           <div style={{ maxHeight: 160, overflow: 'auto' }}>
-            {filtered.length === 0 && <div style={{ padding: '8px 12px', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>No categories match</div>}
+            {q && !exactMatch && (
+              <div
+                onClick={() => { onChange(q); setOpen(false); setQuery(''); }}
+                style={{ padding: '8px 12px', cursor: 'pointer', fontSize: '0.9rem', color: 'var(--primary)', fontWeight: 600 }}
+                onMouseEnter={e => { (e.target as HTMLElement).style.background = 'var(--bg)'; }}
+                onMouseLeave={e => { (e.target as HTMLElement).style.background = 'transparent'; }}
+              >
+                Create &quot;{q}&quot;
+              </div>
+            )}
+            {filtered.length === 0 && !q && <div style={{ padding: '8px 12px', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>No categories match</div>}
             {filtered.map(c => (
               <div
                 key={c}
@@ -138,7 +157,6 @@ export default function ProductsPage() {
       category_name: form.category_name || undefined,
       price: Number(form.price),
       unit: form.unit || null,
-      quantity_available: Number(form.quantity_available),
       description: form.description || null,
     };
     if (editId) updateMutation.mutate({ id: editId, data: payload });
@@ -151,7 +169,6 @@ export default function ProductsPage() {
       category_name: p.category_name || '',
       price: String(p.price || ''),
       unit: p.unit || '',
-      quantity_available: String(p.quantity_available || p.quantity || ''),
       description: p.description || '',
     });
     setEditId(p.id);
@@ -165,9 +182,9 @@ export default function ProductsPage() {
   const columns: Column<any>[] = [
     { key: 'name', label: 'Name' },
     { key: 'category_name', label: 'Category', render: (p: any) => p.category_name || '-' },
-    { key: 'price', label: 'Price', render: (p: any) => `$${Number(p.price).toFixed(2)}` },
+    { key: 'price', label: 'Price', render: (p: any) => `RWF ${Number(p.price).toLocaleString()}` },
     { key: 'unit', label: 'Unit', render: (p: any) => p.unit || '-' },
-    { key: 'quantity_available', label: 'Qty', render: (p: any) => Number(p.quantity_available) ?? 0 },
+    { key: 'quantity_available', label: 'Available (Milk Today)', render: (p: any) => `${Number(p.quantity_available) || 0} L` },
     {
       key: 'actions', label: 'Actions',
       render: (p: any) => (
@@ -210,9 +227,9 @@ export default function ProductsPage() {
           <FormField label="Unit">
             <input className="form-input" value={form.unit} onChange={e => setForm(p => ({ ...p, unit: e.target.value }))} placeholder="e.g. pcs, kg, liter" />
           </FormField>
-          <FormField label="Quantity" required>
-            <input className="form-input" type="number" value={form.quantity_available} onChange={e => setForm(p => ({ ...p, quantity_available: e.target.value }))} required />
-          </FormField>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginTop: 8, background: 'var(--primary-light)', padding: '10px 12px', borderRadius: 8 }}>
+            Product availability is auto-sourced from today&apos;s Milk Today production. Manual stock is not tracked.
+          </p>
           <FormField label="Description">
             <textarea className="form-input" value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} rows={2} />
           </FormField>

@@ -44,7 +44,12 @@ export const getProducts = async (req: AuthRequest, res: Response) => {
        FROM products p LEFT JOIN product_categories pc ON p.category_id = pc.id
        ${where} ORDER BY p.created_at DESC`, params
     );
-    const sanitized = rows.map((r: any) => ({ ...r, quantity_available: Number(r.quantity_available) || 0, price: Number(r.price) || 0 }));
+    // Milk-only products: availability is auto-sourced from today's Milk Today production.
+    // Manual quantity_available is no longer used for availability.
+    const [[{ milkToday }]]: any = await pool.query(
+      "SELECT COALESCE(SUM(quantity_liters),0) as milkToday FROM milk_collections WHERE DATE(collection_date) = CURDATE() AND deleted_at IS NULL"
+    );
+    const sanitized = rows.map((r: any) => ({ ...r, quantity_available: Number(milkToday) || 0, price: Number(r.price) || 0 }));
     return success(res, sanitized);
   } catch (err: any) { return error(res, err.message); }
 };
@@ -62,8 +67,9 @@ export const createProduct = async (req: AuthRequest, res: Response) => {
         category_id = result.insertId;
       }
     }
-    const quantity_available = b.quantity_available ?? b.quantity ?? 0;
     const { name, code, unit, price, cost_price, description } = b;
+    // Milk-only products: no manual stock - availability is auto-sourced from Milk Today
+    const quantity_available = 0;
     const [result]: any = await pool.query(
       `INSERT INTO products (category_id, name, code, unit, price, cost_price, quantity_available, description)
        VALUES (?,?,?,?,?,?,?,?)`,
@@ -89,8 +95,9 @@ export const updateProduct = async (req: AuthRequest, res: Response) => {
         category_id = result.insertId;
       }
     }
-    const quantity_available = b.quantity_available ?? b.quantity ?? old[0].quantity_available;
     const { name, code, unit, price, cost_price, description, status } = b;
+    // Milk-only products: manual stock is not tracked - keep existing quantity (auto-sourced availability)
+    const quantity_available = old[0].quantity_available;
     await pool.query(
       `UPDATE products SET category_id=?, name=?, code=?, unit=?, price=?, cost_price=?, quantity_available=?, description=?, status=? WHERE id=?`,
       [category_id, name, code || null, unit || null, price, cost_price || null, quantity_available, description || null, status || old[0].status, req.params.id]
@@ -112,6 +119,7 @@ export const deleteProduct = async (req: AuthRequest, res: Response) => {
 
 export const updateProductStock = async (req: AuthRequest, res: Response) => {
   try {
+    // Milk-only products: manual stock adjustment disabled - availability comes from Milk Today
     const { quantity } = req.body;
     const [old]: any = await pool.query('SELECT * FROM products WHERE id = ?', [req.params.id]);
     if (old.length === 0) return error(res, 'Product not found', 404);

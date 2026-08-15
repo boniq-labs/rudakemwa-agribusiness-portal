@@ -6,7 +6,7 @@ import FormField from '../../components/FormField';
 import StatsCard from '../../components/StatsCard';
 import client from '../../api/client';
 import { formatAmount } from '../../services/currency';
-import { Plus, Edit2, Trash2, X, Receipt, TrendingDown, Calendar } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, Receipt, TrendingDown, Calendar, CheckCheck } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useConfirm } from '../../components/ConfirmDialog';
 import type { Column } from '../../components/DataTable';
@@ -55,6 +55,16 @@ export default function ExpensesPage() {
     },
   });
 
+  const confirmMutation = useMutation({
+    mutationFn: (id: number) => client.put(`/accounting/expenses/${id}/confirm`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['accounting-expenses'] });
+      queryClient.invalidateQueries({ queryKey: ['accounting-dashboard'] });
+      toast.success('Expense confirmed');
+    },
+    onError: (err: any) => toast.error(err.response?.data?.message || 'Failed to confirm'),
+  });
+
   const closeModal = () => {
     setShowModal(false);
     setEditing(null);
@@ -97,7 +107,12 @@ export default function ExpensesPage() {
 
   const totalExpenses = useMemo(() => {
     if (!expenses) return 0;
-    return (Array.isArray(expenses) ? expenses : []).reduce((s: number, e: any) => s + (Number(e.amount) || 0), 0);
+    return (Array.isArray(expenses) ? expenses : []).reduce((s: number, e: any) => e.status === 'confirmed' ? s + (Number(e.amount) || 0) : s, 0);
+  }, [expenses]);
+
+  const pendingExpenses = useMemo(() => {
+    if (!expenses) return 0;
+    return (Array.isArray(expenses) ? expenses : []).reduce((s: number, e: any) => e.status === 'pending' ? s + (Number(e.amount) || 0) : s, 0);
   }, [expenses]);
 
   const expenseList = Array.isArray(expenses) ? expenses : [];
@@ -110,9 +125,22 @@ export default function ExpensesPage() {
     { key: 'vendor', label: 'Vendor', render: (e: any) => e.vendor || '-' },
     { key: 'date', label: 'Date', render: (e: any) => e.date ? new Date(e.date).toLocaleDateString() : '-' },
     {
+      key: 'status', label: 'Status',
+      render: (e: any) => (
+        <span style={{ background: e.status === 'confirmed' ? 'rgba(22,163,74,0.12)' : 'rgba(217,119,6,0.12)', color: e.status === 'confirmed' ? '#16a34a' : '#d97706', padding: '3px 10px', borderRadius: 12, fontSize: '0.8rem', fontWeight: 600 }}>
+          {e.status === 'confirmed' ? 'Confirmed' : 'Pending'}
+        </span>
+      ),
+    },
+    {
       key: 'actions', label: 'Actions',
       render: (e: any) => (
         <div className="actions">
+          {e.status === 'pending' && (
+            <button className="btn btn-sm" style={{ background: 'rgba(22,163,74,0.12)', color: '#16a34a' }} disabled={confirmMutation.isPending} onClick={() => confirmMutation.mutate(e.id)}>
+              <CheckCheck size={14} /> Confirm
+            </button>
+          )}
           <button className="btn btn-sm" style={{ background: 'var(--primary-light)', color: 'var(--primary)' }} onClick={() => openEdit(e)}>
             <Edit2 size={14} />
           </button>
@@ -135,7 +163,8 @@ export default function ExpensesPage() {
       }
     >
       <div className="stats-grid" style={{ marginBottom: 20 }}>
-        <StatsCard title="Total Expenses (Filtered)" value={formatAmount(totalExpenses)} icon={TrendingDown} color="var(--danger)" />
+        <StatsCard title="Confirmed Expenses" value={formatAmount(totalExpenses)} icon={TrendingDown} color="var(--danger)" />
+        <StatsCard title="Pending Confirmation" value={formatAmount(pendingExpenses)} icon={CheckCheck} color="var(--warning)" />
         <StatsCard title="Transactions" value={expenseList.length} icon={Receipt} color="var(--warning)" />
         <StatsCard title="Period" value={`${dateFrom} to ${dateTo}`} icon={Calendar} color="var(--info)" />
       </div>

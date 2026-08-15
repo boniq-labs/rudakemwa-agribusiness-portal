@@ -146,7 +146,7 @@ export default function MaintenancePage() {
     { key: 'maintenance_type', label: 'Type', render: (m: any) => m.maintenance_type || '-' },
     { key: 'description', label: 'Description', render: (m: any) => m.description || '-' },
     { key: 'date', label: 'Date', render: (m: any) => m.date ? new Date(m.date).toLocaleDateString() : '-' },
-    { key: 'cost', label: 'Cost', render: (m: any) => m.cost ? Number(m.cost).toLocaleString() : '-' },
+    { key: 'cost', label: 'Cost', render: (m: any) => m.cost ? `RWF ${Number(m.cost).toLocaleString()}` : '-' },
     { key: 'service_provider', label: 'Provider', render: (m: any) => m.service_provider || '-' },
     {
       key: 'next_service_date', label: 'Next Service',

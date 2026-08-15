@@ -240,11 +240,11 @@ export default function MilkReports() {
             </div>
             <div>
               <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Est. Revenue</div>
-              <div style={{ fontSize: '1.3rem', fontWeight: 700 }}>${revenue}</div>
+              <div style={{ fontSize: '1.3rem', fontWeight: 700 }}>RWF {Number(revenue).toLocaleString()}</div>
             </div>
           </div>
           <p className="text-secondary" style={{ marginTop: 12, fontSize: '0.85rem' }}>
-            Estimated revenue based on $0.85 per liter (average milk price).
+            Estimated revenue based on RWF 0.85 per liter (average milk price).
           </p>
         </div>
 

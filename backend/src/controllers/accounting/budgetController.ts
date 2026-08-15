@@ -94,7 +94,7 @@ export const getBudgetVsActual = async (req: AuthRequest, res: Response) => {
     if (budget.length === 0) return error(res, 'Budget not found', 404);
     const [items]: any = await pool.query(
       `SELECT bi.*, ec.name as category_name,
-        (SELECT COALESCE(SUM(amount),0) FROM expense_records WHERE category_id = bi.category_id AND YEAR(date) = ?) as actual_amount
+        (SELECT COALESCE(SUM(amount),0) FROM expense_records WHERE category_id = bi.category_id AND YEAR(date) = ? AND status = 'confirmed') as actual_amount
        FROM budget_items bi
        LEFT JOIN expense_categories ec ON bi.category_id = ec.id
        WHERE bi.budget_id = ?`, [budget[0].fiscal_year, req.params.id]

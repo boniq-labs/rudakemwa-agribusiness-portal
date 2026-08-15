@@ -75,10 +75,7 @@ const StockCategories = lazy(() => import('./pages/stock/StockCategories'));
 // Procurement
 const ProcurementDashboard = lazy(() => import('./pages/procurement/ProcurementDashboard'));
 const SuppliersPage = lazy(() => import('./pages/procurement/SuppliersPage'));
-const PurchaseRequests = lazy(() => import('./pages/procurement/PurchaseRequests'));
 const PurchaseOrders = lazy(() => import('./pages/procurement/PurchaseOrders'));
-const ProcurementInvoices = lazy(() => import('./pages/procurement/ProcurementInvoices'));
-const ProcurementContracts = lazy(() => import('./pages/procurement/ProcurementContracts'));
 const ProcurementReports = lazy(() => import('./pages/procurement/ProcurementReports'));
 
 
@@ -97,6 +94,7 @@ const LogisticsReports = lazy(() => import('./pages/logistics/LogisticsReports')
 const AccountingDashboard = lazy(() => import('./pages/accounting/AccountingDashboard'));
 const IncomePage = lazy(() => import('./pages/accounting/IncomePage'));
 const ExpensesPage = lazy(() => import('./pages/accounting/ExpensesPage'));
+const PayrollPage = lazy(() => import('./pages/accounting/PayrollPage'));
 const AccountingInvoices = lazy(() => import('./pages/accounting/AccountingInvoices'));
 const BudgetsPage = lazy(() => import('./pages/accounting/BudgetsPage'));
 const CashFlow = lazy(() => import('./pages/accounting/CashFlow'));
@@ -107,7 +105,6 @@ const SalesDashboard = lazy(() => import('./pages/sales/SalesDashboard'));
 const CustomersPage = lazy(() => import('./pages/sales/CustomersPage'));
 const ProductsPage = lazy(() => import('./pages/sales/ProductsPage'));
 const OrdersPage = lazy(() => import('./pages/sales/OrdersPage'));
-const SalesInvoices = lazy(() => import('./pages/sales/SalesInvoices'));
 const SalesReports = lazy(() => import('./pages/sales/SalesReports'));
 
 // Veterinary
@@ -248,12 +245,8 @@ function AppRoutes() {
           <Route element={<ProtectedRoute roles={['owner', 'admin', 'procurement']} />}>
             <Route path="procurement/dashboard" element={<ProcurementDashboard />} />
             <Route path="procurement/suppliers" element={<SuppliersPage />} />
-            <Route path="procurement/requests" element={<PurchaseRequests />} />
             <Route path="procurement/orders" element={<PurchaseOrders />} />
-                        <Route path="procurement/invoices" element={<ProcurementInvoices />} />
-            <Route path="procurement/contracts" element={<ProcurementContracts />} />
             <Route path="procurement/reports" element={<ProcurementReports />} />
-
           </Route>
 
           {/* Logistics */}
@@ -274,6 +267,7 @@ function AppRoutes() {
             <Route path="accounting/dashboard" element={<AccountingDashboard />} />
             <Route path="accounting/income" element={<IncomePage />} />
             <Route path="accounting/expenses" element={<ExpensesPage />} />
+            <Route path="accounting/payroll" element={<PayrollPage />} />
             <Route path="accounting/invoices" element={<AccountingInvoices />} />
             <Route path="accounting/budgets" element={<BudgetsPage />} />
             <Route path="accounting/cash-flow" element={<CashFlow />} />
@@ -287,8 +281,6 @@ function AppRoutes() {
             <Route path="sales/products" element={<ProductsPage />} />
             <Route path="sales/orders" element={<OrdersPage />} />
             <Route path="sales/quotations" element={<Navigate to="/sales/orders" />} />
-            <Route path="sales/invoices" element={<SalesInvoices />} />
-            <Route path="sales/deliveries" element={<DeliveriesPage />} />
             <Route path="sales/reports" element={<SalesReports />} />
           </Route>
 

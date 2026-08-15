@@ -22,8 +22,7 @@ export default function SplashScreen({ onComplete }: SplashScreenProps) {
 
   useEffect(() => {
     if (!imageLoaded) return;
-    const timer = setTimeout(() => onComplete(), 3000);
-    return () => clearTimeout(timer);
+    onComplete();
   }, [imageLoaded, onComplete]);
 
   return (
@@ -90,6 +89,7 @@ export default function SplashScreen({ onComplete }: SplashScreenProps) {
               src={farmLogo}
               alt={farmName}
               onLoad={() => setImageLoaded(true)}
+              onError={() => setImageLoaded(true)}
               className="relative z-10 w-[72%] h-[72%] object-contain"
             />
           </div>

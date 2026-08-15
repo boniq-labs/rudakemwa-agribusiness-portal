@@ -140,7 +140,7 @@ export default function OrdersPage() {
     { key: 'customer', label: 'Customer', render: (o: any) => o.customer?.name || o.customer_name || '-' },
     {
       key: 'total_amount', label: 'Total',
-      render: (o: any) => `$${Number(o.total_amount || o.amount || 0).toFixed(2)}`,
+      render: (o: any) => `RWF ${Number(o.total_amount || o.amount || 0).toLocaleString()}`,
     },
     {
       key: 'order_date', label: 'Date',
@@ -189,7 +189,7 @@ export default function OrdersPage() {
             <select className="form-input" value={form.product_id} onChange={e => setForm(p => ({ ...p, product_id: e.target.value }))}>
               <option value="">Select product</option>
               {productList.map((p: any) => (
-                <option key={p.id} value={p.id}>{p.name} - ${Number(p.price).toFixed(2)}</option>
+                <option key={p.id} value={p.id}>{p.name} - RWF {Number(p.price).toLocaleString()}</option>
               ))}
             </select>
           </FormField>

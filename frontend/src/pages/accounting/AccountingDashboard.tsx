@@ -21,6 +21,8 @@ export default function AccountingDashboard() {
   const totalMonthlyIncome = dash?.totalMonthlyIncome ?? 0;
   const totalMonthlyExpenses = dash?.totalMonthlyExpenses ?? 0;
   const totalPayroll = dash?.totalPayroll ?? 0;
+  const pendingIncome = dash?.pendingIncome ?? 0;
+  const pendingExpenses = dash?.pendingExpenses ?? 0;
   const profit = dash?.profit ?? (totalMonthlyIncome - totalMonthlyExpenses);
   const incomeVsExpenses = dash?.incomeVsExpenses || [];
   const expenseByCategory = dash?.expenseByCategory || [];
@@ -112,10 +114,19 @@ export default function AccountingDashboard() {
                 <div className="text-secondary" style={{ fontSize: '0.85rem' }}>Expenses</div>
               </div>
               <div style={{ textAlign: 'center' }}>
-                <div style={{ fontWeight: 600 }}>{totalInvoices}</div>
+                <div style={{ fontWeight: 600 }}>{dash?.totalInvoices ?? 0}</div>
                 <div className="text-secondary" style={{ fontSize: '0.85rem' }}>Invoices</div>
               </div>
             </div>
+            {(Number(pendingIncome) > 0 || Number(pendingExpenses) > 0) && (
+              <div style={{ padding: '12px 16px', borderTop: '1px solid var(--border)', background: 'rgba(217,119,6,0.08)', borderRadius: '0 0 var(--radius) var(--radius)' }}>
+                <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#d97706', marginBottom: 6 }}>Awaiting confirmation</div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', flexWrap: 'wrap', gap: 8 }}>
+                  <span>Pending Income <b style={{ color: 'var(--success)' }}>{formatAmount(Number(pendingIncome))}</b></span>
+                  <span>Pending Expenses <b style={{ color: 'var(--danger)' }}>{formatAmount(Number(pendingExpenses))}</b></span>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

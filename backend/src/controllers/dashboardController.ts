@@ -87,8 +87,8 @@ async function getOwnerDashboard() {
   const [[{ totalUsers }]]: any = await pool.query('SELECT COUNT(*) as totalUsers FROM users WHERE deleted_at IS NULL');
   const [[{ totalEmployees }]]: any = await pool.query("SELECT COUNT(*) as totalEmployees FROM employees WHERE deleted_at IS NULL AND status = 'active'");
   const [[{ totalAnimals }]]: any = await pool.query("SELECT COUNT(*) as totalAnimals FROM animals WHERE status='active' AND deleted_at IS NULL");
-  const [[{ income }]]: any = await pool.query("SELECT COALESCE(SUM(amount),0) as income FROM income_records WHERE MONTH(date)=MONTH(CURDATE()) AND YEAR(date)=YEAR(CURDATE()) AND deleted_at IS NULL");
-  const [[{ expenses }]]: any = await pool.query("SELECT COALESCE(SUM(amount),0) as expenses FROM expense_records WHERE MONTH(date)=MONTH(CURDATE()) AND YEAR(date)=YEAR(CURDATE()) AND deleted_at IS NULL");
+  const [[{ income }]]: any = await pool.query("SELECT COALESCE(SUM(amount),0) as income FROM income_records WHERE MONTH(date)=MONTH(CURDATE()) AND YEAR(date)=YEAR(CURDATE()) AND status='confirmed' AND deleted_at IS NULL");
+  const [[{ expenses }]]: any = await pool.query("SELECT COALESCE(SUM(amount),0) as expenses FROM expense_records WHERE MONTH(date)=MONTH(CURDATE()) AND YEAR(date)=YEAR(CURDATE()) AND status='confirmed' AND deleted_at IS NULL");
   const [[{ milk }]]: any = await pool.query("SELECT COALESCE(SUM(quantity_liters),0) as milk FROM milk_collections WHERE DATE(collection_date)=CURDATE()");
   const [[{ pendingOrders }]]: any = await pool.query("SELECT COUNT(*) as pendingOrders FROM purchase_orders WHERE status='draft' OR status='sent'");
   const [[{ lowStockItems }]]: any = await pool.query("SELECT COUNT(*) as lowStockItems FROM inventory_items WHERE quantity <= min_stock_level");
@@ -100,8 +100,8 @@ async function getAdminDashboard() {
   const [[{ totalUsers }]]: any = await pool.query('SELECT COUNT(*) as totalUsers FROM users WHERE deleted_at IS NULL');
   const [[{ totalEmployees }]]: any = await pool.query("SELECT COUNT(*) as totalEmployees FROM employees WHERE deleted_at IS NULL AND status = 'active'");
   const [[{ totalAnimals }]]: any = await pool.query("SELECT COUNT(*) as totalAnimals FROM animals WHERE status='active' AND deleted_at IS NULL");
-  const [[{ income }]]: any = await pool.query("SELECT COALESCE(SUM(amount),0) as income FROM income_records WHERE MONTH(date)=MONTH(CURDATE()) AND YEAR(date)=YEAR(CURDATE()) AND deleted_at IS NULL");
-  const [[{ expenses }]]: any = await pool.query("SELECT COALESCE(SUM(amount),0) as expenses FROM expense_records WHERE MONTH(date)=MONTH(CURDATE()) AND YEAR(date)=YEAR(CURDATE()) AND deleted_at IS NULL");
+  const [[{ income }]]: any = await pool.query("SELECT COALESCE(SUM(amount),0) as income FROM income_records WHERE MONTH(date)=MONTH(CURDATE()) AND YEAR(date)=YEAR(CURDATE()) AND status='confirmed' AND deleted_at IS NULL");
+  const [[{ expenses }]]: any = await pool.query("SELECT COALESCE(SUM(amount),0) as expenses FROM expense_records WHERE MONTH(date)=MONTH(CURDATE()) AND YEAR(date)=YEAR(CURDATE()) AND status='confirmed' AND deleted_at IS NULL");
   const [[{ milk }]]: any = await pool.query("SELECT COALESCE(SUM(quantity_liters),0) as milk FROM milk_collections WHERE DATE(collection_date)=CURDATE()");
   const [[{ lowStockItems }]]: any = await pool.query("SELECT COUNT(*) as lowStockItems FROM inventory_items WHERE quantity <= min_stock_level");
   const [[{ feedItems }]]: any = await pool.query("SELECT COUNT(*) as feedItems FROM feed_items");
@@ -130,16 +130,18 @@ async function getHrDashboard() {
 }
 
 async function getAccountantDashboard() {
-  const [[{ totalMonthlyIncome }]]: any = await pool.query("SELECT COALESCE(SUM(amount),0) as totalMonthlyIncome FROM income_records WHERE MONTH(date)=MONTH(CURDATE()) AND YEAR(date)=YEAR(CURDATE()) AND deleted_at IS NULL");
-  const [[{ totalMonthlyExpenses }]]: any = await pool.query("SELECT COALESCE(SUM(amount),0) as totalMonthlyExpenses FROM expense_records WHERE MONTH(date)=MONTH(CURDATE()) AND YEAR(date)=YEAR(CURDATE()) AND deleted_at IS NULL");
-  const [[{ totalPayroll }]]: any = await pool.query("SELECT COALESCE(SUM(amount),0) as totalPayroll FROM expense_records WHERE category_id = (SELECT id FROM expense_categories WHERE name = 'Salaries' LIMIT 1) AND MONTH(date)=MONTH(CURDATE()) AND YEAR(date)=YEAR(CURDATE()) AND deleted_at IS NULL");
+  const [[{ totalMonthlyIncome }]]: any = await pool.query("SELECT COALESCE(SUM(amount),0) as totalMonthlyIncome FROM income_records WHERE MONTH(date)=MONTH(CURDATE()) AND YEAR(date)=YEAR(CURDATE()) AND status='confirmed' AND deleted_at IS NULL");
+  const [[{ totalMonthlyExpenses }]]: any = await pool.query("SELECT COALESCE(SUM(amount),0) as totalMonthlyExpenses FROM expense_records WHERE MONTH(date)=MONTH(CURDATE()) AND YEAR(date)=YEAR(CURDATE()) AND status='confirmed' AND deleted_at IS NULL");
+  const [[{ totalPayroll }]]: any = await pool.query("SELECT COALESCE(SUM(amount),0) as totalPayroll FROM expense_records WHERE category_id = (SELECT id FROM expense_categories WHERE name = 'Salaries' LIMIT 1) AND MONTH(date)=MONTH(CURDATE()) AND YEAR(date)=YEAR(CURDATE()) AND status='confirmed' AND deleted_at IS NULL");
+  const [[{ pendingIncome }]]: any = await pool.query("SELECT COALESCE(SUM(amount),0) as pendingIncome FROM income_records WHERE MONTH(date)=MONTH(CURDATE()) AND YEAR(date)=YEAR(CURDATE()) AND status='pending' AND deleted_at IS NULL");
+  const [[{ pendingExpenses }]]: any = await pool.query("SELECT COALESCE(SUM(amount),0) as pendingExpenses FROM expense_records WHERE MONTH(date)=MONTH(CURDATE()) AND YEAR(date)=YEAR(CURDATE()) AND status='pending' AND deleted_at IS NULL");
   const [incomeVsExpenses]: any = await pool.query(
-    "SELECT DATE_FORMAT(m.date,'%b') as month, COALESCE(SUM(i.amount),0) as income, COALESCE(SUM(e.amount),0) as expenses FROM (SELECT DISTINCT LAST_DAY(DATE_ADD(CURDATE(), INTERVAL -n MONTH)) as date FROM (SELECT 0 n UNION SELECT 1 UNION SELECT 2 UNION SELECT 3 UNION SELECT 4 UNION SELECT 5) d) m LEFT JOIN income_records i ON MONTH(i.date)=MONTH(m.date) AND YEAR(i.date)=YEAR(m.date) LEFT JOIN expense_records e ON MONTH(e.date)=MONTH(m.date) AND YEAR(e.date)=YEAR(m.date) GROUP BY m.date ORDER BY m.date"
+    "SELECT DATE_FORMAT(m.date,'%b') as month, COALESCE(SUM(i.amount),0) as income, COALESCE(SUM(e.amount),0) as expenses FROM (SELECT DISTINCT LAST_DAY(DATE_ADD(CURDATE(), INTERVAL -n MONTH)) as date FROM (SELECT 0 n UNION SELECT 1 UNION SELECT 2 UNION SELECT 3 UNION SELECT 4 UNION SELECT 5) d) m LEFT JOIN income_records i ON MONTH(i.date)=MONTH(m.date) AND YEAR(i.date)=YEAR(m.date) AND i.status='confirmed' LEFT JOIN expense_records e ON MONTH(e.date)=MONTH(m.date) AND YEAR(e.date)=YEAR(m.date) AND e.status='confirmed' GROUP BY m.date ORDER BY m.date"
   );
   const [expenseByCategory]: any = await pool.query(
-    "SELECT ec.name, COALESCE(SUM(e.amount),0) as value FROM expense_categories ec LEFT JOIN expense_records e ON e.category_id = ec.id AND MONTH(e.date)=MONTH(CURDATE()) AND YEAR(e.date)=YEAR(CURDATE()) GROUP BY ec.id, ec.name"
+    "SELECT ec.name, COALESCE(SUM(e.amount),0) as value FROM expense_categories ec LEFT JOIN expense_records e ON e.category_id = ec.id AND MONTH(e.date)=MONTH(CURDATE()) AND YEAR(e.date)=YEAR(CURDATE()) AND e.status='confirmed' GROUP BY ec.id, ec.name"
   );
-  return { totalMonthlyIncome, totalMonthlyExpenses, totalPayroll, profit: totalMonthlyIncome - totalMonthlyExpenses, incomeVsExpenses, expenseByCategory };
+  return { totalMonthlyIncome, totalMonthlyExpenses, totalPayroll, profit: totalMonthlyIncome - totalMonthlyExpenses, incomeVsExpenses, expenseByCategory, pendingIncome, pendingExpenses };
 }
 
 async function getAnimalDashboard() {
@@ -192,9 +194,12 @@ async function getLogisticsDashboard() {
 
 async function getProcurementDashboard() {
   const [[{ totalSuppliers }]]: any = await pool.query("SELECT COUNT(*) as totalSuppliers FROM suppliers WHERE deleted_at IS NULL");
-  const [[{ totalPurchases }]]: any = await pool.query("SELECT COALESCE(SUM(total_amount),0) as totalPurchases FROM purchase_orders WHERE status IN ('received','completed') AND deleted_at IS NULL");
+  const [[{ totalPurchases }]]: any = await pool.query(
+    "SELECT COALESCE(SUM(poi.total_price),0) as totalPurchases FROM purchase_orders po JOIN purchase_order_items poi ON poi.po_id = po.id WHERE po.status IN ('received','completed') AND po.deleted_at IS NULL"
+  );
+  const [[{ pendingOrders }]]: any = await pool.query("SELECT COUNT(*) as pendingOrders FROM purchase_orders WHERE status IN ('draft','sent','confirmed') AND deleted_at IS NULL");
   const [recent_orders]: any = await pool.query("SELECT po.*, s.supplier_name FROM purchase_orders po LEFT JOIN suppliers s ON po.supplier_id = s.id WHERE po.deleted_at IS NULL ORDER BY po.created_at DESC LIMIT 5");
-  return { totalSuppliers, totalPurchases, recent_orders };
+  return { totalSuppliers, totalPurchases, pendingOrders, recent_orders, recentOrders: recent_orders };
 }
 
 async function getSalesDashboard() {
@@ -277,7 +282,7 @@ export const getDepartmentOverview = async (req: AuthRequest, res: Response) => 
       },
       accounting: {
         monthIncome: await val("SELECT COALESCE(SUM(total),0) c FROM receipts WHERE MONTH(created_at)=MONTH(CURDATE())"),
-        monthExpenses: await val("SELECT COALESCE(SUM(amount),0) c FROM expense_records WHERE MONTH(date)=MONTH(CURDATE())"),
+        monthExpenses: await val("SELECT COALESCE(SUM(amount),0) c FROM expense_records WHERE MONTH(date)=MONTH(CURDATE()) AND status='confirmed'"),
       },
       sales: {
         monthSales: await val("SELECT COALESCE(SUM(total_amount),0) c FROM sales_orders WHERE MONTH(order_date)=MONTH(CURDATE()) AND status='completed'"),

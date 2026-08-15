@@ -116,7 +116,7 @@ export default function FeedManagement() {
     { key: 'max_stock_level', label: 'Max Stock', render: (i: any) => i.max_stock_level ?? '-' },
     {
       key: 'purchase_price', label: 'Purchase Price',
-      render: (i: any) => i.purchase_price != null ? Number(i.purchase_price).toLocaleString() : '-',
+      render: (i: any) => i.purchase_price != null ? `RWF ${Number(i.purchase_price).toLocaleString()}` : '-',
     },
     { key: 'notes', label: 'Notes', render: (i: any) => i.notes || '-' },
     {

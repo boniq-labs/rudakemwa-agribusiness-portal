@@ -138,7 +138,7 @@ export default function VetVaccinations() {
     { key: 'veterinarian', label: 'Vet', render: (v: any) => v.veterinarian || '-' },
     {
       key: 'cost', label: 'Cost',
-      render: (v: any) => v.cost ? `$${Number(v.cost).toFixed(2)}` : '-',
+      render: (v: any) => v.cost ? `RWF ${Number(v.cost).toLocaleString()}` : '-',
     },
     {
       key: 'actions', label: 'Actions',

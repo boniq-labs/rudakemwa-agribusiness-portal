@@ -146,7 +146,7 @@ export default function Treatment() {
     { key: 'veterinarian', label: 'Vet', render: (item: any) => item.veterinarian || '-' },
     {
       key: 'cost', label: 'Cost',
-      render: (item: any) => item.cost ? `$${Number(item.cost).toFixed(2)}` : '-',
+      render: (item: any) => item.cost ? `RWF ${Number(item.cost).toLocaleString()}` : '-',
     },
     {
       key: 'actions', label: 'Actions',

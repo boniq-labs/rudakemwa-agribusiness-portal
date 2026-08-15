@@ -111,7 +111,7 @@ export default function InventoryPage() {
     }},
     { key: 'unit', label: 'Unit' },
     { key: 'min_stock_level', label: 'Min Stock' },
-    { key: 'purchase_price', label: 'Price', render: (i: any) => i.purchase_price ? Number(i.purchase_price).toLocaleString() : '-' },
+    { key: 'purchase_price', label: 'Price', render: (i: any) => i.purchase_price ? `RWF ${Number(i.purchase_price).toLocaleString()}` : '-' },
     { key: 'status', label: 'Status', render: (i: any) => {
       const qty = Number(i.quantity);
       const min = Number(i.min_stock_level);

@@ -141,7 +141,7 @@ export default function ProcurementContracts() {
     },
     {
       key: 'total_value', label: 'Total Value',
-      render: (c: any) => `$${(c.total_value || 0).toLocaleString()}`,
+      render: (c: any) => `RWF ${(c.total_value || 0).toLocaleString()}`,
     },
     { key: 'status', label: 'Status', render: (c: any) => <StatusBadge status={c.status || 'active'} /> },
     {

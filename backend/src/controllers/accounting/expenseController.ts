@@ -33,7 +33,7 @@ export const updateExpenseCategory = async (req: AuthRequest, res: Response) => 
 
 export const getExpenseRecords = async (req: AuthRequest, res: Response) => {
   try {
-    const { category_id, department_id, start_date, end_date, startDate, endDate } = req.query;
+    const { category_id, department_id, start_date, end_date, startDate, endDate, status } = req.query;
     const sd = start_date || startDate || '';
     const ed = end_date || endDate || '';
     let where = 'WHERE 1=1';
@@ -42,6 +42,7 @@ export const getExpenseRecords = async (req: AuthRequest, res: Response) => {
     if (department_id) { where += ' AND e.department_id = ?'; params.push(department_id); }
     if (sd) { where += ' AND e.date >= ?'; params.push(sd); }
     if (ed) { where += ' AND e.date <= ?'; params.push(ed); }
+    if (status) { where += ' AND e.status = ?'; params.push(status); }
     const [rows]: any = await pool.query(
       `SELECT e.*, ec.name as category_name, d.name as department_name
        FROM expense_records e
@@ -69,9 +70,10 @@ export const createExpenseRecord = async (req: AuthRequest, res: Response) => {
     const category_id = await getExpenseCategoryId(b);
     const payment_method = (b.payment_method || '').toLowerCase().replace(/\s+/g, '_');
     const genExpenseNumber = b.expense_number || `EXP-${Date.now()}`;
+    const status = b.status === 'pending' ? 'pending' : 'confirmed';
     const [result]: any = await pool.query(
-      `INSERT INTO expense_records (expense_number, category_id, description, amount, payment_method, vendor, notes, date, department_id) VALUES (?,?,?,?,?,?,?,?,?)`,
-      [genExpenseNumber, category_id, b.description || null, b.amount, payment_method || null, b.vendor || null, b.notes || null, b.date || null, b.department_id || null]
+      `INSERT INTO expense_records (expense_number, category_id, description, amount, payment_method, vendor, notes, date, department_id, status) VALUES (?,?,?,?,?,?,?,?,?,?)`,
+      [genExpenseNumber, category_id, b.description || null, b.amount, payment_method || null, b.vendor || null, b.notes || null, b.date || null, b.department_id || null, status]
     );
     await logAudit(req, createAuditEntry(req, 'Create Expense', 'Accounting', `Expense record ${genExpenseNumber} created`, req.body));
     return created(res, { id: result.insertId }, 'Expense record created');
@@ -104,6 +106,17 @@ export const deleteExpenseRecord = async (req: AuthRequest, res: Response) => {
   } catch (err: any) { return error(res, err.message); }
 };
 
+export const confirmExpenseRecord = async (req: AuthRequest, res: Response) => {
+  try {
+    const [old]: any = await pool.query('SELECT * FROM expense_records WHERE id = ?', [req.params.id]);
+    if (old.length === 0) return error(res, 'Expense record not found', 404);
+    if (old[0].status === 'confirmed') return error(res, 'Expense record already confirmed', 400);
+    await pool.query('UPDATE expense_records SET status = ? WHERE id = ?', ['confirmed', req.params.id]);
+    await logAudit(req, createAuditEntry(req, 'Confirm Expense', 'Accounting', `Expense record #${req.params.id} confirmed`, null, old[0]));
+    return success(res, null, 'Expense record confirmed');
+  } catch (err: any) { return error(res, err.message); }
+};
+
 export const getExpenseSummary = async (req: AuthRequest, res: Response) => {
   try {
     const { period, group } = req.query;
@@ -117,6 +130,7 @@ export const getExpenseSummary = async (req: AuthRequest, res: Response) => {
     const [rows]: any = await pool.query(
       `SELECT DATE_FORMAT(e.date, '${format}') as period${selectGroup}, SUM(e.amount) as total, COUNT(*) as count
        FROM expense_records e ${join}
+       WHERE e.status = 'confirmed'
        GROUP BY DATE_FORMAT(e.date, '${format}')${groupBy} ORDER BY period DESC`
     );
     return success(res, rows);

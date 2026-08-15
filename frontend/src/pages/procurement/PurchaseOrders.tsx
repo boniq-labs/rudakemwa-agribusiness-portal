@@ -13,12 +13,12 @@ import { useConfirm } from '../../components/ConfirmDialog';
 const STATUSES = ['All', 'Draft', 'Sent', 'Confirmed', 'Received', 'Cancelled'];
 
 interface OrderForm {
-  supplier_id: string; request_id: string; order_date: string;
+  supplier_id: string; order_date: string; cost: string;
   expected_delivery: string; status: string; notes: string;
 }
 
 const initialForm: OrderForm = {
-  supplier_id: '', request_id: '', order_date: '', expected_delivery: '',
+  supplier_id: '', order_date: '', cost: '', expected_delivery: '',
   status: 'draft', notes: '',
 };
 
@@ -33,17 +33,12 @@ export default function PurchaseOrders() {
 
   const { data: orders, isLoading } = useQuery({
     queryKey: ['procurement-orders'],
-    queryFn: () => client.get('/procurement/orders').then(r => r.data.data || []),
+    queryFn: () => client.get('/procurement/orders').then(r => r.data.data || r.data),
   });
 
   const { data: suppliers } = useQuery({
     queryKey: ['procurement-suppliers'],
     queryFn: () => client.get('/procurement/suppliers').then(r => r.data.data || []),
-  });
-
-  const { data: requests } = useQuery({
-    queryKey: ['procurement-requests'],
-    queryFn: () => client.get('/procurement/requests').then(r => r.data.data || []),
   });
 
   const statusMap: Record<string, string> = { All: '', Draft: 'draft', Sent: 'sent', Confirmed: 'confirmed', Received: 'received', Cancelled: 'cancelled' };
@@ -76,9 +71,11 @@ export default function PurchaseOrders() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setErrors({});
+    if (!form.supplier_id) { setErrors({ supplier_id: 'Supplier is required' }); return; }
+    if (!form.cost || Number(form.cost) <= 0) { setErrors({ cost: 'Cost is required and must be greater than 0' }); return; }
     const payload = {
-      supplier_id: form.supplier_id ? Number(form.supplier_id) : undefined,
-      request_id: form.request_id ? Number(form.request_id) : undefined,
+      supplier_id: Number(form.supplier_id),
+      cost: Number(form.cost),
       order_date: form.order_date || undefined,
       expected_delivery: form.expected_delivery || undefined,
       status: form.status,
@@ -94,7 +91,7 @@ export default function PurchaseOrders() {
   const openEdit = (item: any) => {
     setForm({
       supplier_id: String(item.supplier_id || ''),
-      request_id: String(item.request_id || ''),
+      cost: item.total_cost != null ? String(item.total_cost) : '',
       order_date: item.order_date ? item.order_date.substring(0, 10) : '',
       expected_delivery: item.expected_delivery ? item.expected_delivery.substring(0, 10) : '',
       status: item.status || 'draft',
@@ -105,11 +102,12 @@ export default function PurchaseOrders() {
   };
 
   const columns: Column<any>[] = [
-    { key: 'id', label: 'PO #', render: (o: any) => `PO-${String(o.id).padStart(4, '0')}` },
-    { key: 'supplier', label: 'Supplier', render: (o: any) => typeof o.supplier === 'object' ? o.supplier?.name || '-' : o.supplier || '-' },
-    { key: 'order_date', label: 'Order Date', render: (o: any) => o.order_date ? new Date(o.order_date).toLocaleDateString() : '-' },
-    { key: 'expected_delivery', label: 'Expected', render: (o: any) => o.expected_delivery ? new Date(o.expected_delivery).toLocaleDateString() : '-' },
-    { key: 'status', label: 'Status', render: (o: any) => <StatusBadge status={o.status || 'draft'} /> },
+    { key: 'po_number', label: 'PO #' },
+    { key: 'item_name', label: 'Name', render: (o: any) => o.item_name || o.request_items || '-' },
+    { key: 'total_cost', label: 'Cost', render: (o: any) => `RWF ${Number(o.total_cost || o.total_amount || 0).toLocaleString()}` },
+    { key: 'department', label: 'Department', render: (o: any) => o.department || '-' },
+    { key: 'payment_method', label: 'Payment Method', render: (o: any) => o.payment_method || '-' },
+    { key: 'status', label: 'Status', render: (o: any) => <StatusBadge status={o.status || 'pending'} /> },
     {
       key: 'actions', label: 'Actions', render: (o: any) => (
         <div className="actions">
@@ -155,13 +153,8 @@ export default function PurchaseOrders() {
                     {(suppliers || []).map((s: any) => <option key={s.id} value={s.id}>{s.supplier_name || s.name}</option>)}
                   </select>
                 </FormField>
-                <FormField label="Linked Request">
-                  <select name="request_id" value={form.request_id} onChange={handleChange}>
-                    <option value="">None</option>
-                    {(requests || []).filter((r: any) => r.status === 'approved').map((r: any) => (
-                      <option key={r.id} value={r.id}>{r.item_name || `Request #${r.id}`}</option>
-                    ))}
-                  </select>
+                <FormField label="Cost" required error={errors.cost}>
+                  <input type="number" name="cost" value={form.cost} onChange={handleChange} min={0} step="0.01" required placeholder="0.00" />
                 </FormField>
               </div>
               <div className="form-row">

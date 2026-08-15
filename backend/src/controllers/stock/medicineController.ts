@@ -21,10 +21,10 @@ export const getMedicines = async (req: AuthRequest, res: Response) => {
 
 export const createMedicine = async (req: AuthRequest, res: Response) => {
   try {
-    const { name, category, quantity, unit_price, expiry_date, supplier_id, reorder_level } = req.body;
+    const { name, category, quantity, unit, unit_price, expiry_date, supplier_id, reorder_level } = req.body;
     const [result]: any = await pool.query(
-      'INSERT INTO medicine_items (name, category, quantity, unit_price, expiry_date, supplier_id, reorder_level) VALUES (?,?,?,?,?,?,?)',
-      [name, category, quantity, unit_price, expiry_date, supplier_id, reorder_level]
+      'INSERT INTO medicine_items (name, category, quantity, unit, unit_price, expiry_date, supplier_id, reorder_level) VALUES (?,?,?,?,?,?,?,?)',
+      [name, category, quantity, unit || null, unit_price, expiry_date, supplier_id, reorder_level]
     );
     await logAudit(req, createAuditEntry(req, 'Create Medicine', 'Medicines', `Medicine ${name} created`));
     return created(res, { id: result.insertId }, 'Medicine created');
@@ -33,12 +33,12 @@ export const createMedicine = async (req: AuthRequest, res: Response) => {
 
 export const updateMedicine = async (req: AuthRequest, res: Response) => {
   try {
-    const { name, category, quantity, unit_price, expiry_date, supplier_id, reorder_level } = req.body;
+    const { name, category, quantity, unit, unit_price, expiry_date, supplier_id, reorder_level } = req.body;
     const [old]: any = await pool.query('SELECT * FROM medicine_items WHERE id = ?', [req.params.id]);
     if (old.length === 0) return error(res, 'Medicine not found', 404);
     await pool.query(
-      'UPDATE medicine_items SET name=?, category=?, quantity=?, unit_price=?, expiry_date=?, supplier_id=?, reorder_level=? WHERE id=?',
-      [name, category, quantity, unit_price, expiry_date, supplier_id, reorder_level, req.params.id]
+      'UPDATE medicine_items SET name=?, category=?, quantity=?, unit=?, unit_price=?, expiry_date=?, supplier_id=?, reorder_level=? WHERE id=?',
+      [name, category, quantity, unit ?? old[0].unit, unit_price, expiry_date, supplier_id, reorder_level, req.params.id]
     );
     return success(res, null, 'Medicine updated');
   } catch (err: any) { return error(res, err.message); }

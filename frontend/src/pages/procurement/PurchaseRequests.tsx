@@ -107,7 +107,7 @@ export default function PurchaseRequests() {
     { key: 'item_name', label: 'Item Name' },
     { key: 'quantity', label: 'Qty' },
     { key: 'unit', label: 'Unit' },
-    { key: 'estimated_cost', label: 'Est. Cost', render: (r: any) => r.estimated_cost ? `$${Number(r.estimated_cost).toLocaleString()}` : '-' },
+    { key: 'estimated_cost', label: 'Est. Cost', render: (r: any) => r.estimated_cost ? `RWF ${Number(r.estimated_cost).toLocaleString()}` : '-' },
     { key: 'department_name', label: 'Department', render: (r: any) => r.department_name || r.department || '-' },
     { key: 'requested_by', label: 'Requested By' },
     { key: 'status', label: 'Status', render: (r: any) => <StatusBadge status={r.status || 'pending'} /> },

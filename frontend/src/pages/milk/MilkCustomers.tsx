@@ -117,7 +117,7 @@ export default function MilkCustomers() {
       key: 'customer_type', label: 'Type',
       render: (c) => c.customer_type ? <StatusBadge status={c.customer_type} /> : '-',
     },
-    { key: 'balance', label: 'Balance', render: (c) => `$${(Number(c.balance) || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` },
+    { key: 'balance', label: 'Balance', render: (c) => `RWF ${(Number(c.balance) || 0).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}` },
     {
       key: 'status', label: 'Status',
       render: (c) => c.status ? <StatusBadge status={c.status} /> : '-',

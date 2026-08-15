@@ -172,7 +172,7 @@ export default function MilkProducts() {
                   </button>
                 </div>
               </div>
-              <div style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--primary)' }}>${product.price}</div>
+              <div style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--primary)' }}>RWF {Number(product.price).toLocaleString()}</div>
               {product.quantity > 0 && (
                 <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Qty: {product.quantity}</div>
               )}

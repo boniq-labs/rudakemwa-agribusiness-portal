@@ -10,15 +10,20 @@ import FormField from '../../components/FormField';
 import type { Column } from '../../components/DataTable';
 import { Plus, Search } from 'lucide-react';
 
+const PAYMENT_METHODS = ['Cash', 'Bank Transfer', 'Mobile Money', 'Cheque', 'Credit Card', 'Other'];
+
 interface CustomerForm {
   name: string;
   phone: string;
   email: string;
   address: string;
   type: string;
+  product_id: string;
+  quantity: string;
+  payment_method: string;
 }
 
-const initialForm: CustomerForm = { name: '', phone: '', email: '', address: '', type: 'regular' };
+const initialForm: CustomerForm = { name: '', phone: '', email: '', address: '', type: 'regular', product_id: '', quantity: '', payment_method: 'Cash' };
 
 export default function CustomersPage() {
   const queryClient = useQueryClient();
@@ -33,11 +38,19 @@ export default function CustomersPage() {
     queryFn: () => client.get('/sales/customers').then(r => r.data.data || []),
   });
 
+  const { data: products } = useQuery({
+    queryKey: ['sales-products'],
+    queryFn: () => client.get('/sales/products').then(r => r.data.data || []),
+  });
+
   const createMutation = useMutation({
     mutationFn: (d: any) => client.post('/sales/customers', d),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sales-customers'] });
       queryClient.invalidateQueries({ queryKey: ['sales-dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['sales-orders'] });
+      queryClient.invalidateQueries({ queryKey: ['sales-products'] });
+      queryClient.invalidateQueries({ queryKey: ['accounting-income'] });
       toast.success('Customer created');
       setShowModal(false);
       setForm(initialForm);
@@ -69,19 +82,49 @@ export default function CustomersPage() {
   });
 
   const list = Array.isArray(data) ? data : [];
+  const productList = Array.isArray(products) ? products : [];
   const filtered = list.filter((c: any) =>
     `${c.name || ''} ${c.phone || ''} ${c.email || ''}`.toLowerCase().includes(search.toLowerCase())
   );
 
+  const selectedProduct = productList.find((p: any) => String(p.id) === form.product_id);
+  const availableStock = selectedProduct ? Number(selectedProduct.quantity_available) || 0 : 0;
+  const unitPrice = selectedProduct ? Number(selectedProduct.price) || 0 : 0;
+  const quantityNum = Number(form.quantity);
+  const isQuantityValid = !isNaN(quantityNum) && quantityNum > 0 && quantityNum <= availableStock;
+  const totalAmount = selectedProduct && isQuantityValid ? Number((quantityNum * unitPrice).toFixed(2)) : 0;
+  const saleValid = !editId && form.product_id !== '' && isQuantityValid;
+
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
-    const payload = { ...form };
-    if (editId) updateMutation.mutate({ id: editId, data: payload });
-    else createMutation.mutate(payload);
+    if (editId) {
+      // Edit only updates customer profile info; it must NOT create a sale/payment/stock/income.
+      const payload: any = {
+        name: form.name,
+        phone: form.phone,
+        email: form.email,
+        address: form.address,
+        type: form.type,
+      };
+      updateMutation.mutate({ id: editId, data: payload });
+    } else {
+      if (!saleValid) return;
+      const payload: any = {
+        name: form.name,
+        phone: form.phone,
+        email: form.email,
+        address: form.address,
+        type: form.type,
+        product_id: Number(form.product_id),
+        quantity: quantityNum,
+        payment_method: form.payment_method,
+      };
+      createMutation.mutate(payload);
+    }
   };
 
   const handleEdit = (c: any) => {
-    setForm({ name: c.name || '', phone: c.phone || '', email: c.email || '', address: c.address || '', type: c.type || 'regular' });
+    setForm({ name: c.name || '', phone: c.phone || '', email: c.email || '', address: c.address || '', type: c.type || 'regular', product_id: '', quantity: '', payment_method: 'Cash' });
     setEditId(c.id);
     setShowModal(true);
   };
@@ -95,7 +138,7 @@ export default function CustomersPage() {
     { key: 'phone', label: 'Phone', render: (c: any) => c.phone || '-' },
     { key: 'email', label: 'Email', render: (c: any) => c.email || '-' },
     { key: 'type', label: 'Type', render: (c: any) => c.type || 'regular' },
-    { key: 'total_purchase_amount', label: 'Total Purchase', render: (c: any) => `$${Number(c.total_purchase_amount || 0).toFixed(2)}` },
+    { key: 'total_purchase_amount', label: 'Total Purchase', render: (c: any) => `RWF ${Number(c.total_purchase_amount || 0).toLocaleString()}` },
     {
       key: 'actions', label: 'Actions',
       render: (c: any) => (
@@ -146,9 +189,43 @@ export default function CustomersPage() {
               <option value="vip">VIP</option>
             </select>
           </FormField>
+          {!editId && (
+            <>
+              <FormField label="Product" required>
+                <select className="form-input" value={form.product_id} onChange={e => setForm(p => ({ ...p, product_id: e.target.value, quantity: '' }))}>
+                  <option value="">Select product</option>
+                  {productList.map((p: any) => (
+                    <option key={p.id} value={p.id}>{p.name} - RWF {Number(p.price).toLocaleString()}</option>
+                  ))}
+                </select>
+              </FormField>
+              <FormField label="Available Stock">
+                <input className="form-input" value={selectedProduct ? String(availableStock) : '-'} readOnly />
+              </FormField>
+              <FormField label="Quantity" required error={form.quantity !== '' && (quantityNum <= 0 || quantityNum > availableStock) ? (quantityNum > availableStock ? `Quantity cannot exceed available stock (${availableStock})` : 'Quantity must be greater than 0') : undefined}>
+                <input className="form-input" type="number" step="0.01" min="0" max={availableStock || undefined} value={form.quantity} onChange={e => setForm(p => ({ ...p, quantity: e.target.value }))} disabled={!selectedProduct} placeholder="0" />
+              </FormField>
+              <FormField label="Unit Price">
+                <input className="form-input" type="number" step="0.01" value={selectedProduct ? String(unitPrice) : '0.00'} readOnly />
+              </FormField>
+              <FormField label="Total Amount">
+                <input className="form-input" type="number" step="0.01" value={String(totalAmount)} readOnly />
+              </FormField>
+              <FormField label="Payment Method">
+                <select className="form-input" value={form.payment_method} onChange={e => setForm(p => ({ ...p, payment_method: e.target.value }))}>
+                  {PAYMENT_METHODS.map(m => <option key={m} value={m}>{m}</option>)}
+                </select>
+              </FormField>
+            </>
+          )}
+          {editId && (
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginTop: 8 }}>
+              Editing customer profile only. Use &quot;Sales Orders&quot; to record a new sale.
+            </p>
+          )}
           <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 20 }}>
             <button type="button" className="btn" onClick={() => setShowModal(false)}>Cancel</button>
-            <button type="submit" className="btn btn-primary" disabled={createMutation.isPending || updateMutation.isPending}>
+            <button type="submit" className="btn btn-primary" disabled={createMutation.isPending || updateMutation.isPending || (!editId && !saleValid)}>
               {editId ? 'Update' : 'Create'}
             </button>
           </div>

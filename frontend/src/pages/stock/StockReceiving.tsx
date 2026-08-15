@@ -52,8 +52,8 @@ export default function StockReceiving() {
     { key: 'date', label: 'Date' },
     { key: 'item', label: 'Item', render: (t: any) => typeof t.item === 'object' ? t.item?.name : t.item_name || t.item || '-' },
     { key: 'quantity', label: 'Qty' },
-    { key: 'unit_price', label: 'Unit Price', render: (t: any) => t.unit_price ? Number(t.unit_price).toLocaleString() : '-' },
-    { key: 'total_value', label: 'Total', render: (t: any) => (t.quantity * t.unit_price) ? (Number(t.quantity) * Number(t.unit_price)).toLocaleString() : '-' },
+    { key: 'unit_price', label: 'Unit Price', render: (t: any) => t.unit_price ? `RWF ${Number(t.unit_price).toLocaleString()}` : '-' },
+    { key: 'total_value', label: 'Total', render: (t: any) => (t.quantity * t.unit_price) ? `RWF ${(Number(t.quantity) * Number(t.unit_price)).toLocaleString()}` : '-' },
     { key: 'supplier', label: 'Supplier', render: (t: any) => typeof t.supplier === 'object' ? t.supplier?.name : t.supplier || '-' },
     { key: 'notes', label: 'Notes', render: (t: any) => t.notes || '-' },
   ];

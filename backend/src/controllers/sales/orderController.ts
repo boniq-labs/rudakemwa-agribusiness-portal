@@ -69,17 +69,14 @@ export const updateSalesOrderStatus = async (req: AuthRequest, res: Response) =>
     const oldStatus = old[0].status;
     await pool.query('UPDATE sales_orders SET status = ? WHERE id = ?', [status, req.params.id]);
     if (status === 'completed' && oldStatus !== 'completed') {
-      const [items]: any = await pool.query('SELECT * FROM sales_order_items WHERE order_id = ?', [req.params.id]);
-      for (const item of items) {
-        await pool.query('UPDATE products SET quantity_available = quantity_available - ? WHERE id = ?', [item.quantity, item.product_id]);
-      }
-      // Create income record for completed sale
+      // Milk availability is auto-sourced from Milk Today - no permanent stock deduction.
+      // Create a PENDING income record (does NOT increase Total Income until confirmed).
       const [order]: any = await pool.query('SELECT * FROM sales_orders WHERE id = ?', [req.params.id]);
       const [customer]: any = await pool.query('SELECT CONCAT(first_name, " ", last_name) as name FROM customers WHERE id = ?', [order[0].customer_id]);
       const incomeNumber = `INC-SAL-${Date.now()}`;
       await pool.query(
-        `INSERT INTO income_records (income_number, source, customer_id, amount, payment_method, date, description, created_by) VALUES (?,?,?,?,?,?,?,?)`,
-        [`INC-SAL-${Date.now()}`, 'Sales Revenue', order[0].customer_id, order[0].total_amount, 'Cash', new Date().toISOString().split('T')[0], `Sales order ${order[0].order_number} completed`, req.user?.id]
+        `INSERT INTO income_records (income_number, source, customer_id, amount, payment_method, date, description, created_by, status) VALUES (?,?,?,?,?,?,?,?,?)`,
+        [`INC-SAL-${Date.now()}`, 'Sales Revenue', order[0].customer_id, order[0].total_amount, 'Cash', new Date().toISOString().split('T')[0], `Sales order ${order[0].order_number} completed`, req.user?.id, 'pending']
       );
     }
     await logAudit(req, createAuditEntry(req, 'Update Sales Order Status', 'Sales', `Order #${req.params.id} status changed to ${status}`, req.body, old[0]));

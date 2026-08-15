@@ -54,7 +54,7 @@ export default function CropReports() {
     { key: 'land_name', label: 'Land', render: (h: any) => h.land_name || '-' },
     { key: 'harvest_date', label: 'Harvest Date', render: (h: any) => h.harvest_date ? new Date(h.harvest_date).toLocaleDateString() : '-' },
     { key: 'quantity_harvested', label: 'Qty Harvested', render: (h: any) => h.quantity_harvested ?? '-' },
-    { key: 'sales_amount', label: 'Value ($)', render: (h: any) => h.sales_amount ? Number(h.sales_amount).toLocaleString() : '-' },
+    { key: 'sales_amount', label: 'Value (RWF)', render: (h: any) => h.sales_amount ? `RWF ${Number(h.sales_amount).toLocaleString()}` : '-' },
     { key: 'notes', label: 'Notes', render: (h: any) => h.notes || '-' },
   ];
 
@@ -70,7 +70,7 @@ export default function CropReports() {
   const salesColumns: Column<any>[] = [
     { key: 'crop_name', label: 'Crop', render: (s: any) => s.crop_name || '-' },
     { key: 'land_name', label: 'Land', render: (s: any) => s.land_name || '-' },
-    { key: 'sales_amount', label: 'Amount ($)', render: (s: any) => s.sales_amount ? Number(s.sales_amount).toLocaleString() : '-' },
+    { key: 'sales_amount', label: 'Amount (RWF)', render: (s: any) => s.sales_amount ? `RWF ${Number(s.sales_amount).toLocaleString()}` : '-' },
     { key: 'harvest_date', label: 'Date', render: (s: any) => s.harvest_date ? new Date(s.harvest_date).toLocaleDateString() : '-' },
     { key: 'notes', label: 'Notes', render: (s: any) => s.notes || '-' },
   ];
@@ -119,7 +119,7 @@ export default function CropReports() {
         <StatsCard title="Active Crops" value={summary.activeCrops ?? 0} icon={Activity} color="var(--warning)" />
         <StatsCard title="Harvested" value={summary.harvested ?? 0} icon={Package} color="var(--success)" />
         <StatsCard title="Diseases Reported" value={summary.diseasesReported ?? 0} icon={Bug} color="var(--danger)" />
-        <StatsCard title="Total Sales" value={summary.totalSales ? `$${Number(summary.totalSales).toLocaleString()}` : '-'} icon={DollarSign} color="var(--primary)" />
+        <StatsCard title="Total Sales" value={summary.totalSales ? `RWF ${Number(summary.totalSales).toLocaleString()}` : '-'} icon={DollarSign} color="var(--primary)" />
       </div>
       <div className="stats-grid" style={{ marginBottom: 24 }}>
         <StatsCard title="Planted Qty" value={summary.totalPlantedQty ?? 0} icon={TrendingUp} color="var(--primary)" />
@@ -170,7 +170,7 @@ export default function CropReports() {
         <div className="card">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
             <h3>Harvest</h3>
-            <button className="btn btn-sm" style={{ background: 'var(--primary-light)', color: 'var(--primary)', border: 'none' }} onClick={() => exportCSV(harvestData, 'harvest', ['crop_name', 'land_name', 'harvest_date', 'quantity_harvested', 'sales_amount', 'notes'], ['Crop', 'Land', 'Harvest Date', 'Qty Harvested', 'Value ($)', 'Notes'])}>
+            <button className="btn btn-sm" style={{ background: 'var(--primary-light)', color: 'var(--primary)', border: 'none' }} onClick={() => exportCSV(harvestData, 'harvest', ['crop_name', 'land_name', 'harvest_date', 'quantity_harvested', 'sales_amount', 'notes'], ['Crop', 'Land', 'Harvest Date', 'Qty Harvested', 'Value (RWF)', 'Notes'])}>
               <Download size={14} /> Export
             </button>
           </div>
@@ -190,7 +190,7 @@ export default function CropReports() {
         <div className="card">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
             <h3>Sales</h3>
-            <button className="btn btn-sm" style={{ background: 'var(--primary-light)', color: 'var(--primary)', border: 'none' }} onClick={() => exportCSV(salesData, 'sales', ['crop_name', 'land_name', 'sales_amount', 'harvest_date', 'notes'], ['Crop', 'Land', 'Amount ($)', 'Date', 'Notes'])}>
+            <button className="btn btn-sm" style={{ background: 'var(--primary-light)', color: 'var(--primary)', border: 'none' }} onClick={() => exportCSV(salesData, 'sales', ['crop_name', 'land_name', 'sales_amount', 'harvest_date', 'notes'], ['Crop', 'Land', 'Amount (RWF)', 'Date', 'Notes'])}>
               <Download size={14} /> Export
             </button>
           </div>

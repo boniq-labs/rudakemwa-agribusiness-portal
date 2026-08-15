@@ -102,21 +102,22 @@ export const createSalaryRecord = async (req: AuthRequest, res: Response) => {
   } catch (err: any) { return error(res, err.message); }
 };
 
-// Simple salary payment record - creates an expense record for payroll tracking
+// Simple salary payment record - creates a PENDING expense record for payroll tracking.
+// Total Expenses on the accounting dashboard only increase once confirmed.
 export const createSalaryPayment = async (req: AuthRequest, res: Response) => {
   try {
-    const { name, salary, date, phone, payment_method } = req.body;
-    
+    const { name, salary, date, phone, payment_method, comment } = req.body;
+
     // Validate required fields
     if (!name || !salary || !date || !phone || !payment_method) {
       return error(res, 'All fields are required: name, salary, date, phone, payment_method', 400);
     }
-    
+
     const salaryAmount = Number(salary);
     if (isNaN(salaryAmount) || salaryAmount <= 0) {
       return error(res, 'Salary must be a positive number', 400);
     }
-    
+
     // Get or create Salaries expense category
     let [categoryRows]: any = await pool.query('SELECT id FROM expense_categories WHERE name = ? LIMIT 1', ['Salaries']);
     let categoryId: number;
@@ -126,17 +127,58 @@ export const createSalaryPayment = async (req: AuthRequest, res: Response) => {
     } else {
       categoryId = categoryRows[0].id;
     }
-    
-    // Create expense record for salary payment
+
+    // Create expense record for salary payment (pending until confirmed by accounting)
     const expenseNumber = `SAL-${Date.now()}`;
     const paymentMethod = (payment_method || 'Cash').toLowerCase().replace(/\s+/g, '_');
-    
+    const notes = `Salary payment for ${name}${comment ? ` - ${comment}` : ''}`;
+
     const [result]: any = await pool.query(
-      `INSERT INTO expense_records (expense_number, category_id, description, amount, payment_method, vendor, notes, date, department_id) VALUES (?,?,?,?,?,?,?,?,?)`,
-      [expenseNumber, categoryId, `Salary payment for ${name} (Phone: ${phone})`, salaryAmount, paymentMethod || null, name, `Salary payment for ${name}`, date, null]
+      `INSERT INTO expense_records (expense_number, category_id, description, amount, payment_method, vendor, notes, date, department_id, status) VALUES (?,?,?,?,?,?,?,?,?,?)`,
+      [expenseNumber, categoryId, `Salary payment for ${name} (Phone: ${phone})`, salaryAmount, paymentMethod || null, name, notes, date, null, 'pending']
     );
-    
-    await logAudit(req, createAuditEntry(req, 'Create Salary Payment', 'Accounting', `Salary payment for ${name} recorded`, { name, salary: salaryAmount, date, phone, payment_method }));
-    return created(res, { id: result.insertId }, 'Salary payment recorded');
+
+    await logAudit(req, createAuditEntry(req, 'Create Salary Payment', 'Accounting', `Salary payment for ${name} recorded (pending)`, { name, salary: salaryAmount, date, phone, payment_method, comment }));
+    return created(res, { id: result.insertId }, 'Salary payment recorded (pending confirmation)');
+  } catch (err: any) { return error(res, err.message); }
+};
+
+// List salary payments (expense records in the Salaries category) - pending + confirmed
+export const getSalaryPayments = async (req: AuthRequest, res: Response) => {
+  try {
+    const { status } = req.query;
+    let where = 'WHERE ec.name = ?';
+    const params: any[] = ['Salaries'];
+    if (status) { where += ' AND e.status = ?'; params.push(status); }
+    const [rows]: any = await pool.query(
+      `SELECT e.*, ec.name as category_name
+       FROM expense_records e
+       LEFT JOIN expense_categories ec ON e.category_id = ec.id
+       ${where} ORDER BY e.date DESC, e.id DESC`, params
+    );
+    return success(res, rows);
+  } catch (err: any) { return error(res, err.message); }
+};
+
+// Confirm a pending salary payment - increases dashboard Total Expenses
+export const confirmSalaryPayment = async (req: AuthRequest, res: Response) => {
+  try {
+    const [old]: any = await pool.query('SELECT * FROM expense_records WHERE id = ?', [req.params.id]);
+    if (old.length === 0) return error(res, 'Salary payment not found', 404);
+    if (old[0].status === 'confirmed') return error(res, 'Salary payment already confirmed', 400);
+    await pool.query('UPDATE expense_records SET status = ? WHERE id = ?', ['confirmed', req.params.id]);
+    await logAudit(req, createAuditEntry(req, 'Confirm Salary Payment', 'Accounting', `Salary payment #${req.params.id} confirmed`, null, old[0]));
+    return success(res, null, 'Salary payment confirmed');
+  } catch (err: any) { return error(res, err.message); }
+};
+
+// Delete a salary payment expense record
+export const deleteSalaryPayment = async (req: AuthRequest, res: Response) => {
+  try {
+    const [old]: any = await pool.query('SELECT * FROM expense_records WHERE id = ?', [req.params.id]);
+    if (old.length === 0) return error(res, 'Salary payment not found', 404);
+    await pool.query('DELETE FROM expense_records WHERE id = ?', [req.params.id]);
+    await logAudit(req, createAuditEntry(req, 'Delete Salary Payment', 'Accounting', `Salary payment #${req.params.id} deleted`, null, old[0]));
+    return success(res, null, 'Salary payment deleted');
   } catch (err: any) { return error(res, err.message); }
 };

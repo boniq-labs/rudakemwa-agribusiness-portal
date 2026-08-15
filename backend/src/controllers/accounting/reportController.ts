@@ -9,8 +9,10 @@ export const getProfitLoss = async (req: AuthRequest, res: Response) => {
     let where = '';
     const params: any[] = [];
     if (start_date && end_date) { where = 'WHERE date >= ? AND date <= ?'; params.push(start_date, end_date); }
-    const [income]: any = await pool.query(`SELECT COALESCE(SUM(amount),0) as total FROM income_records ${where}`, params);
-    const [expense]: any = await pool.query(`SELECT COALESCE(SUM(amount),0) as total FROM expense_records ${where}`, params);
+    const statusFilter = where ? ' AND status = ?' : ' WHERE status = ?';
+    params.push('confirmed');
+    const [income]: any = await pool.query(`SELECT COALESCE(SUM(amount),0) as total FROM income_records ${where}${statusFilter}`, params);
+    const [expense]: any = await pool.query(`SELECT COALESCE(SUM(amount),0) as total FROM expense_records ${where}${statusFilter}`, params);
     const totalIncome = Number(income[0].total);
     const totalExpense = Number(expense[0].total);
     return success(res, {
@@ -27,16 +29,16 @@ export const getCashFlow = async (req: AuthRequest, res: Response) => {
   try {
     const { start_date, end_date } = req.query;
     let where = '';
-    const params: any[] = [];
-    if (start_date && end_date) { where = 'WHERE date >= ? AND date <= ?'; params.push(start_date, end_date); }
+    const params: any[] = ['confirmed'];
+    if (start_date && end_date) { where = ' AND date >= ? AND date <= ?'; params.push(start_date, end_date); }
     const [inflows]: any = await pool.query(
       `SELECT DATE(date) as date, SUM(amount) as amount, source as category, 'inflow' as type
-       FROM income_records ${where} GROUP BY DATE(date), source ORDER BY date`, params
+       FROM income_records WHERE status = ?${where} GROUP BY DATE(date), source ORDER BY date`, params
     );
     const [outflows]: any = await pool.query(
       `SELECT DATE(e.date) as date, SUM(e.amount) as amount, ec.name as category, 'outflow' as type
        FROM expense_records e LEFT JOIN expense_categories ec ON e.category_id = ec.id
-       ${where} GROUP BY DATE(e.date), ec.name ORDER BY date`, params
+       WHERE e.status = ?${where} GROUP BY DATE(e.date), ec.name ORDER BY date`, params
     );
     return success(res, { inflows, outflows });
   } catch (err: any) { return error(res, err.message); }
@@ -50,10 +52,10 @@ export const getFinancialSummary = async (req: AuthRequest, res: Response) => {
     else if (period === 'monthly') format = '%Y-%m';
     else if (period === 'yearly') format = '%Y';
     const [income]: any = await pool.query(
-      `SELECT DATE_FORMAT(date, '${format}') as period, SUM(amount) as total FROM income_records GROUP BY DATE_FORMAT(date, '${format}') ORDER BY period DESC LIMIT 12`
+      `SELECT DATE_FORMAT(date, '${format}') as period, SUM(amount) as total FROM income_records WHERE status = 'confirmed' GROUP BY DATE_FORMAT(date, '${format}') ORDER BY period DESC LIMIT 12`
     );
     const [expense]: any = await pool.query(
-      `SELECT DATE_FORMAT(date, '${format}') as period, SUM(amount) as total FROM expense_records GROUP BY DATE_FORMAT(date, '${format}') ORDER BY period DESC LIMIT 12`
+      `SELECT DATE_FORMAT(date, '${format}') as period, SUM(amount) as total FROM expense_records WHERE status = 'confirmed' GROUP BY DATE_FORMAT(date, '${format}') ORDER BY period DESC LIMIT 12`
     );
     const [pendingInvoices]: any = await pool.query(
       "SELECT COUNT(*) as count, COALESCE(SUM(total_amount),0) as total FROM invoices WHERE status IN ('pending','partial')"

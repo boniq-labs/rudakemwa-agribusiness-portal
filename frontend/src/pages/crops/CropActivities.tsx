@@ -172,8 +172,8 @@ export default function CropActivities() {
     { key: 'status', label: 'Status', render: (a: any) => <StatusBadge status={a.status} /> },
     { key: 'diseases', label: 'Diseases', render: (a: any) => a.diseases || '-' },
     {
-      key: 'sales_amount', label: 'Sales ($)',
-      render: (a: any) => a.sales_amount ? Number(a.sales_amount).toLocaleString() : '-',
+      key: 'sales_amount', label: 'Sales (RWF)',
+      render: (a: any) => a.sales_amount ? `RWF ${Number(a.sales_amount).toLocaleString()}` : '-',
     },
     { key: 'notes', label: 'Notes', render: (a: any) => a.notes || '-' },
     {
@@ -256,7 +256,7 @@ export default function CropActivities() {
                     {STATUSES.map(s => <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>)}
                   </select>
                 </FormField>
-                <FormField label="Sales Amount ($)">
+                <FormField label="Sales Amount (RWF)">
                   <input type="number" name="sales_amount" value={form.sales_amount} onChange={handleChange} min={0} step="0.01" />
                 </FormField>
               </div>

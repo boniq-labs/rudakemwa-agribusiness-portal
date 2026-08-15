@@ -72,12 +72,12 @@ import { getProductCategories, createProductCategory, updateProductCategory, get
 import { getSalesOrders, createSalesOrder, updateSalesOrderStatus, getQuotations, createQuotation, convertQuotationToOrder } from '../controllers/sales/orderController';
 import { getSalesInvoices, createSalesInvoice, recordCustomerPayment } from '../controllers/sales/invoiceController';
 
-import { getIncomeRecords, createIncomeRecord, updateIncomeRecord, deleteIncomeRecord, getIncomeSummary } from '../controllers/accounting/incomeController';
-import { getExpenseCategories, createExpenseCategory, updateExpenseCategory, getExpenseRecords, createExpenseRecord, updateExpenseRecord, deleteExpenseRecord, getExpenseSummary } from '../controllers/accounting/expenseController';
+import { getIncomeRecords, createIncomeRecord, updateIncomeRecord, deleteIncomeRecord, confirmIncomeRecord, getIncomeSummary } from '../controllers/accounting/incomeController';
+import { getExpenseCategories, createExpenseCategory, updateExpenseCategory, getExpenseRecords, createExpenseRecord, updateExpenseRecord, deleteExpenseRecord, confirmExpenseRecord, getExpenseSummary } from '../controllers/accounting/expenseController';
 import { getInvoices, createInvoice, updateInvoice, deleteInvoice, updateInvoiceStatus, recordPayment, getInvoicePDF } from '../controllers/accounting/invoiceController';
 
 import { getBudgets, createBudget, updateBudget, deleteBudget, updateBudgetStatus, getBudgetVsActual } from '../controllers/accounting/budgetController';
-import { getPayrollRecords, createPayroll, processPayrollPayment, deletePayrollRecord, getSalaryRecords, createSalaryRecord, createSalaryPayment } from '../controllers/accounting/payrollController';
+import { getPayrollRecords, createPayroll, processPayrollPayment, deletePayrollRecord, getSalaryRecords, createSalaryRecord, createSalaryPayment, getSalaryPayments, confirmSalaryPayment, deleteSalaryPayment } from '../controllers/accounting/payrollController';
 import { getProfitLoss, getCashFlow, getFinancialSummary } from '../controllers/accounting/reportController';
 
 import { getSupplierCategories, createSupplierCategory, updateSupplierCategory, getSuppliers, createSupplier, updateSupplier, deleteSupplier, rateSupplier } from '../controllers/procurement/supplierController';
@@ -780,6 +780,7 @@ router.get('/logistics/reports', authenticate, authorize(['logistics.view']), ge
 router.get('/accounting/income', authenticate, authorize(['income.view']), getIncomeRecords);
 router.post('/accounting/income', authenticate, authorize(['income.create']), validate(createIncomeSchema), createIncomeRecord);
 router.put('/accounting/income/:id', authenticate, authorize(['income.update']), updateIncomeRecord);
+router.put('/accounting/income/:id/confirm', authenticate, authorize(['income.update']), confirmIncomeRecord);
 router.delete('/accounting/income/:id', authenticate, authorize(['income.delete']), deleteIncomeRecord);
 router.get('/accounting/income/summary', authenticate, authorize(['income.view']), getIncomeSummary);
 
@@ -792,6 +793,7 @@ router.put('/accounting/expense-categories/:id', authenticate, authorize(['expen
 router.get('/accounting/expenses', authenticate, authorize(['expenses.view']), getExpenseRecords);
 router.post('/accounting/expenses', authenticate, authorize(['expenses.create']), validate(createExpenseSchema), createExpenseRecord);
 router.put('/accounting/expenses/:id', authenticate, authorize(['expenses.update']), updateExpenseRecord);
+router.put('/accounting/expenses/:id/confirm', authenticate, authorize(['expenses.update']), confirmExpenseRecord);
 router.delete('/accounting/expenses/:id', authenticate, authorize(['expenses.delete']), deleteExpenseRecord);
 router.get('/accounting/expenses/summary', authenticate, authorize(['expenses.view']), getExpenseSummary);
 
@@ -807,6 +809,9 @@ router.put('/accounting/invoices/:id/pay', authenticate, authorize(['invoices.up
 router.get('/accounting/payroll', authenticate, authorize(['payroll.view']), getPayrollRecords);
 router.post('/accounting/payroll', authenticate, authorize(['payroll.create']), createPayroll);
 router.post('/accounting/payroll/salary-payment', authenticate, authorize(['payroll.create']), createSalaryPayment);
+router.get('/accounting/payroll/payments', authenticate, authorize(['payroll.view']), getSalaryPayments);
+router.put('/accounting/payroll/payments/:id/confirm', authenticate, authorize(['payroll.update']), confirmSalaryPayment);
+router.delete('/accounting/payroll/payments/:id', authenticate, authorize(['payroll.delete']), deleteSalaryPayment);
 router.put('/accounting/payroll/:id/process', authenticate, authorize(['payroll.update']), processPayrollPayment);
 router.delete('/accounting/payroll/:id', authenticate, authorize(['payroll.delete']), deletePayrollRecord);
 
@@ -832,12 +837,12 @@ router.get('/accounting/reports', authenticate, authorize(['reports.view']), asy
   const { start_date, end_date } = req.query;
   let dateWhere = '';
   const params: any[] = [];
-  if (start_date && end_date) { dateWhere = ' WHERE date BETWEEN ? AND ?'; params.push(start_date, end_date); }
+  if (start_date && end_date) { dateWhere = ' AND date BETWEEN ? AND ?'; params.push(start_date, end_date); }
   try {
-    const [incomeRows]: any = await pool.query(`SELECT source, SUM(amount) as total FROM income_records${dateWhere} GROUP BY source ORDER BY total DESC`, params);
+    const [incomeRows]: any = await pool.query(`SELECT source, SUM(amount) as total FROM income_records WHERE status='confirmed'${dateWhere} GROUP BY source ORDER BY total DESC`, params);
     const incomeBySource: Record<string, number> = {};
     for (const r of incomeRows) incomeBySource[r.source] = Number(r.total);
-    const [expenseRows]: any = await pool.query(`SELECT ec.name as category, SUM(e.amount) as total FROM expense_records e LEFT JOIN expense_categories ec ON e.category_id = ec.id${dateWhere.replace('date','e.date')} GROUP BY ec.name ORDER BY total DESC`, params.length ? params : []);
+    const [expenseRows]: any = await pool.query(`SELECT ec.name as category, SUM(e.amount) as total FROM expense_records e LEFT JOIN expense_categories ec ON e.category_id = ec.id WHERE e.status='confirmed'${dateWhere.replace('date','e.date')} GROUP BY ec.name ORDER BY total DESC`, params.length ? params : []);
     const expenseByCategory: Record<string, number> = {};
     for (const r of expenseRows) expenseByCategory[r.category || 'Uncategorized'] = Number(r.total);
     const { success } = await import('../utils/response');
@@ -892,6 +897,13 @@ router.put('/sales/orders/:id', authenticate, authorize(['orders.update']), asyn
     const { customer_id, order_date, status, total_amount, notes, items } = req.body;
     await pool.query('UPDATE sales_orders SET customer_id=?, order_date=?, status=?, total_amount=?, notes=? WHERE id=?',
       [customer_id || old[0].customer_id, order_date || old[0].order_date, status || old[0].status, total_amount || old[0].total_amount, notes ?? old[0].notes, req.params.id]);
+    if (status === 'completed' && old[0].status !== 'completed') {
+      const incomeNumber = `INC-SAL-${Date.now()}`;
+      await pool.query(
+        `INSERT INTO income_records (income_number, source, customer_id, amount, payment_method, date, description, created_by, status) VALUES (?,?,?,?,?,?,?,?,?)`,
+        [incomeNumber, 'Sales Revenue', old[0].customer_id, (status && total_amount) || old[0].total_amount, 'Cash', new Date().toISOString().split('T')[0], `Sales order ${old[0].order_number} completed`, (req as any).user?.id, 'pending']
+      );
+    }
     if (items && Array.isArray(items) && items.length > 0) {
       await pool.query('DELETE FROM sales_order_items WHERE order_id = ?', [req.params.id]);
       for (const item of items) {

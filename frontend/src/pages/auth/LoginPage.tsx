@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useSettings } from '../../contexts/SettingsContext';
@@ -37,6 +37,7 @@ export default function LoginPage() {
   const [serverError, setServerError] = useState('');
   const [darkMode, setDarkMode] = useState(false);
   const [logoTs] = useState(() => Date.now());
+  const loginInFlight = useRef(false);
 
   const systemName = settings.system_name || 'RUDAKEMWA';
   const farmName = settings.farm_name || 'Rudakemwa Agribusiness Portal';
@@ -47,12 +48,19 @@ export default function LoginPage() {
     defaultValues: { username: '', password: '', rememberMe: false },
   });
 
+  useEffect(() => {
+    if (user) {
+      navigate(ROLE_ROUTES[user.role] || '/dashboard', { replace: true });
+    }
+  }, [user, navigate]);
+
   if (user) {
-    navigate(ROLE_ROUTES[user.role] || '/dashboard', { replace: true });
     return null;
   }
 
   const onSubmit = async (data: LoginForm) => {
+    if (loginInFlight.current) return;
+    loginInFlight.current = true;
     setServerError('');
     try {
       const u = await login(data.username, data.password, data.rememberMe ?? false);
@@ -62,6 +70,8 @@ export default function LoginPage() {
       const msg = err.response?.data?.error || err.response?.data?.message || err.message || 'Login failed';
       setServerError(msg);
       toast.error(msg === 'Invalid username or password' ? 'Invalid username or password' : msg, { duration: 3000 });
+    } finally {
+      loginInFlight.current = false;
     }
   };
 

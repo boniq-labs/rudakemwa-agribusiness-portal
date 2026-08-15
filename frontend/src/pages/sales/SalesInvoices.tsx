@@ -140,7 +140,7 @@ export default function SalesInvoices() {
     },
     {
       key: 'total_amount', label: 'Total',
-      render: (inv: any) => `$${Number(inv.total_amount || 0).toFixed(2)}`,
+      render: (inv: any) => `RWF ${Number(inv.total_amount || 0).toLocaleString()}`,
     },
     { key: 'status', label: 'Status' },
     {
@@ -177,7 +177,7 @@ export default function SalesInvoices() {
             <select className="form-input" value={form.order_id} onChange={e => setForm(p => ({ ...p, order_id: e.target.value }))} required>
               <option value="">Select order</option>
               {orderList.map((o: any) => (
-                <option key={o.id} value={o.id}>{o.order_number || `Order #${o.id}`} - ${Number(o.total_amount || 0).toFixed(2)}</option>
+                <option key={o.id} value={o.id}>{o.order_number || `Order #${o.id}`} - RWF {Number(o.total_amount || 0).toLocaleString()}</option>
               ))}
             </select>
           </FormField>

@@ -106,7 +106,7 @@ export default function MedicineStock() {
     { key: 'brand', label: 'Brand', render: (m: any) => m.brand || '-' },
     { key: 'category', label: 'Category', render: (m: any) => typeof m.category === 'object' ? m.category?.name : m.category || '-' },
     { key: 'quantity', label: 'Qty', render: (m: any) => `${m.quantity} ${m.unit || ''}` },
-    { key: 'unit_price', label: 'Unit Price', render: (m: any) => m.unit_price ? `$${Number(m.unit_price).toFixed(2)}` : '-' },
+    { key: 'unit_price', label: 'Unit Price', render: (m: any) => m.unit_price ? `RWF ${Number(m.unit_price).toLocaleString()}` : '-' },
     { key: 'reorder_level', label: 'Reorder', render: (m: any) => m.reorder_level || '-' },
     { key: 'expiry_date', label: 'Expiry', render: (m: any) => m.expiry_date || '-' },
     {
@@ -191,6 +191,7 @@ export default function MedicineStock() {
                     <option value="ml">mL</option>
                     <option value="tablets">Tablets</option>
                     <option value="sachets">Sachets</option>
+                    <option value="grams">Grams</option>
                   </select>
                 </FormField>
               </div>

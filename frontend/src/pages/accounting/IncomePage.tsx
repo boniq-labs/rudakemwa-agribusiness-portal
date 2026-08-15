@@ -6,7 +6,7 @@ import FormField from '../../components/FormField';
 import StatsCard from '../../components/StatsCard';
 import client from '../../api/client';
 import { formatAmount } from '../../services/currency';
-import { Plus, Edit2, Trash2, X, DollarSign, TrendingUp, Calendar } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, DollarSign, TrendingUp, Calendar, CheckCheck } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useConfirm } from '../../components/ConfirmDialog';
 import type { Column } from '../../components/DataTable';
@@ -55,6 +55,16 @@ export default function IncomePage() {
     },
   });
 
+  const confirmMutation = useMutation({
+    mutationFn: (id: number) => client.put(`/accounting/income/${id}/confirm`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['accounting-income'] });
+      queryClient.invalidateQueries({ queryKey: ['accounting-dashboard'] });
+      toast.success('Income confirmed');
+    },
+    onError: (err: any) => toast.error(err.response?.data?.message || 'Failed to confirm'),
+  });
+
   const closeModal = () => {
     setShowModal(false);
     setEditing(null);
@@ -96,7 +106,12 @@ export default function IncomePage() {
 
   const totalIncome = useMemo(() => {
     if (!income) return 0;
-    return (Array.isArray(income) ? income : []).reduce((s: number, i: any) => s + (Number(i.amount) || 0), 0);
+    return (Array.isArray(income) ? income : []).reduce((s: number, i: any) => i.status === 'confirmed' ? s + (Number(i.amount) || 0) : s, 0);
+  }, [income]);
+
+  const pendingIncome = useMemo(() => {
+    if (!income) return 0;
+    return (Array.isArray(income) ? income : []).reduce((s: number, i: any) => i.status === 'pending' ? s + (Number(i.amount) || 0) : s, 0);
   }, [income]);
 
   const incomeList = Array.isArray(income) ? income : [];
@@ -109,9 +124,22 @@ export default function IncomePage() {
     { key: 'payment_method', label: 'Payment' },
     { key: 'date', label: 'Date', render: (i: any) => i.date ? new Date(i.date).toLocaleDateString() : '-' },
     {
+      key: 'status', label: 'Status',
+      render: (i: any) => (
+        <span style={{ background: i.status === 'confirmed' ? 'rgba(22,163,74,0.12)' : 'rgba(217,119,6,0.12)', color: i.status === 'confirmed' ? '#16a34a' : '#d97706', padding: '3px 10px', borderRadius: 12, fontSize: '0.8rem', fontWeight: 600 }}>
+          {i.status === 'confirmed' ? 'Confirmed' : 'Pending'}
+        </span>
+      ),
+    },
+    {
       key: 'actions', label: 'Actions',
       render: (i: any) => (
         <div className="actions">
+          {i.status === 'pending' && (
+            <button className="btn btn-sm" style={{ background: 'rgba(22,163,74,0.12)', color: '#16a34a' }} disabled={confirmMutation.isPending} onClick={() => confirmMutation.mutate(i.id)}>
+              <CheckCheck size={14} /> Confirm
+            </button>
+          )}
           <button className="btn btn-sm" style={{ background: 'var(--primary-light)', color: 'var(--primary)' }} onClick={() => openEdit(i)}>
             <Edit2 size={14} />
           </button>
@@ -134,7 +162,8 @@ export default function IncomePage() {
       }
     >
       <div className="stats-grid" style={{ marginBottom: 20 }}>
-        <StatsCard title="Total Income (Filtered)" value={formatAmount(totalIncome)} icon={DollarSign} color="var(--success)" />
+        <StatsCard title="Confirmed Income" value={formatAmount(totalIncome)} icon={DollarSign} color="var(--success)" />
+        <StatsCard title="Pending Confirmation" value={formatAmount(pendingIncome)} icon={CheckCheck} color="var(--warning)" />
         <StatsCard title="Transactions" value={incomeList.length} icon={TrendingUp} color="var(--primary)" />
         <StatsCard title="Period" value={`${dateFrom} to ${dateTo}`} icon={Calendar} color="var(--info)" />
       </div>

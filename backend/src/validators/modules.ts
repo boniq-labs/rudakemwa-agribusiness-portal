@@ -291,8 +291,10 @@ export const createPurchaseRequestSchema = z.object({
 
 export const createPurchaseOrderSchema = z.object({
   supplier_id: z.number().int().positive(),
+  cost: z.number().positive().optional().nullable(),
+  status: z.string().optional().nullable(),
   request_id: z.number().int().positive().optional().nullable(),
-  order_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  order_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
   expected_delivery: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
   items: z.array(z.object({
     item_name: z.string().min(1, 'Item name is required'),
@@ -420,6 +422,9 @@ export const createCustomerSchema = z.object({
   company_name: z.string().optional().nullable(),
   type: z.string().optional().nullable(),
   initial_payment: z.union([z.string(), z.number()]).optional(),
+  product_id: z.union([z.number().int().positive(), z.string().regex(/^\d+$/), z.null()]).optional(),
+  quantity: z.union([z.number().positive(), z.string().regex(/^\d+(\.\d+)?$/), z.null()]).optional(),
+  payment_method: z.string().optional().nullable(),
 }).passthrough();
 
 export const createProductSchema = z.object({

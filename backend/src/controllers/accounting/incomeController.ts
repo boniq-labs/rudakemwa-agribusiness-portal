@@ -6,7 +6,7 @@ import { logAudit, createAuditEntry } from '../../services/auditService';
 
 export const getIncomeRecords = async (req: AuthRequest, res: Response) => {
   try {
-    const { start_date, end_date, startDate, endDate, source } = req.query;
+    const { start_date, end_date, startDate, endDate, source, status } = req.query;
     const sd = start_date || startDate || '';
     const ed = end_date || endDate || '';
     let where = 'WHERE 1=1';
@@ -14,6 +14,7 @@ export const getIncomeRecords = async (req: AuthRequest, res: Response) => {
     if (sd) { where += ' AND date >= ?'; params.push(sd); }
     if (ed) { where += ' AND date <= ?'; params.push(ed); }
     if (source) { where += ' AND source = ?'; params.push(source); }
+    if (status) { where += ' AND status = ?'; params.push(status); }
     const [rows]: any = await pool.query(`SELECT * FROM income_records ${where} ORDER BY date DESC`, params);
     return success(res, rows);
   } catch (err: any) { return error(res, err.message); }
@@ -26,9 +27,10 @@ export const createIncomeRecord = async (req: AuthRequest, res: Response) => {
     const income_number = b.income_number || b.reference || `INC-${Date.now()}`;
     const payment_method = (b.payment_method || '').toLowerCase().replace(/\s+/g, '_');
     const { customer_id, amount, date, description } = b;
+    const status = b.status === 'pending' ? 'pending' : 'confirmed';
     const [result]: any = await pool.query(
-      `INSERT INTO income_records (income_number, source, customer_id, amount, payment_method, date, description) VALUES (?,?,?,?,?,?,?)`,
-      [income_number, source, customer_id || null, amount, payment_method || null, date || null, description || null]
+      `INSERT INTO income_records (income_number, source, customer_id, amount, payment_method, date, description, status) VALUES (?,?,?,?,?,?,?,?)`,
+      [income_number, source, customer_id || null, amount, payment_method || null, date || null, description || null, status]
     );
     await logAudit(req, createAuditEntry(req, 'Create Income', 'Accounting', `Income record ${income_number} created`, req.body));
     return created(res, { id: result.insertId }, 'Income record created');
@@ -62,6 +64,17 @@ export const deleteIncomeRecord = async (req: AuthRequest, res: Response) => {
   } catch (err: any) { return error(res, err.message); }
 };
 
+export const confirmIncomeRecord = async (req: AuthRequest, res: Response) => {
+  try {
+    const [old]: any = await pool.query('SELECT * FROM income_records WHERE id = ?', [req.params.id]);
+    if (old.length === 0) return error(res, 'Income record not found', 404);
+    if (old[0].status === 'confirmed') return error(res, 'Income record already confirmed', 400);
+    await pool.query('UPDATE income_records SET status = ? WHERE id = ?', ['confirmed', req.params.id]);
+    await logAudit(req, createAuditEntry(req, 'Confirm Income', 'Accounting', `Income record #${req.params.id} confirmed`, null, old[0]));
+    return success(res, null, 'Income record confirmed');
+  } catch (err: any) { return error(res, err.message); }
+};
+
 export const getIncomeSummary = async (req: AuthRequest, res: Response) => {
   try {
     const { period } = req.query;
@@ -71,7 +84,7 @@ export const getIncomeSummary = async (req: AuthRequest, res: Response) => {
     else if (period === 'yearly') format = '%Y';
     const [rows]: any = await pool.query(
       `SELECT DATE_FORMAT(date, '${format}') as period, SUM(amount) as total, source, COUNT(*) as count
-       FROM income_records GROUP BY DATE_FORMAT(date, '${format}'), source ORDER BY period DESC`
+       FROM income_records WHERE status = 'confirmed' GROUP BY DATE_FORMAT(date, '${format}'), source ORDER BY period DESC`
     );
     return success(res, rows);
   } catch (err: any) { return error(res, err.message); }

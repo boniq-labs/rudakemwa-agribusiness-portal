@@ -3,9 +3,59 @@
 ## Project
 EFMS — Enterprise Farm Management System. Full-stack React + Vite frontend, Express + MySQL backend.
 
-## Session Context (Last Updated: 2026-07-29)
+## Session Context (Last Updated: 2026-08-15)
 
-### Objective
+### Current Objective (Purchase Order contract alignment — resolved)
+Fixed the Purchase Orders frontend/backend contract. The frontend sends `{ supplier_id, cost, order_date, expected_delivery, status, notes }`; the backend now validates + persists that payload and returns PO data that matches what `PurchaseOrders.tsx` displays. Scope: `modules.ts` (validator) + `purchaseOrderController.ts` + `PurchaseOrders.tsx`. No schema change, no UI redesign.
+
+- **Validator `createPurchaseOrderSchema`** (`backend/src/validators/modules.ts:292`): now declares `cost: z.number().positive().optional().nullable()` and `status: z.string().optional().nullable()`; `order_date` made `optional().nullable()` (was REQUIRED — frontend sends `undefined` when blank → 400). Kept `request_id`/`expected_delivery`/`items`/`notes` + `.passthrough()`.
+- **Backend `createPurchaseOrder`**: destructures + persists `status` (`status || 'pending'`) instead of hardcoded `'pending'` — previously a new PO (status 'draft' from the form) never appeared under the Draft tab since statusMap has no 'pending'. Also `orderDate = order_date || today` — `order_date` is `DATE NOT NULL`, so a blank date previously hit "Column 'order_date' cannot be null".
+- **Backend `updatePurchaseOrder`**: `orderDate = order_date || old value (Date-safe) || today` instead of `order_date || null` (NOT NULL constraint).
+- **Backend `getPurchaseOrders`**: added `(SELECT GROUP_CONCAT(item_name ...) FROM purchase_order_items WHERE po_id = po.id) as item_name` so the frontend "Name" column has real data (previously undefined).
+- **Frontend `PurchaseOrders.tsx` columns**: Name → `o.item_name || o.request_items || '-'`; Payment Method → `o.payment_method || '-'` (was fake `'Cash'` fallback — PO has no payment_method field). Department stays `o.department || '-'`. Cost column unchanged.
+- **Note**: `getPurchases` still references `po.department_id` (no such column on `purchase_orders`) — latent SQL error if `/procurement/purchases` is ever called, but it is NOT used by the frontend (PurchaseOrders uses `/procurement/orders`); left untouched per "no unrelated changes".
+- **Verified via API (2026-08-15)**: login ruda → POST `/procurement/orders` `{supplier_id:8, cost:150000, order_date, expected_delivery, status:'draft', notes}` → 201 id=13; GET orders shows `status:'draft'`, `total_cost:'150000.00'`, `item_name:null`; PENDING expense id=17 (150000, "Purchase from bonheur"); `PUT /expenses/17/confirm` → 200; double-confirm → 400 "already confirmed". Blank-`order_date` create (no date in body) → 201 id=14 (defaulted to today). Test PO 13/14 + expense 17 deleted afterward.
+- **Builds**: backend `tsc --noEmit` EXIT:0; frontend `tsc --noEmit` EXIT:0 + `vite build` OK (46.96s).
+- NOTE: Backend port 5000 is running (PID from user's `npm run dev`).
+
+### Previous Objective (RWF currency + PO "Cost" column + Medicine "Grams" — resolved)
+Converted all money displays from USD `$` to RWF, reverted the Purchase Orders column to "Cost", and added "Grams" to Medicine Stock units. Frontend-only changes except backend `medicineController` (persist unit) and PO total_cost subquery.
+
+- **Currency → RWF**: `frontend/src/services/currency.ts` is RWF-only (`formatAmount` → `RWF ${n.toLocaleString('en-US', {max 2 decimals})}`, `setCurrency` no-op). Swept ALL hardcoded `$`/bare-number money renders to `RWF ${Number(x).toLocaleString()}` across: sales (ProductsPage price, OrdersPage total + product option, CustomersPage total purchase + product option, SalesInvoices total + order option), procurement (PurchaseOrders Cost, PurchaseRequests Est Cost, ProcurementInvoices amount, ProcurementContracts total_value, ProcurementDashboard total + Total Purchases, ProcurementReports Total Spending + Pending Payments), stock (MedicineStock unit_price, StockReceiving unit_price + total, InventoryPage purchase_price), animals (Treatment cost, AnimalProfile purchase price + cost, AnimalSales price, FeedManagement purchase_price), logistics (FuelPage cost + Total Cost, MaintenancePage cost, LogisticsReports Total Cost + Avg Cost/L), crops (CropReports Value/Amount + CSV headers + Total Sales, CropActivities Sales), milk (MilkCustomers balance, MilkReports revenue, MilkProducts price, MilkProcessing price), veterinary (VetVaccinations cost). Accounting/dashboards/sales reports already used `formatAmount` (now RWF) — no change needed.
+- **PO column = "Cost"**: `PurchaseOrders.tsx:110` — `{ key: 'total_cost', label: 'Cost', render: o => RWF ${...} }`. No "Linked Request" column remnants (that string only remains as the create-form "Linked Request" field label). Backend `purchaseOrderController.ts:20,144` adds `total_cost` subquery (sum of `purchase_order_items.total_price`).
+- **Medicine "Grams"**: `MedicineStock.tsx:194` added `<option value="grams">Grams</option>` (kept pcs/bottles/vials/ml/tablets/sachets). Backend `medicineController.ts` now persists `unit` on create (`unit || null`) and update (`unit ?? old[0].unit`).
+- **Verified**: Frontend `tsc --noEmit` EXIT:0 and `vite build` OK (11.90s). Backend `tsc` changes (medicine unit, PO total_cost) confirmed present.
+- NOTE: Backend port 5000 was freed earlier (background backend killed so user can run `npm run dev` themselves); backend may not be running.
+
+### Previous Objective (Login speed — targeted, resolved)
+Optimized the login flow so valid logins redirect immediately. Only 2 files changed (frontend-only):
+
+- **`SplashScreen.tsx`**: Removed the hardcoded `setTimeout(..., 3000)` artificial delay after the logo loads — splash now completes the instant the image loads. Added `onError` fallback so a blocked/failed logo (e.g. railway.app upload blocked by ORB/CORS) can NEVER hang the splash and block the app.
+- **`LoginPage.tsx`**: Moved the authenticated-user `navigate()` out of the render body into a `useEffect` (fixes a "side effect during render" anti-pattern and duplicate navigation). Added a `loginInFlight` ref guard so clicking Sign In twice cannot fire duplicate `/auth/login` requests.
+
+Verified (browser automation, chromium via playwright skill):
+- Login reachable fast (splash no longer waits 3s). ✅
+- Valid login redirects to `/dashboard` in ~1.2s (farm_owner); crops user role-redirect works. ✅
+- Invalid login shows "Invalid credentials. N attempts remaining." banner + toast. ✅
+- Page refresh keeps auth (stays on dashboard, profile endpoint intact). ✅
+- Duplicate-submit guarded, no bounce back to login. ✅
+- Frontend `tsc --noEmit` and `vite build` both pass. ✅
+- Test user passwords restored to original hashes; `failed_attempts` reset; backend hung process was restarted.
+
+Note: The backend process (tsx watch) was hung/unresponsive (port open, no response) and had to be killed and restarted with `npm run dev` in `backend/`. Not related to these frontend changes.
+
+### Accounting pending/confirm workflow (previous session — resolved)
+Sales, payroll, and expenses go through a PENDING → CONFIRMED workflow so unconfirmed records do NOT inflate dashboard totals. Confirmed totals = only `status='confirmed'` rows; `pendingIncome`/`pendingExpenses` reported separately. Verified end-to-end via API (2026-08-13):
+
+- **Payroll salary payment** → created `pending`, dashboard pendingExpenses increases but totalMonthlyExpenses does NOT; `PUT /api/accounting/payroll/payments/:id/confirm` moves to confirmed; double-confirm → 400 "already confirmed". ✅
+- **Customer sale** (POST /api/sales/customers with product/quantity) → creates `pending` income `source=Sales`, does NOT deduct product stock, does NOT increase confirmed income; `PUT /api/accounting/income/:id/confirm` confirms; double-confirm → 400. ✅
+- **Sales order completion** (`PUT /api/sales/orders/:id/status` completed) → creates `pending` income `source=Sales Revenue`. ✅
+- **Expense POST** defaults to `status='confirmed'` unless body passes `status:'pending'`; `PUT /api/accounting/expenses/:id/confirm` confirms a pending expense; double-confirm → 400. ✅
+- **Migration 019** (`019_alter_customer_payments_invoice_nullable.ts`): made `customer_payments.invoice_id` NULL — the pre-existing dirty `customerController.ts` sale path inserts NULL for invoice_id (NOT NULL column caused HTTP 500 "Column 'invoice_id' cannot be null" on any customer sale). ✅
+- **Migration 018** (`018_add_status_to_income_expense.ts`): added `status` to `income_records`/`expense_records`, backfilled existing rows to `confirmed` (no data loss). ✅
+- **Test data cleaned up** after verification (customer 18, income 11/12, expenses 9/10, sales_orders 9/10, customer_payment 2, payroll expense 7). Remaining `Test * CRUD` rows are pre-existing.
+
+### Previous Objective (Animal Production — resolved)
 Fix all 10 Animal Production production issues: HTTP 500 on animal list API (Issue 1), empty Cattle (Issue 2), missing older pigs (Issue 3), BirthRecord dropdown (Issue 4), TobeInHit blank page (Issue 5), cache invalidation gaps (Issue 6), dashboard counts (Issue 7), DB consistency (Issue 8), production logging (Issue 9), final validation (Issue 10).
 
 ### Important Details

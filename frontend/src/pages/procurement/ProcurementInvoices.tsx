@@ -140,7 +140,7 @@ export default function ProcurementInvoices() {
     },
     {
       key: 'amount', label: 'Amount',
-      render: (i: any) => `$${(i.amount || 0).toLocaleString()}`,
+      render: (i: any) => `RWF ${(i.amount || 0).toLocaleString()}`,
     },
     {
       key: 'due_date', label: 'Due Date',

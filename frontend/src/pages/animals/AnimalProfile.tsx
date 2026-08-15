@@ -195,7 +195,7 @@ export default function AnimalProfile() {
               <h3 style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.9rem' }}><Calendar size={16} /> Ownership</h3>
               <div style={{ fontSize: '0.85rem', display: 'flex', flexDirection: 'column', gap: 6 }}>
                 <div><span className="text-secondary">Source:</span> {animal.source || '-'}</div>
-                <div><span className="text-secondary">Purchase Price:</span> {animal.purchase_price ? `$${animal.purchase_price}` : '-'}</div>
+                <div><span className="text-secondary">Purchase Price:</span> {animal.purchase_price ? `RWF ${Number(animal.purchase_price).toLocaleString()}` : '-'}</div>
                 <div><span className="text-secondary">Location:</span> {animal.location || '-'}</div>
               </div>
             </div>
@@ -255,7 +255,7 @@ export default function AnimalProfile() {
                   { key: 'medicine', label: 'Medicine' },
                   { key: 'dosage', label: 'Dosage' },
                   { key: 'veterinarian', label: 'Vet' },
-                  { key: 'cost', label: 'Cost', render: (item: any) => item.cost ? `$${item.cost}` : '-' },
+                  { key: 'cost', label: 'Cost', render: (item: any) => item.cost ? `RWF ${Number(item.cost).toLocaleString()}` : '-' },
                 ]} data={treatments} emptyMessage="No treatments" />
               </div>
             )}
