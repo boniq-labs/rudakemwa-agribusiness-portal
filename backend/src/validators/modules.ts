@@ -271,7 +271,7 @@ export const createSupplierSchema = z.object({
   supplier_name: z.string().min(1, 'Supplier name is required'),
   name: z.string().optional().nullable(),
   contact_person: z.string().optional().nullable(),
-  email: z.string().email().optional().nullable(),
+  email: z.string().email().optional().nullable().or(z.literal('')),
   phone: z.string().optional().nullable(),
   address: z.string().optional().nullable(),
   category_id: z.number().int().positive().optional().nullable(),

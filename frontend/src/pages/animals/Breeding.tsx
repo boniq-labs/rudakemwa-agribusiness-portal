@@ -148,7 +148,7 @@ export default function Breeding() {
                 <select className="form-select" value={form.mother_id} onChange={e => setForm(p => ({ ...p, mother_id: e.target.value }))} required>
                   <option value="">Select mother</option>
                   {females.map((a: any) => (
-                    <option key={a.id} value={a.id}>{a.tag_number} - {a.name || 'Unnamed'}</option>
+                    <option key={a.id} value={a.id}>{a.tag_number} - {a.name || 'Unnamed'} ({a.species || 'Unknown'})</option>
                   ))}
                 </select>
               </div>
@@ -157,7 +157,7 @@ export default function Breeding() {
                 <select className="form-select" value={form.father_id} onChange={e => setForm(p => ({ ...p, father_id: e.target.value }))}>
                   <option value="">Select father (optional)</option>
                   {animals.filter((a: any) => a.gender === 'male').map((a: any) => (
-                    <option key={a.id} value={a.id}>{a.tag_number} - {a.name || 'Unnamed'}</option>
+                    <option key={a.id} value={a.id}>{a.tag_number} - {a.name || 'Unnamed'} ({a.species || 'Unknown'})</option>
                   ))}
                 </select>
               </div>
