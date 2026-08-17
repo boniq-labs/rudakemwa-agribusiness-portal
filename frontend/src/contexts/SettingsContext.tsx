@@ -31,17 +31,17 @@ export const useSettings = () => {
 export function SettingsProvider({ children }: { children: ReactNode }) {
   const [settings, setSettings] = useState<AppSettings>(defaultSettings);
 
-  const applyFavicon = useCallback((url: string) => {
-    if (!url) return;
-    const absoluteUrl = resolveAssetUrl(url);
+  const applyFavicon = useCallback((url?: string) => {
     document.querySelectorAll("link[rel*='icon'], link[rel*='apple-touch-icon']").forEach(el => el.remove());
+    const absoluteUrl = url ? resolveAssetUrl(url) : '/assets/favicon.jpeg';
+    const ts = Date.now();
     const link = document.createElement('link');
     link.rel = 'icon';
-    link.href = `${absoluteUrl}?v=${Date.now()}`;
+    link.href = `${absoluteUrl}?v=${ts}`;
     document.head.appendChild(link);
     const appleLink = document.createElement('link');
     appleLink.rel = 'apple-touch-icon';
-    appleLink.href = `${absoluteUrl}?v=${Date.now()}`;
+    appleLink.href = `${absoluteUrl}?v=${ts}`;
     document.head.appendChild(appleLink);
   }, []);
 
@@ -50,7 +50,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       const res = await settingsApi.get();
       const s = res.data.data || {};
       setSettings(prev => ({ ...prev, ...s }));
-      if (s.favicon) applyFavicon(s.favicon);
+      applyFavicon(s.favicon || '');
     } catch {
       // silent
     }
@@ -63,7 +63,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   const updateSettings = useCallback(async (data: Partial<AppSettings>) => {
     await settingsApi.update(data);
     setSettings(prev => ({ ...prev, ...data }));
-    if (data.favicon) applyFavicon(data.favicon);
+    if ('favicon' in data) applyFavicon(data.favicon || '');
   }, [applyFavicon]);
 
   return (

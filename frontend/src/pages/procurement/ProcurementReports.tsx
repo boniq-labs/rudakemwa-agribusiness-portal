@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import client from '../../api/client';
 import ModulePage from '../../components/ModulePage';
 import StatsCard from '../../components/StatsCard';
-import { DollarSign, TrendingUp, ShoppingCart, Star } from 'lucide-react';
+import { ShoppingCart, TrendingUp, Star } from 'lucide-react';
 
 export default function ProcurementReports() {
   const { data } = useQuery({
@@ -13,10 +13,9 @@ export default function ProcurementReports() {
   return (
     <ModulePage title="Procurement Reports" subtitle="Procurement performance and spending">
       <div className="stats-grid">
-        <StatsCard title="Total Spending" value={data?.total_spending ? `RWF ${Number(data.total_spending).toLocaleString()}` : 'RWF 0'} icon={DollarSign} color="var(--primary)" />
         <StatsCard title="Total Orders" value={data?.total_orders ?? 0} icon={ShoppingCart} color="var(--info)" />
-        <StatsCard title="Pending Payments" value={data?.pending_payments ? `RWF ${Number(data.pending_payments).toLocaleString()}` : 'RWF 0'} icon={TrendingUp} color="var(--danger)" />
         <StatsCard title="Active Suppliers" value={data?.active_suppliers ?? 0} icon={Star} color="var(--success)" />
+        <StatsCard title="Pending Payments" value={data?.pending_payments ? `RWF ${Number(data.pending_payments).toLocaleString()}` : 'RWF 0'} icon={TrendingUp} color="var(--danger)" />
       </div>
     </ModulePage>
   );
