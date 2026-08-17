@@ -46,7 +46,7 @@ export default function PurchaseOrders() {
 
   const createMutation = useMutation({
     mutationFn: (data: any) => client.post('/procurement/orders', data),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['procurement-orders'] }); queryClient.invalidateQueries({ queryKey: ['procurement-dashboard'] }); closeModal(); toast.success('Order created'); },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['procurement-orders'] }); queryClient.invalidateQueries({ queryKey: ['procurement-dashboard'] }); closeModal(); toast.success('Purchase Order created successfully', { duration: 5000 }); },
     onError: (err: any) => setErrors({ submit: err.response?.data?.message || 'Failed to create order' }),
   });
 

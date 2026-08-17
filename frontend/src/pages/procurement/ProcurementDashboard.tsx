@@ -20,7 +20,7 @@ export default function ProcurementDashboard() {
     { key: 'supplier_name', label: 'Supplier', render: (r: any) => r.supplier_name || '-' },
     { key: 'status', label: 'Status' },
     { key: 'order_date', label: 'Date', render: (r: any) => r.order_date ? new Date(r.order_date).toLocaleDateString() : '-' },
-    { key: 'total_amount', label: 'Total', render: (r: any) => `RWF ${Number(r.total_amount || 0).toLocaleString()}` },
+    { key: 'total_cost', label: 'Total', render: (r: any) => `RWF ${Number(r.total_cost ?? r.total_amount ?? 0).toLocaleString()}` },
   ];
 
   return (

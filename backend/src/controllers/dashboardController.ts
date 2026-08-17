@@ -195,9 +195,9 @@ async function getLogisticsDashboard() {
 async function getProcurementDashboard() {
   const [[{ totalSuppliers }]]: any = await pool.query("SELECT COUNT(*) as totalSuppliers FROM suppliers WHERE deleted_at IS NULL");
   const [[{ totalPurchases }]]: any = await pool.query(
-    "SELECT COALESCE(SUM(poi.total_price),0) as totalPurchases FROM purchase_orders po JOIN purchase_order_items poi ON poi.po_id = po.id WHERE po.status IN ('received','completed') AND po.deleted_at IS NULL"
+    "SELECT COALESCE(SUM(po.total_cost),0) as totalPurchases FROM purchase_orders po WHERE po.deleted_at IS NULL AND po.status != 'cancelled'"
   );
-  const [[{ pendingOrders }]]: any = await pool.query("SELECT COUNT(*) as pendingOrders FROM purchase_orders WHERE status IN ('draft','sent','confirmed') AND deleted_at IS NULL");
+  const [[{ pendingOrders }]]: any = await pool.query("SELECT COUNT(*) as pendingOrders FROM purchase_orders WHERE deleted_at IS NULL AND status NOT IN ('received','completed','cancelled')");
   const [recent_orders]: any = await pool.query("SELECT po.*, s.supplier_name FROM purchase_orders po LEFT JOIN suppliers s ON po.supplier_id = s.id WHERE po.deleted_at IS NULL ORDER BY po.created_at DESC LIMIT 5");
   return { totalSuppliers, totalPurchases, pendingOrders, recent_orders, recentOrders: recent_orders };
 }
