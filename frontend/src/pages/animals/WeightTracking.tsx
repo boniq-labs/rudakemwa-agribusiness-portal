@@ -32,7 +32,7 @@ export default function WeightTracking() {
 
   const { data, isLoading } = useQuery({
     queryKey: ['weights'],
-    queryFn: async () => (await client.get('/animals/weights')).data?.data || [],
+    queryFn: async () => (await client.get('/animals/weights', { params: { limit: 10000 } })).data?.data || [],
   });
 
   const { data: animalsData } = useQuery({

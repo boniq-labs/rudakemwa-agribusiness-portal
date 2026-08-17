@@ -46,6 +46,29 @@ const getPermissionsForRoles = async (roles: string[]): Promise<string[]> => {
   }
 };
 
+// Effective permission set = primary role permissions + mapped cross-department
+// role permissions + permissions from departments the user is assigned to
+// (user_departments). This union is what the backend enforces via authorize().
+export const getEffectivePermissions = async (userId: number, roleSlug: string): Promise<{ permissions: string[]; departmentRoles: string[] }> => {
+  let permissions = await getPermissionsForRoles([roleSlug]);
+
+  // Include permissions from mapped cross-department role
+  const extraDept = departmentRoleMap[roleSlug];
+  if (extraDept) {
+    const extra = await getPermissionsForRoles([extraDept]);
+    permissions = [...new Set([...permissions, ...extra])];
+  }
+
+  // Load department-based roles and their permissions
+  const departmentRoles = await getDepartmentRolesForUser(userId);
+  if (departmentRoles.length > 0) {
+    const deptPerms = await getPermissionsForRoles(departmentRoles);
+    permissions = [...new Set([...permissions, ...deptPerms])];
+  }
+
+  return { permissions, departmentRoles };
+};
+
 export const authenticate = async (req: AuthRequest, res: Response, next: NextFunction) => {
   const token = req.headers.authorization?.split(' ')[1];
   if (!token) return res.status(401).json({ error: 'No token provided' });
@@ -53,42 +76,15 @@ export const authenticate = async (req: AuthRequest, res: Response, next: NextFu
   try {
     const payload = jwt.verify(token, process.env.JWT_SECRET || 'secret') as any;
     const [rows]: any = await pool.query(
-      `SELECT u.id, u.username, r.slug as role, u.role_id, u.department_id,
-       GROUP_CONCAT(DISTINCT p.slug) as permissions
+      `SELECT u.id, u.username, r.slug as role, u.role_id, u.department_id
        FROM users u JOIN roles r ON u.role_id = r.id
-       LEFT JOIN role_permissions rp ON r.id = rp.role_id
-       LEFT JOIN permissions p ON rp.permission_id = p.id
-       WHERE u.id = ? AND u.is_active = 1 AND u.deleted_at IS NULL
-       GROUP BY u.id`,
+       WHERE u.id = ? AND u.is_active = 1 AND u.deleted_at IS NULL`,
       [payload.id]
     );
     if (rows.length === 0) return res.status(401).json({ error: 'User not found or inactive' });
 
     const user = rows[0];
-    let permissions = user.permissions ? user.permissions.split(',') : [];
-
-    // Include permissions from mapped cross-department role
-    const extraDept = departmentRoleMap[user.role];
-    if (extraDept) {
-      const [extraRows]: any = await pool.query(
-        `SELECT GROUP_CONCAT(DISTINCT p.slug) as extra_perms
-         FROM roles r
-         JOIN role_permissions rp ON r.id = rp.role_id
-         JOIN permissions p ON rp.permission_id = p.id
-         WHERE r.slug = ?`,
-        [extraDept]
-      );
-      if (extraRows[0]?.extra_perms) {
-        permissions = [...new Set([...permissions, ...extraRows[0].extra_perms.split(',')])];
-      }
-    }
-
-    // Load department-based roles and their permissions
-    const departmentRoles = await getDepartmentRolesForUser(user.id);
-    if (departmentRoles.length > 0) {
-      const deptPerms = await getPermissionsForRoles(departmentRoles);
-      permissions = [...new Set([...permissions, ...deptPerms])];
-    }
+    const { permissions, departmentRoles } = await getEffectivePermissions(user.id, user.role);
 
     req.user = {
       id: user.id,

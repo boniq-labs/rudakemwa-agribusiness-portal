@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
 import { authApi } from '../api';
 import type { User } from '../types';
+import { canAccessDepartment, departmentNameToRole } from '../utils/departmentAccess';
 
 interface AuthContextType {
   user: User | null;
@@ -100,7 +101,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const hasRole = useCallback(
-    (...roles: string[]) => user !== null && (user.role === 'owner' || user.role === 'farm_owner' || roles.includes(user.role)),
+    (...roles: string[]) => {
+      if (!user) return false;
+      if (user.role === 'owner' || user.role === 'farm_owner' || roles.includes(user.role)) return true;
+      if (roles.some(r => canAccessDepartment(user.role, r))) return true;
+      const userDeptRoleSlugs = (user.departments || [])
+        .map(d => departmentNameToRole[d.name.toLowerCase()])
+        .filter(Boolean);
+      return roles.some(r => userDeptRoleSlugs.includes(r));
+    },
     [user]
   );
 

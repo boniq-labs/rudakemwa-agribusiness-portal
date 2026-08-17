@@ -2,7 +2,7 @@ import { Response } from 'express';
 import jwt, { type SignOptions } from 'jsonwebtoken';
 import pool from '../config/database';
 import { hashPassword, comparePassword } from '../utils/helpers';
-import { AuthRequest } from '../middlewares/auth';
+import { AuthRequest, getEffectivePermissions } from '../middlewares/auth';
 import { success, error, AppError } from '../utils/response';
 import { logAudit, createAuditEntry } from '../services/auditService';
 
@@ -61,10 +61,7 @@ export const login = async (req: AuthRequest, res: Response) => {
 
     await logAudit(req, { userId: user.id, action: 'Login', module: 'Auth', description: `${user.first_name} ${user.last_name} logged in` });
 
-    const [permissions]: any = await pool.query(
-      `SELECT p.slug FROM permissions p JOIN role_permissions rp ON p.id = rp.permission_id WHERE rp.role_id = ?`,
-      [user.role_id]
-    );
+    const { permissions } = await getEffectivePermissions(user.id, user.role);
 
     const [userDepts]: any = await pool.query(
       `SELECT d.id, d.name FROM departments d
@@ -81,7 +78,7 @@ export const login = async (req: AuthRequest, res: Response) => {
         role: user.role, roleName: user.role_name,
         departmentId: user.department_id, departmentName: user.department_name,
         departments: userDepts,
-        permissions: permissions.map((p: any) => p.slug),
+        permissions,
       },
     }, 'Login successful');
   } catch (err: any) {
@@ -114,14 +111,10 @@ export const getProfile = async (req: AuthRequest, res: Response) => {
     const [users]: any = await pool.query(
       `SELECT u.id, u.username, u.email, u.first_name, u.last_name, u.photo, u.phone,
        u.gender, u.address, u.date_of_birth, r.slug as role, r.name as role_name,
-       d.name as department_name, d.id as department_id, u.created_at,
-       GROUP_CONCAT(DISTINCT p.slug) as permissions
+       d.name as department_name, d.id as department_id, u.created_at
        FROM users u JOIN roles r ON u.role_id = r.id
        LEFT JOIN departments d ON u.department_id = d.id
-       LEFT JOIN role_permissions rp ON r.id = rp.role_id
-       LEFT JOIN permissions p ON rp.permission_id = p.id
-       WHERE u.id = ?
-       GROUP BY u.id`,
+       WHERE u.id = ?`,
       [req.user!.id]
     );
     const u = users[0];
@@ -134,6 +127,8 @@ export const getProfile = async (req: AuthRequest, res: Response) => {
       [u.id]
     );
 
+    const { permissions } = await getEffectivePermissions(u.id, u.role);
+
     const userData = {
       id: u.id, username: u.username, email: u.email,
       firstName: u.first_name, lastName: u.last_name, photo: u.photo,
@@ -143,7 +138,7 @@ export const getProfile = async (req: AuthRequest, res: Response) => {
       departmentId: u.department_id, departmentName: u.department_name,
       departments: userDepts,
       createdAt: u.created_at,
-      permissions: u.permissions ? u.permissions.split(',') : [],
+      permissions,
     };
     return success(res, userData);
   } catch (err: any) {
@@ -197,12 +192,15 @@ export const updateProfile = async (req: AuthRequest, res: Response) => {
       [req.user!.id]
     );
 
+    const { permissions } = await getEffectivePermissions(users[0].id, users[0].role);
+
     return success(res, {
       id: users[0].id, username: users[0].username, email: users[0].email,
       firstName: users[0].first_name, lastName: users[0].last_name, photo: users[0].photo,
       phone: users[0].phone, role: users[0].role, roleName: users[0].role_name,
       departmentId: users[0].department_id, departmentName: users[0].department_name,
       departments: userDepts,
+      permissions,
     }, 'Profile updated successfully');
   } catch (err: any) {
     return error(res, err.message);
