@@ -19,16 +19,17 @@ export const globalSearch = async (req: AuthRequest, res: Response) => {
     const like = `%${q}%`;
     const results: SearchHit[] = [];
 
-    const run = async (sql: string, map: (r: any) => SearchHit) => {
+    const run = async (sql: string, map: (r: any) => SearchHit, params?: any[]) => {
       try {
-        const [rows]: any = await pool.query(sql, [like, like]);
+        const [rows]: any = await pool.query(sql, params || [like, like]);
         (rows as any[]).slice(0, 8).forEach((r) => results.push(map(r)));
       } catch { /* table may not exist — skip */ }
     };
 
     await run(
-      `SELECT id, CONCAT(first_name,' ',last_name) as name, employee_code as code, position FROM employees WHERE deleted_at IS NULL AND (first_name LIKE ? OR last_name LIKE ? OR employee_code LIKE ?) LIMIT 8`,
-      (r) => ({ type: 'Employee', id: r.id, label: r.name, sub: r.code || r.position || '', link: '/hr/employees' })
+      `SELECT e.id, CONCAT(u.first_name,' ',u.last_name) as name, e.employee_code as code, e.position FROM employees e JOIN users u ON e.user_id = u.id WHERE e.deleted_at IS NULL AND u.deleted_at IS NULL AND (u.first_name LIKE ? OR u.last_name LIKE ? OR e.employee_code LIKE ?) LIMIT 8`,
+      (r) => ({ type: 'Employee', id: r.id, label: r.name, sub: r.code || r.position || '', link: '/hr/employees' }),
+      [like, like, like]
     );
     await run(
       `SELECT id, tag_number as tag, name FROM animals WHERE status='active' AND (tag_number LIKE ? OR name LIKE ?) LIMIT 8`,

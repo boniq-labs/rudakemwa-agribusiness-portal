@@ -229,7 +229,7 @@ export default function BirthRecords() {
                 <select className="form-select" value={form.animal_id} onChange={e => setForm(p => ({ ...p, animal_id: e.target.value }))} required>
                   <option value="">Select animal</option>
                   {filteredAnimals.map((a: Animal) => (
-                    <option key={a.id} value={a.id}>{a.tag_number} - {a.name || 'Unnamed'} ({a.species || 'Unknown'})</option>
+                    <option key={a.id} value={a.id}>{a.name || 'Unnamed'} — {a.tag_number}</option>
                   ))}
                 </select>
               </FormField>

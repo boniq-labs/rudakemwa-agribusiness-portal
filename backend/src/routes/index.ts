@@ -157,7 +157,7 @@ router.get('/dashboard/latest-employees', authenticate, hasRole('owner', 'admin'
       FROM employees e
       JOIN users u ON e.user_id = u.id
       LEFT JOIN departments d ON u.department_id = d.id
-      WHERE e.deleted_at IS NULL AND e.status = 'active'
+      WHERE e.deleted_at IS NULL AND e.status = 'active' AND u.deleted_at IS NULL
       ORDER BY e.created_at DESC LIMIT 5
     `);
     const { success } = await import('../utils/response');

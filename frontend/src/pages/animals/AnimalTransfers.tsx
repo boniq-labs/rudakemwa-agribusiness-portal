@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { movementAPI, animalAPI } from '../../api/endpoints';
+import { movementAPI } from '../../api/endpoints';
+import client from '../../api/client';
 import ModulePage from '../../components/ModulePage';
 import DataTable from '../../components/DataTable';
 import type { Column } from '../../components/DataTable';
@@ -23,8 +24,8 @@ export default function AnimalTransfers() {
   });
 
   const { data: animalsData } = useQuery({
-    queryKey: ['animals'],
-    queryFn: async () => (await animalAPI.getAll()).data.data || [],
+    queryKey: ['animals', 'select'],
+    queryFn: async () => (await client.get('/animals/select')).data.data || [],
   });
 
   const transfers = Array.isArray(data) ? data : [];
@@ -138,7 +139,7 @@ export default function AnimalTransfers() {
                 <select className="form-select" value={form.animal_id} onChange={e => setForm(p => ({ ...p, animal_id: e.target.value }))} required>
                   <option value="">Select animal</option>
                   {animals.map((a: any) => (
-                    <option key={a.id} value={a.id}>{a.tag_number} - {a.name || 'Unnamed'} ({a.species || 'Unknown'})</option>
+                    <option key={a.id} value={a.id}>{a.name || 'Unnamed'} — {a.tag_number}</option>
                   ))}
                 </select>
               </div>

@@ -194,6 +194,7 @@ export const deleteUser = async (req: AuthRequest, res: Response) => {
     if (old.length === 0) return error(res, 'User not found', 404);
 
     await pool.query('UPDATE users SET deleted_at = NOW(), is_active = 0 WHERE id = ?', [req.params.id]);
+    await pool.query('UPDATE employees SET deleted_at = NOW(), status = "inactive" WHERE user_id = ?', [req.params.id]);
 
     await logAudit(req, createAuditEntry(req, 'Delete User', 'Users', `Deleted user ${old[0].first_name} ${old[0].last_name}`, null, old[0]));
     return success(res, null, 'User deleted');

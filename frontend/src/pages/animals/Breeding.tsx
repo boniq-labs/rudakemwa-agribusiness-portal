@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { breedingAPI, animalAPI } from '../../api/endpoints';
+import { breedingAPI } from '../../api/endpoints';
+import client from '../../api/client';
 import ModulePage from '../../components/ModulePage';
 import DataTable from '../../components/DataTable';
 import StatusBadge from '../../components/StatusBadge';
@@ -24,8 +25,8 @@ export default function Breeding() {
   });
 
   const { data: animalsData } = useQuery({
-    queryKey: ['animals'],
-    queryFn: async () => (await animalAPI.getAll()).data.data || [],
+    queryKey: ['animals', 'select'],
+    queryFn: async () => (await client.get('/animals/select')).data.data || [],
   });
 
   const records = Array.isArray(data) ? data : [];
@@ -148,7 +149,7 @@ export default function Breeding() {
                 <select className="form-select" value={form.mother_id} onChange={e => setForm(p => ({ ...p, mother_id: e.target.value }))} required>
                   <option value="">Select mother</option>
                   {females.map((a: any) => (
-                    <option key={a.id} value={a.id}>{a.tag_number} - {a.name || 'Unnamed'} ({a.species || 'Unknown'})</option>
+                    <option key={a.id} value={a.id}>{a.name || 'Unnamed'} — {a.tag_number}</option>
                   ))}
                 </select>
               </div>
@@ -157,7 +158,7 @@ export default function Breeding() {
                 <select className="form-select" value={form.father_id} onChange={e => setForm(p => ({ ...p, father_id: e.target.value }))}>
                   <option value="">Select father (optional)</option>
                   {animals.filter((a: any) => a.gender === 'male').map((a: any) => (
-                    <option key={a.id} value={a.id}>{a.tag_number} - {a.name || 'Unnamed'} ({a.species || 'Unknown'})</option>
+                    <option key={a.id} value={a.id}>{a.name || 'Unnamed'} — {a.tag_number}</option>
                   ))}
                 </select>
               </div>

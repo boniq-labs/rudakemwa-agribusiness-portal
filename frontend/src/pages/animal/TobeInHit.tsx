@@ -148,7 +148,7 @@ export default function TobeInHit() {
               <FormField label="Animal">
                 <select className="input" value={form.animal_id} onChange={e => setForm(f => ({ ...f, animal_id: e.target.value }))}>
                   <option value="">-- Select --</option>
-                  {animals.map((a: any) => <option key={a.id} value={String(a.id)}>{a.tag_number} - {a.name || 'Unnamed'} ({a.species || 'Unknown'})</option>)}
+                  {animals.map((a: any) => <option key={a.id} value={String(a.id)}>{a.name || 'Unnamed'} — {a.tag_number}</option>)}
                 </select>
               </FormField>
               <FormField label="Tobe Date">

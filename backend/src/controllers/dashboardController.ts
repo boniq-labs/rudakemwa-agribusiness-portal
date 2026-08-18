@@ -21,7 +21,7 @@ async function respondWithDashboard(req: AuthRequest, res: Response, dashboardFn
       WHERE u.id = ?
     `, [userId]);
     const [[{ employeeCount }]]: any = await pool.query(
-      "SELECT COUNT(*) as employeeCount FROM employees WHERE deleted_at IS NULL AND status = 'active'"
+      "SELECT COUNT(*) as employeeCount FROM employees e JOIN users u ON e.user_id = u.id WHERE e.deleted_at IS NULL AND e.status = 'active' AND u.deleted_at IS NULL"
     );
     return success(res, {
       ...data, notifications, tasks,
@@ -69,7 +69,7 @@ export const getDashboard = async (req: AuthRequest, res: Response) => {
     `, [userId]);
 
     const [[{ employeeCount }]]: any = await pool.query(
-      "SELECT COUNT(*) as employeeCount FROM employees WHERE deleted_at IS NULL AND status = 'active'"
+      "SELECT COUNT(*) as employeeCount FROM employees e JOIN users u ON e.user_id = u.id WHERE e.deleted_at IS NULL AND e.status = 'active' AND u.deleted_at IS NULL"
     );
 
     return success(res, {
@@ -85,7 +85,7 @@ export const getDashboard = async (req: AuthRequest, res: Response) => {
 
 async function getOwnerDashboard() {
   const [[{ totalUsers }]]: any = await pool.query('SELECT COUNT(*) as totalUsers FROM users WHERE deleted_at IS NULL');
-  const [[{ totalEmployees }]]: any = await pool.query("SELECT COUNT(*) as totalEmployees FROM employees WHERE deleted_at IS NULL AND status = 'active'");
+  const [[{ totalEmployees }]]: any = await pool.query("SELECT COUNT(*) as totalEmployees FROM employees e JOIN users u ON e.user_id = u.id WHERE e.deleted_at IS NULL AND e.status = 'active' AND u.deleted_at IS NULL");
   const [[{ totalAnimals }]]: any = await pool.query("SELECT COUNT(*) as totalAnimals FROM animals WHERE status='active' AND deleted_at IS NULL");
   const [[{ income }]]: any = await pool.query("SELECT COALESCE(SUM(amount),0) as income FROM income_records WHERE MONTH(date)=MONTH(CURDATE()) AND YEAR(date)=YEAR(CURDATE()) AND status='confirmed' AND deleted_at IS NULL");
   const [[{ expenses }]]: any = await pool.query("SELECT COALESCE(SUM(amount),0) as expenses FROM expense_records WHERE MONTH(date)=MONTH(CURDATE()) AND YEAR(date)=YEAR(CURDATE()) AND status='confirmed' AND deleted_at IS NULL");
@@ -98,7 +98,7 @@ async function getOwnerDashboard() {
 
 async function getAdminDashboard() {
   const [[{ totalUsers }]]: any = await pool.query('SELECT COUNT(*) as totalUsers FROM users WHERE deleted_at IS NULL');
-  const [[{ totalEmployees }]]: any = await pool.query("SELECT COUNT(*) as totalEmployees FROM employees WHERE deleted_at IS NULL AND status = 'active'");
+  const [[{ totalEmployees }]]: any = await pool.query("SELECT COUNT(*) as totalEmployees FROM employees e JOIN users u ON e.user_id = u.id WHERE e.deleted_at IS NULL AND e.status = 'active' AND u.deleted_at IS NULL");
   const [[{ totalAnimals }]]: any = await pool.query("SELECT COUNT(*) as totalAnimals FROM animals WHERE status='active' AND deleted_at IS NULL");
   const [[{ income }]]: any = await pool.query("SELECT COALESCE(SUM(amount),0) as income FROM income_records WHERE MONTH(date)=MONTH(CURDATE()) AND YEAR(date)=YEAR(CURDATE()) AND status='confirmed' AND deleted_at IS NULL");
   const [[{ expenses }]]: any = await pool.query("SELECT COALESCE(SUM(amount),0) as expenses FROM expense_records WHERE MONTH(date)=MONTH(CURDATE()) AND YEAR(date)=YEAR(CURDATE()) AND status='confirmed' AND deleted_at IS NULL");
@@ -121,7 +121,7 @@ async function getAdminDashboard() {
 }
 
 async function getHrDashboard() {
-  const [[{ total }]]: any = await pool.query("SELECT COUNT(*) as total FROM employees WHERE deleted_at IS NULL AND status = 'active'");
+  const [[{ total }]]: any = await pool.query("SELECT COUNT(*) as total FROM employees e JOIN users u ON e.user_id = u.id WHERE e.deleted_at IS NULL AND e.status = 'active' AND u.deleted_at IS NULL");
   const [[{ present }]]: any = await pool.query("SELECT COUNT(*) as present FROM attendance WHERE date=CURDATE() AND status='present'");
   const [[{ absent }]]: any = await pool.query("SELECT COUNT(*) as absent FROM attendance WHERE date=CURDATE() AND status='absent'");
   const [[{ pendingLeaves }]]: any = await pool.query("SELECT COUNT(*) as pendingLeaves FROM leave_requests WHERE status='pending'");
@@ -246,7 +246,7 @@ export const getDepartmentOverview = async (req: AuthRequest, res: Response) => 
   try {
     const overview: any = {
       hr: {
-        employees: await val("SELECT COUNT(*) c FROM employees WHERE deleted_at IS NULL AND status = 'active'"),
+        employees: await val("SELECT COUNT(*) c FROM employees e JOIN users u ON e.user_id = u.id WHERE e.deleted_at IS NULL AND e.status = 'active' AND u.deleted_at IS NULL"),
         presentToday: await val("SELECT COUNT(*) c FROM attendance WHERE date=CURDATE() AND status='present'"),
         pendingLeaves: await val("SELECT COUNT(*) c FROM leave_requests WHERE status='pending'"),
       },

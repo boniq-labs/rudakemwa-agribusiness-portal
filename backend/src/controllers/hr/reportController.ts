@@ -8,7 +8,7 @@ export const getHRReports = async (req: AuthRequest, res: Response) => {
     const { start_date, end_date } = req.query;
 
     const [[{ total_employees }]]: any = await pool.query(
-      "SELECT COUNT(*) as total_employees FROM employees WHERE deleted_at IS NULL AND status = 'active'"
+      "SELECT COUNT(*) as total_employees FROM employees e JOIN users u ON e.user_id = u.id WHERE e.deleted_at IS NULL AND e.status = 'active' AND u.deleted_at IS NULL"
     );
     const [[{ present_today }]]: any = await pool.query(
       "SELECT COUNT(*) as present_today FROM attendance WHERE date = CURDATE() AND status = 'present'"
