@@ -9,6 +9,7 @@ import {
   Users, PawPrint, Milk, TrendingUp, TrendingDown,
   Bell, Clock, UserCircle,
   ArrowRight, Sprout, UserPlus,
+  HeartPulse, Eye, Flame, CalendarClock, Repeat,
 } from 'lucide-react';
 import type { FC } from 'react';
 
@@ -148,6 +149,57 @@ export default function DashboardPage() {
             <div className="stat-icon" style={{ background: '#fef2f2', color: '#dc2626' }}><TrendingDown /></div>
             <div className="stat-info"><div className="stat-value">{formatAmount(Number(main?.monthlyExpenses ?? 0))}</div><div className="stat-label">Monthly Expenses</div></div>
           </div>
+        </div>
+      )}
+
+      {/* Breeding & Reproduction summary — real data from /api/dashboard (main.breeding) */}
+      {showKpis && main?.breeding && (
+        <div className="card" style={{ marginTop: 20 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
+            <h3 style={{ margin: 0 }}>Breeding &amp; Reproduction</h3>
+            <Link to="/animals/breeding" className="btn btn-sm btn-outline">Open module <ArrowRight size={14} /></Link>
+          </div>
+          <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', marginTop: 14 }}>
+            <div className="stat-card">
+              <div className="stat-icon" style={{ background: '#ede9fe', color: '#7c3aed' }}><Repeat /></div>
+              <div className="stat-info"><div className="stat-value">{main.breeding.active_breedings ?? 0}</div><div className="stat-label">Active Breedings</div></div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-icon" style={{ background: '#dbeafe', color: '#2563eb' }}><Eye /></div>
+              <div className="stat-info"><div className="stat-value">{main.breeding.under_observation ?? 0}</div><div className="stat-label">Under Observation</div></div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-icon" style={{ background: '#dcfce7', color: '#16a34a' }}><HeartPulse /></div>
+              <div className="stat-info"><div className="stat-value">{main.breeding.pregnant ?? 0}</div><div className="stat-label">Pregnant</div></div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-icon" style={{ background: '#fef3c7', color: '#d97706' }}><Flame /></div>
+              <div className="stat-info"><div className="stat-value">{main.breeding.returned_heat ?? 0}</div><div className="stat-label">Returned Heat / Ready to Rebreed</div></div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-icon" style={{ background: '#fee2e2', color: '#dc2626' }}><CalendarClock /></div>
+              <div className="stat-info"><div className="stat-value">{main.breeding.expected_deliveries_7d ?? 0}</div><div className="stat-label">Expected Deliveries ≤ 7 Days</div></div>
+            </div>
+          </div>
+
+          {(main.breeding.upcoming?.length ?? 0) > 0 && (
+            <div style={{ marginTop: 14 }}>
+              <div style={{ fontSize: '0.85rem', fontWeight: 600, marginBottom: 8, color: 'var(--text-secondary)' }}>Upcoming breeding actions</div>
+              <div style={{ display: 'grid', gap: 6 }}>
+                {main.breeding.upcoming.map((u: any) => (
+                  <div key={u.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, padding: '8px 12px', background: 'var(--bg)', borderRadius: 8, flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: '0.85rem' }}>
+                      <strong>{u.animal_name || 'Unnamed'}</strong> ({u.tag_number}) · <span className="badge badge-secondary">{u.species_label}</span>{' '}
+                      <span className={`badge ${u.status === 'Pregnant' ? 'badge-success' : 'badge-info'}`}>{u.status}</span>
+                    </span>
+                    <span style={{ fontSize: '0.82rem', color: u.days_left <= 3 ? '#dc2626' : 'var(--text-secondary)' }}>
+                      Delivery {u.expected_delivery_date ? new Date(u.expected_delivery_date).toLocaleDateString() : '-'} · in {u.days_left} day(s)
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 

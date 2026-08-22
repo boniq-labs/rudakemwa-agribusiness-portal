@@ -49,7 +49,7 @@ import { getJobs, createJob, updateJob, closeJob, getApplicants, createApplicant
 import { getAnimalCategories, createAnimalCategory, updateAnimalCategory, deleteAnimalCategory, getBreeds, createBreed, updateBreed, deleteBreed, getAnimals, getAnimalsForSelect, getAnimalProfile, createAnimal, updateAnimal, deleteAnimal, getAnimalLocations, getAnimalGroups } from '../controllers/animal/animalController';
 import { getAnimalReports } from '../controllers/animal/reportController';
 import { getCropTypes, createCropType, updateCropType, deleteCropType, getLandAreas, createLandArea, updateLandArea, deleteLandArea, getCropActivities, createCropActivity, updateCropActivity, deleteCropActivity, getCropDashboard, getCropReports } from '../controllers/crop/cropController';
-import { getBreedingRecords, createBreedingRecord, updateBreedingRecord, deleteBreedingRecord, getPregnancies, createPregnancy, updatePregnancy, deletePregnancy, getBirthRecords, createBirthRecord, updateBirthRecord, deleteBirthRecord } from '../controllers/animal/breedingController';
+import { getBreedingRecords, createBreedingRecord, updateBreedingRecord, deleteBreedingRecord, getPregnancies, createPregnancy, updatePregnancy, deletePregnancy, getBirthRecords, createBirthRecord, updateBirthRecord, deleteBirthRecord, updatePregnancyStatus } from '../controllers/animal/breedingController';
 import { getVaccinations, createVaccination, updateVaccination, deleteVaccination, getDiseases, createDisease, updateDiseaseStatus, updateDisease, deleteDisease, getTreatments, createTreatment, updateTreatment, deleteTreatment } from '../controllers/animal/healthController';
 import { getFeedingRecords, createFeedingRecord, updateFeedingRecord, deleteFeedingRecord, getFeedConsumptionReport } from '../controllers/animal/feedingController';
 import { getAnimalTransfers, createAnimalTransfer, updateAnimalTransfer, deleteAnimalTransfer, getAnimalPurchases, createAnimalPurchase, getAnimalSales, createAnimalSale, updateAnimalSale, deleteAnimalSale, getAnimalDeaths, createAnimalDeath, updateAnimalDeath, deleteAnimalDeath, getWeightRecords, createWeightRecord, updateWeightRecord, deleteWeightRecord } from '../controllers/animal/movementController';
@@ -401,6 +401,8 @@ router.delete('/animals/breeding/:id', authenticate, authorize(['breeding.delete
 router.get('/animals/pregnancies', authenticate, authorize(['breeding.view']), getPregnancies);
 router.post('/animals/pregnancies', authenticate, authorize(['breeding.create']), validate(createPregnancySchema), createPregnancy);
 router.put('/animals/pregnancies/:id', authenticate, authorize(['breeding.update']), updatePregnancy);
+// Pregnancy Check — Veterinary users ONLY (server-enforced in controller too)
+router.put('/animals/pregnancies/:id/status', authenticate, hasRole('admin', 'farm_owner', 'animal', 'veterinarian'), updatePregnancyStatus);
 router.delete('/animals/pregnancies/:id', authenticate, authorize(['breeding.delete']), deletePregnancy);
 router.get('/animals/births', authenticate, authorize(['breeding.view']), getBirthRecords);
 router.post('/animals/births', authenticate, authorize(['breeding.create']), validate(createBirthRecordSchema), createBirthRecord);
@@ -498,6 +500,7 @@ router.post('/breeding', authenticate, authorize(['breeding.create']), validate(
 router.get('/breeding/pregnancies', authenticate, authorize(['breeding.view']), getPregnancies);
 router.post('/breeding/pregnancies', authenticate, authorize(['breeding.create']), validate(createPregnancySchema), createPregnancy);
 router.put('/breeding/pregnancies/:id', authenticate, authorize(['breeding.update']), updatePregnancy);
+router.put('/breeding/pregnancies/:id/status', authenticate, hasRole('admin', 'farm_owner', 'animal', 'veterinarian'), updatePregnancyStatus);
 router.delete('/breeding/pregnancies/:id', authenticate, authorize(['breeding.delete']), deletePregnancy);
 router.get('/breeding/births', authenticate, authorize(['breeding.view']), getBirthRecords);
 router.post('/breeding/births', authenticate, authorize(['breeding.create']), validate(createBirthRecordSchema), createBirthRecord);

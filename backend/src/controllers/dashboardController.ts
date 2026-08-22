@@ -83,6 +83,42 @@ export const getDashboard = async (req: AuthRequest, res: Response) => {
   } catch (err: any) { return error(res, err.message); }
 };
 
+/* Real Breeding & Reproduction summary (no hard-coded numbers). */
+async function getBreedingSummary() {
+  const [[{ active_breedings }]]: any = await pool.query(
+    `SELECT COUNT(*) AS active_breedings FROM breeding_records
+     WHERE deleted_at IS NULL AND result IN ('inseminated','pregnant','returned_heat','rebred')`
+  );
+  const [[{ under_observation }]]: any = await pool.query(
+    `SELECT COUNT(*) AS under_observation FROM pregnancies WHERE deleted_at IS NULL AND status = 'Under Observation'`
+  );
+  const [[{ pregnant }]]: any = await pool.query(
+    `SELECT COUNT(*) AS pregnant FROM pregnancies WHERE deleted_at IS NULL AND status = 'Pregnant'`
+  );
+  const [[{ returned_heat }]]: any = await pool.query(
+    `SELECT COUNT(*) AS returned_heat FROM pregnancies WHERE deleted_at IS NULL AND status = 'Returned Heat'`
+  );
+  const [[{ expected_deliveries_7d }]]: any = await pool.query(
+    `SELECT COUNT(*) AS expected_deliveries_7d FROM pregnancies
+     WHERE deleted_at IS NULL AND status IN ('Pregnant','Under Observation')
+       AND expected_delivery_date IS NOT NULL
+       AND expected_delivery_date >= CURDATE() AND expected_delivery_date <= DATE_ADD(CURDATE(), INTERVAL 7 DAY)`
+  );
+  const [upcoming]: any = await pool.query(
+    `SELECT p.id, p.status, p.expected_delivery_date, a.name AS animal_name, a.tag_number,
+            ac.name AS category_name,
+            CASE WHEN LOWER(TRIM(ac.name)) = 'pigs' THEN 'Pig' WHEN LOWER(TRIM(ac.name)) = 'cattle' THEN 'Cattle' ELSE ac.name END AS species_label,
+            DATEDIFF(p.expected_delivery_date, CURDATE()) AS days_left
+     FROM pregnancies p
+     JOIN animals a ON p.animal_id = a.id
+     LEFT JOIN animal_categories ac ON a.animal_category_id = ac.id
+     WHERE p.deleted_at IS NULL AND p.status IN ('Pregnant','Under Observation')
+       AND p.expected_delivery_date IS NOT NULL AND p.expected_delivery_date >= CURDATE()
+     ORDER BY p.expected_delivery_date ASC LIMIT 5`
+  );
+  return { active_breedings, under_observation, pregnant, returned_heat, expected_deliveries_7d, upcoming };
+}
+
 async function getOwnerDashboard() {
   const [[{ totalUsers }]]: any = await pool.query('SELECT COUNT(*) as totalUsers FROM users WHERE deleted_at IS NULL');
   const [[{ totalEmployees }]]: any = await pool.query("SELECT COUNT(*) as totalEmployees FROM employees e JOIN users u ON e.user_id = u.id WHERE e.deleted_at IS NULL AND e.status = 'active' AND u.deleted_at IS NULL");
@@ -93,7 +129,8 @@ async function getOwnerDashboard() {
   const [[{ pendingOrders }]]: any = await pool.query("SELECT COUNT(*) as pendingOrders FROM purchase_orders WHERE status='draft' OR status='sent'");
   const [[{ lowStockItems }]]: any = await pool.query("SELECT COUNT(*) as lowStockItems FROM inventory_items WHERE quantity <= min_stock_level");
   const [recentActivities]: any = await pool.query('SELECT * FROM activity_logs ORDER BY created_at DESC LIMIT 10');
-  return { totalUsers, totalEmployees, totalAnimals, monthlyIncome: income, monthlyExpenses: expenses, profit: income - expenses, milkToday: milk, pendingOrders, lowStockItems, recentActivities };
+  const breeding = await getBreedingSummary();
+  return { totalUsers, totalEmployees, totalAnimals, monthlyIncome: income, monthlyExpenses: expenses, profit: income - expenses, milkToday: milk, pendingOrders, lowStockItems, recentActivities, breeding };
 }
 
 async function getAdminDashboard() {
@@ -111,12 +148,13 @@ async function getAdminDashboard() {
   const [[{ pregnant }]]: any = await pool.query("SELECT COUNT(*) as pregnant FROM pregnancies WHERE status='confirmed'");
   const [[{ activeUsers }]]: any = await pool.query("SELECT COUNT(*) as activeUsers FROM users WHERE is_active=1 AND deleted_at IS NULL");
   const [recentActivities]: any = await pool.query('SELECT * FROM activity_logs ORDER BY created_at DESC LIMIT 10');
+  const breeding = await getBreedingSummary();
   return {
     totalUsers, totalEmployees, totalAnimals,
     monthlyIncome: income, monthlyExpenses: expenses, profit: income - expenses,
     milkToday: milk, lowStockItems, feedStock: feedItems, medicineStock: medItems,
     equipmentStock: equipItems, birthsThisMonth: births, pregnantAnimals: pregnant,
-    activeUsers, recentActivities,
+    activeUsers, recentActivities, breeding,
   };
 }
 

@@ -21,6 +21,8 @@ import * as m018 from './migrations/018_add_status_to_income_expense';
 import * as m019 from './migrations/019_alter_customer_payments_invoice_nullable';
 import * as m020 from './migrations/020_add_purchase_orders_total_cost';
 import * as m021 from './migrations/021_alter_suppliers_supplier_categories';
+import * as m022 from './migrations/022_add_insemination_fields_to_breeding_records';
+import * as m023 from './migrations/023_extend_breeding_pregnancy_enums_workflow';
 
 const migrations = [
   { name: m001.name, up: m001.up },
@@ -44,6 +46,8 @@ const migrations = [
   { name: m019.name, up: m019.up },
   { name: m020.name, up: m020.up },
   { name: m021.name, up: m021.up },
+  { name: m022.name, up: m022.up },
+  { name: m023.name, up: m023.up },
 ];
 
 export async function runMigrations(conn: mysql.Connection): Promise<void> {

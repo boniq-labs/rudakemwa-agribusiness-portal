@@ -2,22 +2,22 @@ import { useQuery } from '@tanstack/react-query';
 import client from '../../api/client';
 import ModulePage from '../../components/ModulePage';
 import {
-  PawPrint, Baby, Syringe, Pill, Weight, Activity,
+  PawPrint, Baby, Weight, Activity,
   FileText, FileSpreadsheet, Printer,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 interface ReportData {
   total_animals?: number;
+  total_pigs?: number;
+  total_cattle?: number;
   total_births?: number;
-  total_vaccinations?: number;
   total_diseases?: number;
-  total_treatments?: number;
+  total_deaths?: number;
   total_weights?: number;
   total_feedings?: number;
-  total_sales?: number;
-  total_deaths?: number;
-  total_pregnancies?: number;
+  total_breedings?: number;
+  total_under_observation?: number;
   [key: string]: any;
 }
 
@@ -30,42 +30,16 @@ export default function AnimalReports() {
   const report: ReportData = reportData || {};
 
   const reportCards = [
-    {
-      title: 'Total Registered Animals',
-      icon: PawPrint,
-      color: '#2563eb',
-      value: report.total_animals ?? 0,
-    },
-    {
-      title: 'Birth Records',
-      icon: Baby,
-      color: '#d97706',
-      value: report.total_births ?? 0,
-    },
-    {
-      title: 'Vaccinations',
-      icon: Syringe,
-      color: '#16a34a',
-      value: report.total_vaccinations ?? 0,
-    },
-    {
-      title: 'Diseases',
-      icon: Activity,
-      color: '#dc2626',
-      value: report.total_diseases ?? 0,
-    },
-    {
-      title: 'Treatments',
-      icon: Pill,
-      color: '#8b5cf6',
-      value: report.total_treatments ?? 0,
-    },
-    {
-      title: 'Weight Records',
-      icon: Weight,
-      color: '#0891b2',
-      value: report.total_weights ?? 0,
-    },
+    { title: 'Registered Animals', icon: PawPrint, color: '#2563eb', value: report.total_animals ?? 0 },
+    { title: 'Pigs', icon: PawPrint, color: '#ea580c', value: report.total_pigs ?? 0 },
+    { title: 'Cattle', icon: PawPrint, color: '#7c2d12', value: report.total_cattle ?? 0 },
+    { title: 'Birth Records', icon: Baby, color: '#d97706', value: report.total_births ?? 0 },
+    { title: 'Breeding & Inseminations', icon: Activity, color: '#8b5cf6', value: report.total_breedings ?? 0 },
+    { title: 'Pregnancies Monitored', icon: Activity, color: '#16a34a', value: (report.total_under_observation ?? 0) + (report.total_pregnancies ?? 0) },
+    { title: 'Feeding Records', icon: FileText, color: '#0891b2', value: report.total_feedings ?? 0 },
+    { title: 'Weight Records', icon: Weight, color: '#0369a1', value: report.total_weights ?? 0 },
+    { title: 'Disease Cases', icon: Activity, color: '#dc2626', value: report.total_diseases ?? 0 },
+    { title: 'Deaths', icon: Activity, color: '#991b1b', value: report.total_deaths ?? 0 },
   ];
 
   const handleExport = (format: string) => {

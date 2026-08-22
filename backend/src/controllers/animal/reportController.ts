@@ -52,6 +52,26 @@ export const getAnimalReports = async (req: AuthRequest, res: Response) => {
       `SELECT COUNT(*) as total_pregnancies FROM pregnancies WHERE deleted_at IS NULL AND status = 'Pregnant'`
     );
 
+    // Species split (Pigs / Cattle) for the Animal Production report cards
+    const [speciesRows]: any = await pool.query(
+      `SELECT LOWER(TRIM(ac.name)) AS category, COUNT(*) AS total
+       FROM animals a JOIN animal_categories ac ON a.animal_category_id = ac.id
+       WHERE a.deleted_at IS NULL AND a.status = 'active' AND ac.deleted_at IS NULL
+       GROUP BY LOWER(TRIM(ac.name))`
+    );
+    const speciesMap: Record<string, number> = {};
+    for (const r of speciesRows) speciesMap[r.category] = Number(r.total);
+    const total_pigs = speciesMap['pigs'] ?? 0;
+    const total_cattle = speciesMap['cattle'] ?? 0;
+
+    // Breeding & Reproduction workflow counts
+    const [[{ total_breedings }]]: any = await pool.query(
+      `SELECT COUNT(*) as total_breedings FROM breeding_records WHERE deleted_at IS NULL`
+    );
+    const [[{ total_under_observation }]]: any = await pool.query(
+      `SELECT COUNT(*) as total_under_observation FROM pregnancies WHERE deleted_at IS NULL AND status = 'Under Observation'`
+    );
+
     const d = dateFilter('br.birth_date');
     const [births]: any = await pool.query(
       `SELECT br.*, a.tag_number, a.name as offspring_name, m.tag_number as mother_tag
@@ -118,6 +138,7 @@ export const getAnimalReports = async (req: AuthRequest, res: Response) => {
       total_animals, total_births, total_vaccinations, total_diseases,
       total_treatments, total_weights, total_feedings, total_sales,
       total_deaths, total_pregnancies,
+      total_pigs, total_cattle, total_breedings, total_under_observation,
       births, vaccinations, diseases, treatments, weights, feedings, sales, deaths,
     });
   } catch (err: any) { return error(res, err.message); }

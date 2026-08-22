@@ -121,6 +121,8 @@ export const createBreedingRecordSchema = z.object({
   father_id: z.number().int().positive().optional().nullable(),
   breeding_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   method: z.enum(['natural', 'artificial', 'ai']).optional().nullable(),
+  insemination_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
+  technician: z.string().max(200).optional().nullable(), // free text, NOT a select
   notes: z.string().optional().nullable(),
 }).passthrough();
 
