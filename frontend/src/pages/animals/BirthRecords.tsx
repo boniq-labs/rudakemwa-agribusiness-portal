@@ -8,6 +8,7 @@ import type { Column } from '../../components/DataTable';
 import { Plus, Baby, Eye, Edit2, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useConfirm } from '../../components/ConfirmDialog';
+import { useAnimalSelect, animalSelectStateOptions } from '../../hooks/useAnimalSelect';
 import { resolveAssetUrl } from '../../utils/assetUrl';
 
 interface BirthRecord {
@@ -74,14 +75,14 @@ export default function BirthRecords() {
     queryFn: async () => (await client.get('/animals/categories')).data?.data || [],
   });
 
-  const { data: animalsData } = useQuery({
-    queryKey: ['animals', 'select'],
-    queryFn: async () => (await client.get('/animals/select')).data?.data || [],
-  });
+  const animalSelect = useAnimalSelect();
+  const animalsData = animalSelect.animals;
 
   const births: BirthRecord[] = Array.isArray(birthsData) ? birthsData : [];
   const categories: Category[] = Array.isArray(categoriesData) ? categoriesData : [];
-  const animals: Animal[] = Array.isArray(animalsData) ? animalsData : [];
+  const animals: Animal[] = Array.isArray(animalsData)
+    ? animalsData.map((a: any) => ({ ...a, name: a.name ?? undefined }))
+    : [];
 
   const selectedCategory = categories.find((c: Category) => String(c.id) === form.category_id);
   const genderOptions = GENDER_OPTIONS[selectedCategory?.name || ''] || GENDER_OPTIONS.DEFAULT;
@@ -228,6 +229,7 @@ export default function BirthRecords() {
               <FormField label="Select Animal (Parent)" required>
                 <select className="form-select" value={form.animal_id} onChange={e => setForm(p => ({ ...p, animal_id: e.target.value }))} required>
                   <option value="">Select animal</option>
+                  {animalSelectStateOptions(animalSelect).map(o => <option key={o.label} value={o.value} disabled>{o.label}</option>)}
                   {filteredAnimals.map((a: Animal) => (
                     <option key={a.id} value={a.id}>{a.name || 'Unnamed'} — {a.tag_number}</option>
                   ))}

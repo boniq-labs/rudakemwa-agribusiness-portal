@@ -8,6 +8,7 @@ import type { Column } from '../../components/DataTable';
 import { Plus, Weight, Edit2, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useConfirm } from '../../components/ConfirmDialog';
+import { useAnimalSelect, animalSelectStateOptions } from '../../hooks/useAnimalSelect';
 
 interface WeightRecord {
   id: number;
@@ -35,10 +36,8 @@ export default function WeightTracking() {
     queryFn: async () => (await client.get('/animals/weights', { params: { limit: 10000 } })).data?.data || [],
   });
 
-  const { data: animalsData } = useQuery({
-    queryKey: ['animals'],
-    queryFn: async () => (await client.get('/animals/select')).data?.data || [],
-  });
+  const animalSelect = useAnimalSelect();
+  const animalsData = animalSelect.animals;
 
   const allWeights: WeightRecord[] = Array.isArray(data) ? data : [];
   const animals: any[] = Array.isArray(animalsData) ? animalsData : [];
@@ -159,6 +158,7 @@ export default function WeightTracking() {
               <FormField label="Animal" required>
                 <select className="form-select" value={form.animal_id} onChange={e => setForm(p => ({ ...p, animal_id: e.target.value }))} required>
                   <option value="">Select animal</option>
+                  {animalSelectStateOptions(animalSelect).map(o => <option key={o.label} value={o.value} disabled>{o.label}</option>)}
                   {animals.map((a: any) => (
                     <option key={a.id} value={a.id}>{a.name || 'Unnamed'} — {a.tag_number}</option>
                   ))}

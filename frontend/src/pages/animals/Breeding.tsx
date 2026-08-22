@@ -10,6 +10,7 @@ import type { Column } from '../../components/DataTable';
 import { Plus, Edit2, Trash2, HeartPulse, Eye, RefreshCw, CalendarClock, Baby, Flame, Repeat } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useConfirm } from '../../components/ConfirmDialog';
+import { useAnimalSelect, animalSelectStateOptions } from '../../hooks/useAnimalSelect';
 
 /* Workflow: Planned → Inseminated → Pregnancy Check (vet) → Pregnant / Returned Heat / Rebred → Delivered */
 const PIG_CHECK_MIN_DAY = 18; // pig heat-check window opens on day 18 (mirrors backend PIG_HEAT_CYCLE_MIN_DAYS)
@@ -52,10 +53,8 @@ export default function Breeding() {
   });
 
   /* ALL eligible animals — no limits, deleted/dead/sold excluded server-side */
-  const { data: animalsData } = useQuery({
-    queryKey: ['animals', 'select'],
-    queryFn: async () => (await client.get('/animals/select')).data?.data || [],
-  });
+  const animalSelect = useAnimalSelect();
+  const animalsData = animalSelect.animals;
 
   const { data: breedingData, isLoading: breedingLoading } = useQuery({
     queryKey: ['breeding'],
@@ -361,6 +360,7 @@ export default function Breeding() {
                 <label className="form-label">Mother *</label>
                 <select className="form-select" value={form.mother_id} onChange={e => setForm(p => ({ ...p, mother_id: e.target.value }))} required>
                   <option value="">Select mother</option>
+                  {animalSelectStateOptions(animalSelect).map(o => <option key={o.label+'m'} value={o.value} disabled>{o.label}</option>)}
                   {females.map((a: any) => <option key={a.id} value={a.id}>{a.name || 'Unnamed'} — {a.tag_number}</option>)}
                 </select>
               </div>
@@ -368,6 +368,7 @@ export default function Breeding() {
                 <label className="form-label">Father (optional)</label>
                 <select className="form-select" value={form.father_id} onChange={e => setForm(p => ({ ...p, father_id: e.target.value }))}>
                   <option value="">Select father (optional)</option>
+                  {animalSelectStateOptions(animalSelect).map(o => <option key={o.label+'f'} value={o.value} disabled>{o.label}</option>)}
                   {males.map((a: any) => <option key={a.id} value={a.id}>{a.name || 'Unnamed'} — {a.tag_number}</option>)}
                 </select>
               </div>

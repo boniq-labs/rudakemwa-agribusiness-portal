@@ -9,6 +9,7 @@ import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recha
 import { Plus, Bug, Skull, Edit2, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useConfirm } from '../../components/ConfirmDialog';
+import { useAnimalSelect, animalSelectStateOptions } from '../../hooks/useAnimalSelect';
 
 const PIE_COLORS = ['#dc2626', '#d97706', '#2563eb', '#16a34a', '#8b5cf6', '#ec4899'];
 
@@ -196,10 +197,8 @@ export default function DiseaseManagement() {
   const pieData = Object.entries(causeMap).map(([name, value]) => ({ name, value }));
 
   /* ================= Animals select — ALL eligible, no limits ================= */
-  const { data: animalsData } = useQuery({
-    queryKey: ['animals', 'select'],
-    queryFn: async () => (await client.get('/animals/select')).data?.data || [],
-  });
+  const animalSelect = useAnimalSelect();
+  const animalsData = animalSelect.animals;
   const animals = Array.isArray(animalsData) ? animalsData : [];
 
   /* ================= Columns ================= */
@@ -309,6 +308,7 @@ export default function DiseaseManagement() {
                 <label className="form-label">Animal *</label>
                 <select className="form-select" value={diseaseForm.animal_id} onChange={e => setDiseaseForm(p => ({ ...p, animal_id: e.target.value }))} required>
                   <option value="">Select animal</option>
+                  {animalSelectStateOptions(animalSelect).map(o => <option key={o.label} value={o.value} disabled>{o.label}</option>)}
                   {animals.map((a: any) => (
                     <option key={a.id} value={a.id}>{a.name || 'Unnamed'} — {a.tag_number}</option>
                   ))}
@@ -370,6 +370,7 @@ export default function DiseaseManagement() {
                 <label className="form-label">Animal *</label>
                 <select className="form-select" value={deathForm.animal_id} onChange={e => setDeathForm(p => ({ ...p, animal_id: e.target.value }))} required>
                   <option value="">Select animal</option>
+                  {animalSelectStateOptions(animalSelect).map(o => <option key={o.label} value={o.value} disabled>{o.label}</option>)}
                   {animals.map((a: any) => (
                     <option key={a.id} value={a.id}>{a.name || 'Unnamed'} — {a.tag_number}</option>
                   ))}

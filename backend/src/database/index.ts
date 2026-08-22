@@ -23,6 +23,7 @@ import * as m020 from './migrations/020_add_purchase_orders_total_cost';
 import * as m021 from './migrations/021_alter_suppliers_supplier_categories';
 import * as m022 from './migrations/022_add_insemination_fields_to_breeding_records';
 import * as m023 from './migrations/023_extend_breeding_pregnancy_enums_workflow';
+import * as m024 from './migrations/024_grant_feeding_permissions_to_animal_role';
 
 const migrations = [
   { name: m001.name, up: m001.up },
@@ -48,6 +49,7 @@ const migrations = [
   { name: m021.name, up: m021.up },
   { name: m022.name, up: m022.up },
   { name: m023.name, up: m023.up },
+  { name: m024.name, up: m024.up },
 ];
 
 export async function runMigrations(conn: mysql.Connection): Promise<void> {

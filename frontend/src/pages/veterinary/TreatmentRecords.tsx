@@ -9,6 +9,7 @@ import FormField from '../../components/FormField';
 import type { Column } from '../../components/DataTable';
 import { Plus, Search } from 'lucide-react';
 import { useConfirm } from '../../components/ConfirmDialog';
+import { useAnimalSelect, animalSelectStateOptions } from '../../hooks/useAnimalSelect';
 
 interface TreatmentForm {
   animal_id: string;
@@ -39,10 +40,8 @@ export default function TreatmentRecords() {
     queryFn: () => client.get('/veterinary/treatments').then(r => r.data.data || []),
   });
 
-  const { data: animals } = useQuery({
-    queryKey: ['animals', 'select'],
-    queryFn: () => client.get('/animals/select').then(r => r.data.data || []),
-  });
+  const animalSelect = useAnimalSelect();
+  const animals = animalSelect.animals;
 
   const createMutation = useMutation({
     mutationFn: (d: any) => client.post('/veterinary/treatments', d),
@@ -165,6 +164,7 @@ export default function TreatmentRecords() {
           <FormField label="Animal" required>
             <select className="form-input" value={form.animal_id} onChange={e => setForm(p => ({ ...p, animal_id: e.target.value }))} required>
               <option value="">Select animal</option>
+                  {animalSelectStateOptions(animalSelect).map(o => <option key={o.label} value={o.value} disabled>{o.label}</option>)}
               {animalList.map((a: any) => (
                 <option key={a.id} value={a.id}>{a.name || 'Unnamed'} — {a.tag_number}</option>
               ))}

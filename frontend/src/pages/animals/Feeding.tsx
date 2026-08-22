@@ -9,6 +9,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { Plus, Wheat, Edit2, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useConfirm } from '../../components/ConfirmDialog';
+import { useAnimalSelect, animalSelectStateOptions } from '../../hooks/useAnimalSelect';
 
 export default function Feeding() {
   const queryClient = useQueryClient();
@@ -30,10 +31,8 @@ export default function Feeding() {
     queryFn: async () => (await client.get('/feeding/report')).data.data || [],
   });
 
-  const { data: animalsData } = useQuery({
-    queryKey: ['animals'],
-    queryFn: async () => (await client.get('/animals/select')).data.data || [],
-  });
+  const animalSelect = useAnimalSelect();
+  const animalsData = animalSelect.animals;
 
   const records = Array.isArray(data) ? data : [];
   const report = Array.isArray(reportData) ? reportData : [];
@@ -187,6 +186,7 @@ export default function Feeding() {
                 <label className="form-label">Animal *</label>
                 <select className="form-select" value={form.animal_id} onChange={e => setForm(p => ({ ...p, animal_id: e.target.value }))} required>
                   <option value="">Select animal</option>
+                  {animalSelectStateOptions(animalSelect).map(o => <option key={o.label} value={o.value} disabled>{o.label}</option>)}
                   {animals.map((a: any) => (
                     <option key={a.id} value={a.id}>{a.name || 'Unnamed'} — {a.tag_number}</option>
                   ))}
