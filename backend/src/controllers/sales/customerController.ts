@@ -37,7 +37,12 @@ export const getCustomers = async (req: AuthRequest, res: Response) => {
     if (search) { where += ' AND (CONCAT(c.first_name,\' \',c.last_name) LIKE ? OR c.company_name LIKE ? OR c.email LIKE ? OR c.phone LIKE ?)'; params.push(`%${search}%`, `%${search}%`, `%${search}%`, `%${search}%`); }
     const [rows]: any = await pool.query(
       `SELECT c.*, CONCAT(c.first_name, ' ', c.last_name) as name,
-       COALESCE((SELECT SUM(total_amount) FROM sales_orders WHERE customer_id = c.id AND status = 'completed' AND deleted_at IS NULL), 0) as total_purchase_amount
+       COALESCE((SELECT SUM(total_amount) FROM sales_orders WHERE customer_id = c.id AND status = 'completed' AND deleted_at IS NULL), 0) as total_purchase_amount,
+       (SELECT COUNT(*) FROM sales_order_items soi JOIN sales_orders so2 ON soi.order_id = so2.id WHERE so2.customer_id = c.id AND so2.deleted_at IS NULL) as product_sale_count,
+       (SELECT COUNT(*) FROM sales_orders WHERE customer_id = c.id AND status='completed' AND deleted_at IS NULL) as completed_order_count,
+       (SELECT amount FROM income_records WHERE customer_id = c.id AND description LIKE 'Other Sale -%' AND deleted_at IS NULL ORDER BY id DESC LIMIT 1) as last_other_amount,
+       (SELECT payment_method FROM income_records WHERE customer_id = c.id AND description LIKE 'Other Sale -%' AND deleted_at IS NULL ORDER BY id DESC LIMIT 1) as last_other_payment_method,
+       (SELECT description FROM income_records WHERE customer_id = c.id AND description LIKE 'Other Sale -%' AND deleted_at IS NULL ORDER BY id DESC LIMIT 1) as last_other_description
        FROM customers c ${where} ORDER BY c.created_at DESC`, params
     );
     return success(res, rows);
@@ -251,6 +256,37 @@ export const updateCustomer = async (req: AuthRequest, res: Response) => {
         [req.params.id, diff, 'payment']
       );
     }
+
+    // Other-Sale edit: when other_product/cost are supplied (Other Sales form),
+    // update the customer's latest completed sales_order total + latest Other
+    // Sale income record so TOTAL PURCHASE and Accounting stay in sync.
+    const otherProductEdit = typeof b.other_product === 'string' ? b.other_product.trim() : '';
+    const costEdit = b.cost !== undefined && b.cost !== null && b.cost !== '' ? Number(b.cost) : NaN;
+    if ((otherProductEdit || Number.isFinite(costEdit)) && !Number.isNaN(costEdit ?? NaN)) {
+      const custName = `${first_name} ${last_name}`.trim() || old[0].company_name || '';
+      if (Number.isFinite(costEdit)) {
+        await pool.query(
+          `UPDATE sales_orders SET total_amount = ?
+           WHERE id = (SELECT id FROM (SELECT id FROM sales_orders WHERE customer_id = ? AND status='completed' AND deleted_at IS NULL ORDER BY id DESC LIMIT 1) t)`,
+          [costEdit.toFixed(2), req.params.id]
+        );
+        await pool.query(`UPDATE customers SET balance = ? WHERE id = ?`, [Math.max(0, costEdit), req.params.id]);
+        await pool.query(
+          `UPDATE income_records SET amount = ?, description = CONCAT('Other Sale - ', ?, ' - ', ?)
+           WHERE customer_id = ? AND description LIKE 'Other Sale -%' AND deleted_at IS NULL
+             AND id = (SELECT id FROM (SELECT id FROM income_records WHERE customer_id = ? AND description LIKE 'Other Sale -%' AND deleted_at IS NULL ORDER BY id DESC LIMIT 1) t2)`,
+          [costEdit.toFixed(2), custName, otherProductEdit || '', req.params.id, req.params.id]
+        );
+      } else {
+        await pool.query(
+          `UPDATE income_records SET description = REPLACE(description, SUBSTRING_INDEX(description, ' - ', -1), ?)
+           WHERE customer_id = ? AND description LIKE 'Other Sale -%' AND deleted_at IS NULL
+             AND id = (SELECT id FROM (SELECT id FROM income_records WHERE customer_id = ? AND description LIKE 'Other Sale -%' AND deleted_at IS NULL ORDER BY id DESC LIMIT 1) t3)`,
+          [otherProductEdit, req.params.id, req.params.id]
+        );
+      }
+    }
+
     await logAudit(req, createAuditEntry(req, 'Update Customer', 'Sales', `Customer #${req.params.id} updated`, req.body, old[0]));
     return success(res, null, 'Customer updated');
   } catch (err: any) { return error(res, err.message); }

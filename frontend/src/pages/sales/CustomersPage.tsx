@@ -29,6 +29,7 @@ export default function CustomersPage() {
   const queryClient = useQueryClient();
   const [showModal, setShowModal] = useState(false);
   const [showOtherSale, setShowOtherSale] = useState(false);
+  const [otherEditId, setOtherEditId] = useState<number | null>(null);
   const [otherForm, setOtherForm] = useState({ name: '', other_product: '', phone: '', cost: '', payment_method: 'Cash' });
   const [search, setSearch] = useState('');
   const [editId, setEditId] = useState<number | null>(null);
@@ -126,6 +127,23 @@ export default function CustomersPage() {
   };
 
   const handleEdit = (c: any) => {
+    // Context-aware: customers created via Other Sales edit in the Other Sale
+    // form (no Product-Management sales); normal customers use the standard form.
+    const isOtherSaleCustomer = Number(c.product_sale_count) === 0 && Number(c.completed_order_count) > 0 && !!c.last_other_description;
+    if (isOtherSaleCustomer) {
+      const desc = String(c.last_other_description || '');
+      const product = desc.split(' - ').slice(2).join(' - ');
+      setOtherForm({
+        name: c.name || '',
+        other_product: product,
+        phone: c.phone || '',
+        cost: String(Number(c.last_other_amount) || 0),
+        payment_method: c.last_other_payment_method ? String(c.last_other_payment_method).replace(/_/g, ' ').replace(/\b\w/g, (m: string) => m.toUpperCase()) : 'Cash',
+      });
+      setOtherEditId(c.id);
+      setShowOtherSale(true);
+      return;
+    }
     setForm({ name: c.name || '', phone: c.phone || '', email: c.email || '', address: c.address || '', type: c.type || 'regular', product_id: '', quantity: '', payment_method: 'Cash' });
     setEditId(c.id);
     setShowModal(true);
@@ -138,13 +156,14 @@ export default function CustomersPage() {
   /* Other Sale: free-text farm product (eggs, chicken, manure, ...) —
      reuses the existing Customer → Payment → pending Income flow. */
   const otherSaleMutation = useMutation({
-    mutationFn: (d: any) => client.post('/sales/customers', d),
+    mutationFn: (d: any) => (otherEditId ? client.put(`/sales/customers/${otherEditId}`, d) : client.post('/sales/customers', d)),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sales-customers'] });
       queryClient.invalidateQueries({ queryKey: ['accounting-income'] });
       queryClient.invalidateQueries({ queryKey: ['sales-dashboard'] });
-      toast.success('Other sale recorded — pending in Accounting → Income for confirmation');
+      toast.success('Other sale saved');
       setShowOtherSale(false);
+      setOtherEditId(null);
       setOtherForm({ name: '', other_product: '', phone: '', cost: '', payment_method: 'Cash' });
     },
     onError: (err: any) => toast.error(err.response?.data?.message || 'Failed to record other sale'),
@@ -267,7 +286,7 @@ export default function CustomersPage() {
         </form>
       </Modal>
 
-      <Modal open={showOtherSale} onClose={() => setShowOtherSale(false)} title="Other Sale">
+      <Modal open={showOtherSale} onClose={() => { setShowOtherSale(false); setOtherEditId(null); }} title={otherEditId ? 'Edit Other Sale' : 'Other Sale'}>
         <form onSubmit={handleOtherSaleSubmit}>
           <FormField label="Customer Name" required>
             <input className="form-input" value={otherForm.name} onChange={e => setOtherForm(p => ({ ...p, name: e.target.value }))} placeholder="e.g. Jean Mukamana" required />
@@ -291,9 +310,9 @@ export default function CustomersPage() {
             Goes to Accounting → Income as pending for Accountant confirmation.
           </p>
           <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 20 }}>
-            <button type="button" className="btn" onClick={() => setShowOtherSale(false)}>Cancel</button>
+            <button type="button" className="btn" onClick={() => { setShowOtherSale(false); setOtherEditId(null); }}>Cancel</button>
             <button type="submit" className="btn btn-primary" disabled={otherSaleMutation.isPending}>
-              {otherSaleMutation.isPending ? 'Saving…' : 'Submit'}
+              {otherSaleMutation.isPending ? 'Saving…' : (otherEditId ? 'Update' : 'Submit')}
             </button>
           </div>
         </form>
