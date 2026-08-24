@@ -265,6 +265,33 @@ export default function Breeding() {
             toast.success('New cycle started — Day 0, heat window and dates calculated from the new insemination date');
           } catch (err: any) { toast.error(err.response?.data?.message || 'Failed to start new cycle'); }
         };
+        /* Edit this cycle's breeding record — prefilled from the pregnancy row;
+           saving via the existing PUT flow auto-recalculates all derived dates. */
+        const editThisCycle = () => {
+          if (!p.breeding_record_id) { toast.error('This cycle has no linked breeding record to edit'); return; }
+          setEditingId(p.breeding_record_id);
+          setForm({
+            mother_id: String(p.animal_id ?? ''),
+            father_id: '',
+            breeding_date: String(p.breeding_date || p.pregnancy_date || '').split('T')[0],
+            method: p.breeding_method === 'natural' ? 'natural' : 'ai',
+            insemination_date: p.insemination_date ? String(p.insemination_date).split('T')[0] : '',
+            technician: p.technician || '',
+            notes: '',
+          });
+          setShowModal(true);
+        };
+        /* Delete this cycle: soft-deletes the pregnancy row AND its linked
+           breeding record via the existing authorized endpoints. */
+        const deleteThisCycle = async () => {
+          if (!(await confirm(`Delete this breeding record for ${p.animal_name}? This removes the cycle from monitoring and history.`))) return;
+          try {
+            await client.delete(`/animals/pregnancies/${p.id}`);
+            if (p.breeding_record_id) await client.delete(`/animals/breeding/${p.breeding_record_id}`);
+            invalidateAll();
+            toast.success('Breeding record deleted');
+          } catch (err: any) { toast.error(err.response?.data?.message || 'Failed to delete breeding record'); }
+        };
         return (
           <div className="actions">
             {checkable && isVetChecker && (
@@ -292,6 +319,19 @@ export default function Breeding() {
             <button className="btn btn-sm" title="View animal details" onClick={(e) => { e.stopPropagation(); navigate(`/animals/profile/${p.animal_id}`); }}>
               <Eye size={14} /> View
             </button>
+            {/* Edit / Delete — authorized users only (existing backend authorization applies) */}
+            {isVetChecker && (
+              <button className="btn btn-sm" title="Edit breeding record (dates recalculate automatically)" onClick={(e) => { e.stopPropagation(); editThisCycle(); }} disabled={!p.breeding_record_id}>
+                <Edit2 size={14} /> Edit
+              </button>
+            )}
+            {isVetChecker && (
+              <button className="btn btn-sm" style={{ color: 'var(--danger, #dc2626)', border: '1px solid var(--danger, #dc2626)' }} title="Delete this breeding record"
+                onClick={async (e) => { e.stopPropagation(); await deleteThisCycle(); }}
+                disabled={checkMutation.isPending}>
+                <Trash2 size={14} /> Delete
+              </button>
+            )}
             {/* PREGNANT → monitoring + history shortcuts */}
             {['pregnant', 'confirmed'].includes(st) && (
               <>
