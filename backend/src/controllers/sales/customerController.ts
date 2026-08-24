@@ -45,13 +45,13 @@ export const getCustomers = async (req: AuthRequest, res: Response) => {
 };
 
 export const createCustomer = async (req: AuthRequest, res: Response) => {
-  let connection;
+  let connection: any;
   try {
     const b = req.body;
     const name = b.name || '';
     const nameParts = name.split(' ');
-    const first_name = b.first_name || nameParts[0] || '';
-    const last_name = b.last_name || nameParts.slice(1).join(' ') || '';
+    let first_name = b.first_name || nameParts[0] || '';
+    let last_name = b.last_name || nameParts.slice(1).join(' ') || '';
     const customer_type = b.customer_type || b.type || 'individual';
     const customer_code = b.customer_code || `CUST-${Date.now()}`;
     const { company_name, phone, email, address, credit_limit, payment_terms, payment_method } = b;
@@ -107,13 +107,36 @@ export const createCustomer = async (req: AuthRequest, res: Response) => {
         productName = product.name || `Product #${saleProductId}`;
       }
 
-      // 1. Create the customer (balance follows existing convention = payment amount)
-      const [result]: any = await connection.query(
-        `INSERT INTO customers (first_name, last_name, company_name, phone, email, address, customer_type, credit_limit, payment_terms, customer_code, balance)
-         VALUES (?,?,?,?,?,?,?,?,?,?,?)`,
-        [first_name, last_name, company_name || null, phone || null, email || null, address || null, customer_type, credit_limit || null, payment_terms || null, customer_code, isSale ? paymentAmount : (Math.max(0, Number(b.initial_payment) || 0))]
-      );
-      const customer_id = result.insertId;
+      // 1. Customer: for Other Sales, reuse the EXISTING customer when the
+      //    phone matches so repeat purchases accumulate on one row; otherwise create.
+      let customer_id: number;
+      if (isOtherSale && phone) {
+        const [existing]: any = await connection.query(
+          'SELECT id FROM customers WHERE phone = ? AND deleted_at IS NULL ORDER BY id ASC LIMIT 1',
+          [phone]
+        );
+        if (existing.length > 0) {
+          customer_id = existing[0].id;
+          const [names]: any = await connection.query('SELECT first_name, last_name FROM customers WHERE id = ?', [customer_id]);
+          first_name = names[0]?.first_name || first_name;
+          last_name = names[0]?.last_name || last_name;
+        } else {
+          customer_id = await insertCustomer(connection);
+        }
+      } else {
+        customer_id = await insertCustomer(connection);
+      }
+
+      async function insertCustomer(conn: any): Promise<number> {
+        // balance follows existing convention = payment amount (product sale or other sale)
+        const initialBalance = (isSale || isOtherSale) ? paymentAmount : Math.max(0, Number(b.initial_payment) || 0);
+        const [result]: any = await conn.query(
+          `INSERT INTO customers (first_name, last_name, company_name, phone, email, address, customer_type, credit_limit, payment_terms, customer_code, balance)
+           VALUES (?,?,?,?,?,?,?,?,?,?,?)`,
+          [first_name, last_name, company_name || null, phone || null, email || null, address || null, customer_type, credit_limit || null, payment_terms || null, customer_code, initialBalance]
+        );
+        return result.insertId;
+      }
 
       if (isSale) {
         // 2. Create completed sales order
@@ -148,14 +171,22 @@ export const createCustomer = async (req: AuthRequest, res: Response) => {
           [incomeNumber, 'Sales', customer_id, paymentAmount, (payment_method || 'Cash').toLowerCase().replace(/\s+/g, '_'), today, `Sale ${saleOrderNumber} - ${customerName} - ${saleQuantity} x ${productName}`, req.user?.id || null, 'pending']
         );
       } else if (isOtherSale) {
-        // Other Sale: same Customer → Payment → pending Income flow, no Product
-        // Management records and no stock involvement.
+        // Other Sale: same Customer → Order → Payment → pending Income flow as
+        // product sales, minus Product Management involvement. The completed
+        // sales_orders row is what feeds the existing TOTAL PURCHASE column.
         total_amount = Number(costNum.toFixed(2));
         paymentAmount = total_amount;
 
+        saleOrderNumber = await generateUniqueNumber(connection, 'sales_orders', 'order_number', 'SO');
+        await connection.query(
+          `INSERT INTO sales_orders (order_number, customer_id, order_date, status, total_amount, created_by)
+           VALUES (?,?,?,?,?,?)`,
+          [saleOrderNumber, customer_id, today, 'completed', total_amount, req.user?.id || null]
+        );
+
         await connection.query(
           `INSERT INTO customer_payments (customer_id, invoice_id, amount, payment_method, reference_number) VALUES (?,?,?,?,?)`,
-          [customer_id, null, paymentAmount, payment_method || 'Cash', `OTHER-${Date.now()}`]
+          [customer_id, null, paymentAmount, payment_method || 'Cash', saleOrderNumber]
         );
 
         incomeNumber = await generateUniqueNumber(connection, 'income_records', 'income_number', 'INC');
