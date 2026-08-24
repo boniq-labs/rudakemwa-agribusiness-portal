@@ -64,6 +64,14 @@ export const createCustomer = async (req: AuthRequest, res: Response) => {
       ? Number(b.quantity) : NaN;
     const isSale = !isNaN(productIdNum) && productIdNum > 0;
 
+    // "Other Sale": free-text farm product (eggs, chicken, manure, ...) —
+    // deliberately bypasses Product Management and reuses the same
+    // Customer → Payment → pending Income flow for Accountant confirmation.
+    const otherProduct = typeof b.other_product === 'string' ? b.other_product.trim() : '';
+    const costNum = b.cost !== undefined && b.cost !== null && b.cost !== '' ? Number(b.cost) : NaN;
+    const isOtherSale = !isSale && otherProduct.length > 0;
+    if (isOtherSale && (!Number.isFinite(costNum) || costNum <= 0)) return error(res, 'Cost must be greater than 0', 400);
+
     if (isSale) {
       if (!Number.isInteger(productIdNum) || productIdNum <= 0) return error(res, 'Invalid product', 400);
       if (isNaN(quantityNum) || quantityNum <= 0) return error(res, 'Quantity must be greater than 0', 400);
@@ -139,6 +147,24 @@ export const createCustomer = async (req: AuthRequest, res: Response) => {
            VALUES (?,?,?,?,?,?,?,?,?)`,
           [incomeNumber, 'Sales', customer_id, paymentAmount, (payment_method || 'Cash').toLowerCase().replace(/\s+/g, '_'), today, `Sale ${saleOrderNumber} - ${customerName} - ${saleQuantity} x ${productName}`, req.user?.id || null, 'pending']
         );
+      } else if (isOtherSale) {
+        // Other Sale: same Customer → Payment → pending Income flow, no Product
+        // Management records and no stock involvement.
+        total_amount = Number(costNum.toFixed(2));
+        paymentAmount = total_amount;
+
+        await connection.query(
+          `INSERT INTO customer_payments (customer_id, invoice_id, amount, payment_method, reference_number) VALUES (?,?,?,?,?)`,
+          [customer_id, null, paymentAmount, payment_method || 'Cash', `OTHER-${Date.now()}`]
+        );
+
+        incomeNumber = await generateUniqueNumber(connection, 'income_records', 'income_number', 'INC');
+        const customerName2 = `${first_name} ${last_name}`.trim() || (company_name || '');
+        await connection.query(
+          `INSERT INTO income_records (income_number, source, customer_id, amount, payment_method, date, description, created_by, status)
+           VALUES (?,?,?,?,?,?,?,?,?)`,
+          [incomeNumber, 'Sales', customer_id, paymentAmount, (payment_method || 'Cash').toLowerCase().replace(/\s+/g, '_'), today, `Other Sale - ${customerName2} - ${otherProduct}`, req.user?.id || null, 'pending']
+        );
       } else if (Number(b.initial_payment) > 0) {
         // Non-sale customer creation with an initial payment (existing behavior preserved)
         await connection.query(
@@ -153,6 +179,10 @@ export const createCustomer = async (req: AuthRequest, res: Response) => {
       if (isSale) {
         await logAudit(req, createAuditEntry(req, 'Create Sale', 'Sales', `Sale ${saleOrderNumber} created for customer #${customer_id}`, { order_number: saleOrderNumber, product_id: saleProductId, quantity: saleQuantity, unit_price, total_amount, payment_method }));
         await logAudit(req, createAuditEntry(req, 'Pending Income', 'Sales', `Pending income created for sale ${saleOrderNumber}`, { income_number: incomeNumber, total_amount }));
+      }
+      if (isOtherSale) {
+        await logAudit(req, createAuditEntry(req, 'Other Sale', 'Sales', `Other sale (${otherProduct}) recorded for customer #${customer_id}`, { other_product: otherProduct, cost: total_amount, payment_method }));
+        await logAudit(req, createAuditEntry(req, 'Pending Income', 'Sales', `Pending income created for other sale (${otherProduct})`, { income_number: incomeNumber, total_amount }));
       }
       return created(res, { id: customer_id }, 'Customer created');
     } catch (err) {

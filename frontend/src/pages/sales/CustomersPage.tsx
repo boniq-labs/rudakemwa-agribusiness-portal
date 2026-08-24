@@ -28,6 +28,8 @@ const initialForm: CustomerForm = { name: '', phone: '', email: '', address: '',
 export default function CustomersPage() {
   const queryClient = useQueryClient();
   const [showModal, setShowModal] = useState(false);
+  const [showOtherSale, setShowOtherSale] = useState(false);
+  const [otherForm, setOtherForm] = useState({ name: '', other_product: '', phone: '', cost: '', payment_method: 'Cash' });
   const [search, setSearch] = useState('');
   const [editId, setEditId] = useState<number | null>(null);
   const [form, setForm] = useState<CustomerForm>(initialForm);
@@ -133,6 +135,34 @@ export default function CustomersPage() {
     if (await confirm('Delete this customer?')) deleteMutation.mutate(id);
   };
 
+  /* Other Sale: free-text farm product (eggs, chicken, manure, ...) —
+     reuses the existing Customer → Payment → pending Income flow. */
+  const otherSaleMutation = useMutation({
+    mutationFn: (d: any) => client.post('/sales/customers', d),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sales-customers'] });
+      queryClient.invalidateQueries({ queryKey: ['accounting-income'] });
+      queryClient.invalidateQueries({ queryKey: ['sales-dashboard'] });
+      toast.success('Other sale recorded — pending in Accounting → Income for confirmation');
+      setShowOtherSale(false);
+      setOtherForm({ name: '', other_product: '', phone: '', cost: '', payment_method: 'Cash' });
+    },
+    onError: (err: any) => toast.error(err.response?.data?.message || 'Failed to record other sale'),
+  });
+
+  const handleOtherSaleSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    const cost = Number(otherForm.cost);
+    if (!otherForm.name.trim() || !otherForm.other_product.trim() || !Number.isFinite(cost) || cost <= 0) return;
+    otherSaleMutation.mutate({
+      name: otherForm.name,
+      phone: otherForm.phone,
+      other_product: otherForm.other_product.trim(),
+      cost,
+      payment_method: otherForm.payment_method,
+    });
+  };
+
   const columns: Column<any>[] = [
     { key: 'name', label: 'Name' },
     { key: 'phone', label: 'Phone', render: (c: any) => c.phone || '-' },
@@ -155,9 +185,14 @@ export default function CustomersPage() {
       title="Customers"
       subtitle="Manage sales customers"
       actions={
-        <button className="btn btn-primary" onClick={() => { setForm(initialForm); setEditId(null); setShowModal(true); }}>
-          <Plus size={16} /> Add Customer
-        </button>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <button className="btn btn-primary" onClick={() => { setForm(initialForm); setEditId(null); setShowModal(true); }}>
+            <Plus size={16} /> Add Customer
+          </button>
+          <button className="btn" onClick={() => setShowOtherSale(true)}>
+            <Plus size={16} /> Other Sales
+          </button>
+        </div>
       }
     >
       <div className="page-search" style={{ display: 'flex', gap: 8, alignItems: 'center', background: 'var(--card-bg)', padding: '8px 14px', borderRadius: 8, border: '1px solid var(--border)', marginBottom: 16 }}>
@@ -227,6 +262,38 @@ export default function CustomersPage() {
             <button type="button" className="btn" onClick={() => setShowModal(false)}>Cancel</button>
             <button type="submit" className="btn btn-primary" disabled={createMutation.isPending || updateMutation.isPending || (!editId && !saleValid)}>
               {editId ? 'Update' : 'Create'}
+            </button>
+          </div>
+        </form>
+      </Modal>
+
+      <Modal open={showOtherSale} onClose={() => setShowOtherSale(false)} title="Other Sale">
+        <form onSubmit={handleOtherSaleSubmit}>
+          <FormField label="Customer Name" required>
+            <input className="form-input" value={otherForm.name} onChange={e => setOtherForm(p => ({ ...p, name: e.target.value }))} placeholder="e.g. Jean Mukamana" required />
+          </FormField>
+          <FormField label="Other Product" required>
+            {/* Free-text farm product — intentionally NOT the Product Management selector */}
+            <input className="form-input" value={otherForm.other_product} onChange={e => setOtherForm(p => ({ ...p, other_product: e.target.value }))} placeholder="Eggs, Chicken, Manure, Piglet, Feed…" required />
+          </FormField>
+          <FormField label="Phone" required>
+            <input className="form-input" value={otherForm.phone} onChange={e => setOtherForm(p => ({ ...p, phone: e.target.value }))} required />
+          </FormField>
+          <FormField label="Cost (RWF)" required>
+            <input className="form-input" type="number" step="0.01" min="0" value={otherForm.cost} onChange={e => setOtherForm(p => ({ ...p, cost: e.target.value }))} required />
+          </FormField>
+          <FormField label="Payment Method">
+            <select className="form-input" value={otherForm.payment_method} onChange={e => setOtherForm(p => ({ ...p, payment_method: e.target.value }))}>
+              {PAYMENT_METHODS.map(m => <option key={m} value={m}>{m}</option>)}
+            </select>
+          </FormField>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginTop: 8 }}>
+            Goes to Accounting → Income as pending for Accountant confirmation.
+          </p>
+          <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 20 }}>
+            <button type="button" className="btn" onClick={() => setShowOtherSale(false)}>Cancel</button>
+            <button type="submit" className="btn btn-primary" disabled={otherSaleMutation.isPending}>
+              {otherSaleMutation.isPending ? 'Saving…' : 'Submit'}
             </button>
           </div>
         </form>
