@@ -25,7 +25,7 @@ import { login, refreshTokenHandler, getProfile, changePassword, logout, updateP
 import { getDashboard, getDepartmentOverview, getHrDashboardHandler, getAnimalDashboardHandler, getMilkDashboardHandler, getStockDashboardHandler, getProcurementDashboardHandler, getLogisticsDashboardHandler, getAccountingDashboardHandler, getSalesDashboardHandler, getVetDashboardHandler } from '../controllers/dashboardController';
 import { submitReport, getMyReports, getDepartmentReports, approveReport, rejectReport } from '../controllers/reportController';
 import { globalSearch } from '../controllers/searchController';
-import { getUsers, getUserById, createUser, updateUser, deleteUser, resetPassword, getManagers } from '../controllers/userController';
+import { getUsers, getUserById, createUser, updateUser, deleteUser, resetPassword, getManagers, setUserAccountStatus } from '../controllers/userController';
 import { getNotifications, markAsRead, markAllAsRead } from '../controllers/notificationController';
 import { getSystemHealth, createBackup, listBackups, restoreBackup } from '../controllers/systemController';
 import { getBranches, createBranch, updateBranch, deleteBranch } from '../controllers/branchController';
@@ -206,6 +206,8 @@ router.post('/users', authenticate, authorize(['users.create']), validate(create
 router.put('/users/:id', authenticate, authorize(['users.update']), validate(updateUserSchema), updateUser);
 router.delete('/users/:id', authenticate, authorize(['users.delete']), deleteUser);
 router.put('/users/reset-password/:id', authenticate, authorize(['users.update']), resetPassword);
+// Suspend / on-leave / reactivate — Admin & Farm Owner only (users.approve)
+router.put('/users/:id/account-status', authenticate, authorize(['users.approve']), hasRole('owner', 'farm_owner', 'admin'), setUserAccountStatus);
 
 // Roles
 router.get('/roles', authenticate, authorize(['roles.view']), getRoles);

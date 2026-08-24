@@ -38,6 +38,8 @@ export const login = async (req: AuthRequest, res: Response) => {
 
     const user = users[0];
     if (!user.is_active) return error(res, 'Account is deactivated', 401);
+    if (user.account_status === 'suspended') return error(res, 'Account is suspended. Contact an administrator.', 403);
+    if (user.account_status === 'on_leave') return error(res, 'Account is on leave. Contact an administrator to reactivate.', 403);
     if (user.locked_until && new Date(user.locked_until) > new Date()) {
       const remaining = Math.ceil((new Date(user.locked_until).getTime() - Date.now()) / 60000);
       return error(res, `Account is locked. Try again in ${remaining} minutes.`, 401);
@@ -165,9 +167,23 @@ export const changePassword = async (req: AuthRequest, res: Response) => {
 
 export const updateProfile = async (req: AuthRequest, res: Response) => {
   try {
-    const { firstName, lastName, email, phone, photo } = req.body;
+    const { firstName, lastName, email, phone, photo, username } = req.body;
     const fields: string[] = [];
     const params: any[] = [];
+
+    // Self-service username change — must remain unique across all users.
+    if (username !== undefined && String(username).trim() !== '') {
+      const newUsername = String(username).trim();
+      if (newUsername.toLowerCase() !== String(req.user!.username || '').toLowerCase()) {
+        const [dup]: any = await pool.query(
+          'SELECT id FROM users WHERE username = ? AND id <> ? AND deleted_at IS NULL LIMIT 1',
+          [newUsername, req.user!.id]
+        );
+        if (dup.length > 0) return error(res, 'Username is already taken', 409);
+        fields.push('username = ?'); params.push(newUsername);
+      }
+    }
+
     if (firstName !== undefined) { fields.push('first_name = ?'); params.push(firstName); }
     if (lastName !== undefined) { fields.push('last_name = ?'); params.push(lastName); }
     if (email !== undefined) { fields.push('email = ?'); params.push(email); }

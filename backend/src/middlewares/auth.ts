@@ -76,12 +76,14 @@ export const authenticate = async (req: AuthRequest, res: Response, next: NextFu
   try {
     const payload = jwt.verify(token, process.env.JWT_SECRET || 'secret') as any;
     const [rows]: any = await pool.query(
-      `SELECT u.id, u.username, r.slug as role, u.role_id, u.department_id
+      `SELECT u.id, u.username, u.account_status, r.slug as role, u.role_id, u.department_id
        FROM users u JOIN roles r ON u.role_id = r.id
        WHERE u.id = ? AND u.is_active = 1 AND u.deleted_at IS NULL`,
       [payload.id]
     );
     if (rows.length === 0) return res.status(401).json({ error: 'User not found or inactive' });
+    if (rows[0].account_status === 'suspended') return res.status(403).json({ error: 'Account is suspended. Contact an administrator.' });
+    if (rows[0].account_status === 'on_leave') return res.status(403).json({ error: 'Account is on leave. Contact an administrator to reactivate.' });
 
     const user = rows[0];
     const { permissions, departmentRoles } = await getEffectivePermissions(user.id, user.role);

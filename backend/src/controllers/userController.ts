@@ -25,7 +25,7 @@ export const getUsers = async (req: AuthRequest, res: Response) => {
     const [[{ total }]]: any = await pool.query(countQuery, params);
 
     const dataQuery = `
-      SELECT u.id, u.username, u.email, u.first_name, u.last_name, u.photo, u.phone,
+      SELECT u.id, u.username, u.email, u.first_name, u.last_name, u.photo, u.phone, u.account_status,
        u.gender, u.is_active, r.name as role_name, r.slug as role, d.name as department_name,
        e.employee_code, e.position, e.date_hired, e.employment_type, e.supervisor_id,
        u.created_at, u.last_login
@@ -144,9 +144,22 @@ export const updateUser = async (req: AuthRequest, res: Response) => {
     const isActive = b.isActive !== undefined ? b.isActive : (b.is_active !== undefined ? b.is_active : old[0].is_active);
 
     const photo = req.body.photo !== undefined ? req.body.photo : old[0].photo;
+
+    // Username change (Admin/Farm Owner) — uniqueness enforced, excluding self.
+    let newUsername: string | null = null;
+    if (typeof b.username === 'string' && b.username.trim() !== '' && b.username.trim().toLowerCase() !== String(old[0].username).toLowerCase()) {
+      const candidate = b.username.trim();
+      const [dup]: any = await conn.query(
+        'SELECT id FROM users WHERE username = ? AND id <> ? AND deleted_at IS NULL LIMIT 1',
+        [candidate, req.params.id]
+      );
+      if (dup.length > 0) { conn.release(); return error(res, 'Username is already taken', 409); }
+      newUsername = candidate;
+    }
+
     await conn.query(
-      `UPDATE users SET email=?, first_name=?, last_name=?, phone=?, gender=?, address=?, date_of_birth=?, role_id=?, department_id=?, is_active=?, photo=? WHERE id=?`,
-      [email, firstName, lastName, phone, gender, address, dob, roleId, departmentId, isActive ?? true, photo, req.params.id]
+      `UPDATE users SET email=?, first_name=?, last_name=?, phone=?, gender=?, address=?, date_of_birth=?, role_id=?, department_id=?, is_active=?, photo=?${newUsername ? ', username=?' : ''} WHERE id=?`,
+      [email, firstName, lastName, phone, gender, address, dob, roleId, departmentId, isActive ?? true, photo, ...(newUsername ? [newUsername] : []), req.params.id]
     );
 
     const employeeCode = b.employee_code || b.employeeCode;
@@ -222,7 +235,7 @@ export const getManagers = async (req: AuthRequest, res: Response) => {
 export const getUserById = async (req: AuthRequest, res: Response) => {
   try {
     const [rows]: any = await pool.query(
-      `SELECT u.id, u.username, u.email, u.first_name, u.last_name, u.photo, u.phone,
+      `SELECT u.id, u.username, u.email, u.first_name, u.last_name, u.photo, u.phone, u.account_status,
               u.gender, u.is_active, r.name as role_name, r.slug as role, d.name as department_name,
               e.employee_code, e.position, e.date_hired, e.employment_type, e.supervisor_id,
               u.created_at, u.last_login
@@ -242,10 +255,52 @@ export const resetPassword = async (req: AuthRequest, res: Response) => {
     const [users]: any = await pool.query('SELECT id FROM users WHERE id = ?', [req.params.id]);
     if (users.length === 0) return error(res, 'User not found', 404);
 
-    const hashed = await hashPassword('Changeme123!');
+    const hashed = await hashPassword(
+      typeof req.body?.password === 'string' && req.body.password.length >= 6
+        ? req.body.password
+        : 'Changeme123!'
+    );
     await pool.query('UPDATE users SET password = ? WHERE id = ?', [hashed, req.params.id]);
 
     await logAudit(req, createAuditEntry(req, 'Reset Password', 'Users', `Password reset for user ID ${req.params.id}`));
-    return success(res, null, 'Password reset to Changeme123!');
+    const usingCustom = typeof req.body?.password === 'string' && req.body.password.length >= 6;
+    return success(res, null, usingCustom
+      ? 'Password updated (stored securely as a hash — it is never displayed)'
+      : 'Password reset to Changeme123!');
+  } catch (err: any) { return error(res, err.message); }
+};
+
+/**
+ * Suspend / place on leave / reactivate a user.
+ * Only flips users.account_status — roles, departments and permissions are
+ * untouched so reactivation restores access exactly as before.
+ * Authorization: users.approve (Admin / Farm Owner). Enforced server-side.
+ */
+export const setUserAccountStatus = async (req: AuthRequest, res: Response) => {
+  try {
+    const allowed = ['active', 'suspended', 'on_leave'];
+    const status = String(req.body?.status || '').toLowerCase();
+    if (!allowed.includes(status)) return error(res, "Invalid status. Use one of: active, suspended, on_leave", 400);
+
+    const [users]: any = await pool.query(
+      'SELECT id, username, account_status FROM users WHERE id = ? AND deleted_at IS NULL',
+      [req.params.id]
+    );
+    if (users.length === 0) return error(res, 'User not found', 404);
+    if (Number(req.params.id) === Number(req.user!.id) && status !== 'active') {
+      return error(res, 'You cannot suspend or deactivate your own account', 400);
+    }
+    if ((users[0].account_status || 'active') === status) {
+      return success(res, { id: Number(req.params.id), account_status: status }, `User already ${status.replace('_', ' ')}`);
+    }
+
+    await pool.query('UPDATE users SET account_status = ? WHERE id = ?', [status, req.params.id]);
+
+    await logAudit(req, createAuditEntry(req, 'Set Account Status', 'Users',
+      `Account status for user ID ${req.params.id} (${users[0].username}) set to ${status}`,
+      { status }, { previous_status: users[0].account_status }));
+
+    return success(res, { id: Number(req.params.id), account_status: status },
+      status === 'active' ? 'User reactivated' : status === 'suspended' ? 'User suspended' : 'User placed on leave');
   } catch (err: any) { return error(res, err.message); }
 };

@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../contexts/AuthContext';
 import { useSettings } from '../contexts/SettingsContext';
 import { uploadApi, authApi } from '../api';
+import client from '../api/client';
 import { resolveAssetUrl } from '../utils/assetUrl';
-import { Moon, Sun, Settings as SettingsIcon, Save, User, Lock } from 'lucide-react';
+import { Moon, Sun, Settings as SettingsIcon, Save, User, Lock, Users as UsersIcon, KeyRound, UserX, UserCheck, Clock, Pencil } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function SettingsPage() {
@@ -15,7 +17,7 @@ export default function SettingsPage() {
   const [localSettings, setLocalSettings] = useState({ ...settings });
   const [loading, setLoading] = useState(false);
 
-  const [profileForm, setProfileForm] = useState({ firstName: '', lastName: '', email: '', phone: '' });
+  const [profileForm, setProfileForm] = useState({ firstName: '', lastName: '', email: '', phone: '', username: '' });
   const [profilePic, setProfilePic] = useState<File | null>(null);
   const [savingProfile, setSavingProfile] = useState(false);
 
@@ -28,7 +30,7 @@ export default function SettingsPage() {
 
   useEffect(() => {
     if (user) {
-      setProfileForm({ firstName: user.firstName || '', lastName: user.lastName || '', email: user.email || '', phone: user.phone || '' });
+      setProfileForm({ firstName: user.firstName || '', lastName: user.lastName || '', email: user.email || '', phone: user.phone || '', username: user.username || '' });
     }
   }, [user]);
 
@@ -79,8 +81,8 @@ export default function SettingsPage() {
         const storage = localStorage.getItem('user') ? localStorage : sessionStorage;
         storage.setItem('user', JSON.stringify(updated));
       }
-      toast.success('Profile updated');
-    } catch { toast.error('Failed to update profile'); }
+      toast.success(res.data?.message || 'Profile updated');
+    } catch (err: any) { toast.error(err.response?.data?.message || 'Failed to update profile'); }
     finally { setSavingProfile(false); }
   };
 
@@ -162,6 +164,10 @@ export default function SettingsPage() {
               <input type="file" accept="image/*" onChange={(e) => setProfilePic(e.target.files?.[0] || null)} />
             </div>
           </div>
+          <div className="form-group">
+            <label>Username</label>
+            <input value={profileForm.username} onChange={(e) => setProfileForm({ ...profileForm, username: e.target.value })} autoComplete="username" />
+          </div>
           <div className="form-row">
             <div className="form-group">
               <label>First Name</label>
@@ -204,6 +210,8 @@ export default function SettingsPage() {
           </button>
         </div>
 
+        {isAdmin && <UserManagement />}
+
         <div className="card form-card">
           <h3><Moon size={16} /> Appearance</h3>
           <div className="setting-row" onClick={() => applyDark(!dark)}>
@@ -217,6 +225,179 @@ export default function SettingsPage() {
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+/* ============================================================
+ * Admin Settings → User Management (Admin & Farm Owner only)
+ * Change username · Reset password · Suspend / On Leave / Reactivate
+ * Passwords are never displayed or returned — only set.
+ * ==========================================================*/
+function UserManagement() {
+  const { user: me } = useAuth();
+  const queryClient = useQueryClient();
+  const [editUser, setEditUser] = useState<any>(null);
+  const [newUsername, setNewUsername] = useState('');
+  const [resetUser, setResetUser] = useState<any>(null);
+  const [newPassword, setNewPassword] = useState('');
+
+  const { data, isLoading } = useQuery({
+    queryKey: ['settings-users'],
+    queryFn: () => client.get('/users', { params: { limit: 1000 } }).then(r => r.data.data || []),
+  });
+  const users: any[] = Array.isArray(data) ? data : [];
+
+  const invalidate = () => queryClient.invalidateQueries({ queryKey: ['settings-users'] });
+
+  const usernameMutation = useMutation({
+    mutationFn: (d: any) => client.put(`/users/${d.userId}`, { username: d.username }),
+    onSuccess: () => {
+      invalidate();
+      setEditUser(null);
+      toast.success('Username updated');
+    },
+    onError: (err: any) => toast.error(err.response?.data?.message || 'Failed to update username'),
+  });
+
+  const resetMutation = useMutation({
+    mutationFn: ({ id, password }: any) => client.put(`/users/reset-password/${id}`, { password }),
+    onSuccess: () => {
+      invalidate();
+      setResetUser(null);
+      setNewPassword('');
+      toast.success('Password reset');
+    },
+    onError: (err: any) => toast.error(err.response?.data?.message || 'Failed to reset password'),
+  });
+
+  const statusMutation = useMutation({
+    mutationFn: ({ id, status }: any) => client.put(`/users/${id}/account-status`, { status }),
+    onSuccess: (res: any) => {
+      invalidate();
+      toast.success(res.data?.message || 'Status updated');
+    },
+    onError: (err: any) => toast.error(err.response?.data?.error || err.response?.data?.message || 'Failed to update status'),
+  });
+
+  const statusBadge = (u: any) => {
+    if (!u.is_active) return <span className="badge badge-danger">Deactivated</span>;
+    const s = u.account_status || 'active';
+    if (s === 'suspended') return <span className="badge badge-danger">Suspended</span>;
+    if (s === 'on_leave') return <span className="badge badge-warning">On Leave</span>;
+    return <span className="badge badge-success">Active</span>;
+  };
+
+  return (
+    <div className="card form-card" style={{ overflowX: 'auto' }}>
+      <h3><UsersIcon size={16} /> User Management</h3>
+      <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginTop: -4 }}>
+        Change usernames, reset passwords, suspend / place on leave / reactivate. Roles, departments and permissions are preserved.
+      </p>
+      <div className="table-container">
+        <table className="table">
+          <thead>
+            <tr><th>User</th><th>Username</th><th>Role</th><th>Status</th><th>Actions</th></tr>
+          </thead>
+          <tbody>
+            {isLoading && <tr><td colSpan={5}>Loading users…</td></tr>}
+            {!isLoading && users.length === 0 && <tr><td colSpan={5}>No users found</td></tr>}
+            {users.map((u) => (
+              <tr key={u.id}>
+                <td>{`${u.first_name || ''} ${u.last_name || ''}`.trim() || '-'}</td>
+                <td>{u.username}</td>
+                <td>{u.role_slug || u.role || '-'}</td>
+                <td>{statusBadge(u)}</td>
+                <td>
+                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                    <button
+                      className="btn btn-sm"
+                      title="Change username"
+                      onClick={() => { setEditUser(u); setNewUsername(u.username || ''); }}
+                    >
+                      <Pencil size={13} /> Username
+                    </button>
+                    <button
+                      className="btn btn-sm"
+                      title="Reset password (user will change it after login)"
+                      onClick={() => { setResetUser(u); setNewPassword(''); }}
+                    >
+                      <KeyRound size={13} /> Reset Password
+                    </button>
+                    {me?.id !== u.id && (u.account_status || 'active') !== 'suspended' && (
+                      <button className="btn btn-sm btn-danger" title="Suspend — blocks login and API access"
+                        onClick={() => statusMutation.mutate({ id: u.id, status: 'suspended' })}
+                        disabled={statusMutation.isPending}>
+                        <UserX size={13} /> Suspend
+                      </button>
+                    )}
+                    {me?.id !== u.id && (u.account_status || 'active') !== 'on_leave' && (
+                      <button className="btn btn-sm" title="Place on leave"
+                        onClick={() => statusMutation.mutate({ id: u.id, status: 'on_leave' })}
+                        disabled={statusMutation.isPending}>
+                        <Clock size={13} /> On Leave
+                      </button>
+                    )}
+                    {me?.id !== u.id && (u.account_status || 'active') !== 'active' && (
+                      <button className="btn btn-sm btn-primary" title="Reactivate — restores roles, departments and permissions"
+                        onClick={() => statusMutation.mutate({ id: u.id, status: 'active' })}
+                        disabled={statusMutation.isPending}>
+                        <UserCheck size={13} /> Reactivate
+                      </button>
+                    )}
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Change username modal */}
+      {editUser && (
+        <div className="modal-overlay" onClick={() => setEditUser(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div className="modal card form-card" onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 420, margin: 16 }}>
+            <h3><Pencil size={16} /> Change Username — {`${editUser.first_name || ''} ${editUser.last_name || ''}`.trim()}</h3>
+            <form onSubmit={(e) => { e.preventDefault(); if (!newUsername.trim()) return; usernameMutation.mutate({ userId: editUser.id, username: newUsername.trim() }); }}>
+              <div className="form-group">
+                <label>New Username</label>
+                <input value={newUsername} onChange={(e) => setNewUsername(e.target.value)} autoComplete="username" required />
+              </div>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.82rem' }}>Usernames must be unique across the system.</p>
+              <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
+                <button type="button" className="btn" onClick={() => setEditUser(null)}>Cancel</button>
+                <button type="submit" className="btn btn-primary" disabled={usernameMutation.isPending}>
+                  {usernameMutation.isPending ? 'Saving…' : 'Save'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Reset password modal */}
+      {resetUser && (
+        <div className="modal-overlay" onClick={() => setResetUser(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div className="modal card form-card" onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 420, margin: 16 }}>
+            <h3><KeyRound size={16} /> Reset Password — {`${resetUser.first_name || ''} ${resetUser.last_name || ''}`.trim()}</h3>
+            <form onSubmit={(e) => { e.preventDefault(); if (newPassword.length < 6) { toast.error('Password must be at least 6 characters'); return; } resetMutation.mutate({ id: resetUser.id, password: newPassword }); }}>
+              <div className="form-group">
+                <label>New Password</label>
+                <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} autoComplete="new-password" required minLength={6} />
+              </div>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.82rem' }}>
+                The password is stored securely (hashed). It is never displayed again.
+              </p>
+              <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
+                <button type="button" className="btn" onClick={() => setResetUser(null)}>Cancel</button>
+                <button type="submit" className="btn btn-primary" disabled={resetMutation.isPending}>
+                  {resetMutation.isPending ? 'Saving…' : 'Reset Password'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
