@@ -167,7 +167,7 @@ export const createVaccinationSchema = z.object({
 export const createDiseaseSchema = z.object({
   animal_id: z.number().int().positive(),
   disease_name: z.string().min(1, 'Disease name is required'),
-  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(), // server defaults to today when omitted; record creation timestamp is always server-side
   symptoms: z.string().optional().nullable(),
   severity: z.string().optional().nullable(),
   notes: z.string().optional().nullable(),
@@ -196,7 +196,7 @@ export const createFeedingRecordSchema = z.object({
   feed_type: z.string().min(1, 'Feed type is required'),
   quantity: z.number().positive(),
   unit: z.string().optional().nullable(),
-  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(), // server defaults to today when omitted; record creation timestamp is always server-side
   notes: z.string().optional().nullable(),
 }).passthrough();
 
@@ -360,7 +360,7 @@ export const createFuelRecordSchema = z.object({
   vehicle_id: z.number().int().positive(),
   quantity: z.number().positive(),
   cost: z.number().positive().optional().nullable(),
-  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(), // server defaults to today when omitted; record creation timestamp is always server-side
   fuel_type: z.string().optional().nullable(),
   mileage: z.number().positive().optional().nullable(),
   notes: z.string().optional().nullable(),
@@ -369,7 +369,7 @@ export const createFuelRecordSchema = z.object({
 export const createMaintenanceSchema = z.object({
   vehicle_id: z.number().int().positive(),
   equipment_id: z.number().int().positive().optional().nullable(),
-  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(), // server defaults to today when omitted; record creation timestamp is always server-side
   maintenance_type: z.string().min(1, 'Type is required'),
   description: z.string().optional().nullable(),
   cost: z.number().positive().optional().nullable(),
@@ -381,7 +381,7 @@ export const createIncomeSchema = z.object({
   source: z.string().optional().default(''),
   category: z.string().optional(),
   description: z.string().optional().nullable(),
-  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(), // server defaults to today when omitted; record creation timestamp is always server-side
   payment_method: z.string().optional().nullable(),
   reference: z.string().optional().nullable(),
 }).passthrough();
@@ -391,7 +391,7 @@ export const createExpenseSchema = z.object({
   category: z.string().optional(),
   category_id: z.union([z.number(), z.string()]).optional().nullable(),
   description: z.string().min(1, 'Description is required'),
-  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(), // server defaults to today when omitted; record creation timestamp is always server-side
   payment_method: z.string().optional().nullable(),
   department_id: z.union([z.number(), z.string()]).optional().nullable(),
   vendor: z.string().optional().nullable(),

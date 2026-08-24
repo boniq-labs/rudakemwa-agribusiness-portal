@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import ModulePage from '../../components/ModulePage';
 import DataTable from '../../components/DataTable';
+import RecordedDate from '../../components/RecordedDate';
 import StatusBadge from '../../components/StatusBadge';
 import { accountingAPI } from '../../api/endpoints';
 import { formatAmount } from '../../services/currency';
@@ -152,7 +153,8 @@ export default function AccountingInvoices() {
     { key: 'due_date', label: 'Due Date', render: (inv: any) => inv.due_date ? new Date(inv.due_date).toLocaleDateString() : '-' },
     { key: 'status', label: 'Status', render: (inv: any) => <StatusBadge status={inv.status} /> },
     {
-      key: 'actions', label: '',
+      key: 'recorded', label: 'Recorded', render: (r: any) => <RecordedDate value={r.created_at} />},
+      { key: 'actions', label: '',
       render: (inv: any) => (
         <div className="actions">
           {(inv.status === 'sent' || inv.status === 'partial') && (

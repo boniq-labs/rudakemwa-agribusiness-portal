@@ -26,7 +26,10 @@ export const createIncomeRecord = async (req: AuthRequest, res: Response) => {
     const source = b.source || b.category || '';
     const income_number = b.income_number || b.reference || `INC-${Date.now()}`;
     const payment_method = (b.payment_method || '').toLowerCase().replace(/\s+/g, '_');
-    const { customer_id, amount, date, description } = b;
+    const { customer_id, amount, description } = b;
+    // Business date defaults to server-side today when not provided; the
+    // record's creation timestamp (created_at) is always set by the database.
+    const date = b.date || new Date().toISOString().split('T')[0];
     const status = b.status === 'pending' ? 'pending' : 'confirmed';
     const [result]: any = await pool.query(
       `INSERT INTO income_records (income_number, source, customer_id, amount, payment_method, date, description, status) VALUES (?,?,?,?,?,?,?,?)`,

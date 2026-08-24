@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import ModulePage from '../../components/ModulePage';
 import DataTable from '../../components/DataTable';
+import RecordedDate from '../../components/RecordedDate';
 import StatsCard from '../../components/StatsCard';
 import FormField from '../../components/FormField';
 import client from '../../api/client';
@@ -106,7 +107,8 @@ const deleteMutation = useMutation({
       ),
     },
     {
-      key: 'actions', label: 'Actions',
+      key: 'recorded', label: 'Recorded', render: (r: any) => <RecordedDate value={r.created_at} />},
+      { key: 'actions', label: 'Actions',
       render: (p: any) => (
         <div className="actions">
           {p.status === 'pending' && (

@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import ModulePage from '../../components/ModulePage';
 import DataTable from '../../components/DataTable';
+import RecordedDate from '../../components/RecordedDate';
 import { accountingAPI, departmentsAPI } from '../../api/endpoints';
 import { formatAmount } from '../../services/currency';
 import { Plus, X, PieChart, Edit2, Trash2 } from 'lucide-react';
@@ -155,7 +156,8 @@ export default function BudgetsPage() {
       return pct > 100 ? <span style={{ color: 'var(--danger)' }}>Over budget</span> : pct > 80 ? <span style={{ color: 'var(--warning)' }}>Nearly Exhausted</span> : <span style={{ color: 'var(--success)' }}>On Track</span>;
     }},
     {
-      key: 'actions', label: '',
+      key: 'recorded', label: 'Recorded', render: (r: any) => <RecordedDate value={r.created_at} />},
+      { key: 'actions', label: '',
       render: (b: any) => (
         <div className="actions">
           <button className="btn btn-sm btn-ghost" onClick={(e) => { e.stopPropagation(); openEdit(b); }}>

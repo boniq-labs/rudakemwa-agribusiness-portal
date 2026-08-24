@@ -106,7 +106,7 @@ export default function SettingsPage() {
       <div className="settings-grid">
         {isAdmin && (
           <div className="card form-card">
-            <h3>System Settings</h3>
+            <h3><SettingsIcon size={16} /> System Settings</h3>
             <div className="form-group">
               <label>System Name</label>
               <input value={localSettings.system_name} onChange={(e) => setLocalSettings({ ...localSettings, system_name: e.target.value })} />
@@ -156,7 +156,7 @@ export default function SettingsPage() {
         )}
 
         <div className="card form-card">
-          <h3><User size={16} /> Profile Information</h3>
+          <h3><User size={16} /> Profile</h3>
           <div className="form-group">
             <label>Profile Photo</label>
             <div className="setting-upload-row">
@@ -192,7 +192,7 @@ export default function SettingsPage() {
         </div>
 
         <div className="card form-card">
-          <h3><Lock size={16} /> Change Password</h3>
+          <h3><Lock size={16} /> Security</h3>
           <div className="form-group">
             <label>Current Password</label>
             <input type="password" value={pwForm.currentPassword} onChange={(e) => setPwForm({ ...pwForm, currentPassword: e.target.value })} />
@@ -295,7 +295,7 @@ function UserManagement() {
         Change usernames, reset passwords, suspend / place on leave / reactivate. Roles, departments and permissions are preserved.
       </p>
       <div className="table-container">
-        <table className="table">
+        <table className="table table-compact">
           <thead>
             <tr><th>User</th><th>Username</th><th>Role</th><th>Status</th><th>Actions</th></tr>
           </thead>
@@ -315,34 +315,34 @@ function UserManagement() {
                       title="Change username"
                       onClick={() => { setEditUser(u); setNewUsername(u.username || ''); }}
                     >
-                      <Pencil size={13} /> Username
+                      <Pencil size={14} />
                     </button>
                     <button
                       className="btn btn-sm"
                       title="Reset password (user will change it after login)"
                       onClick={() => { setResetUser(u); setNewPassword(''); }}
                     >
-                      <KeyRound size={13} /> Reset Password
+                      <KeyRound size={14} />
                     </button>
                     {me?.id !== u.id && (u.account_status || 'active') !== 'suspended' && (
                       <button className="btn btn-sm btn-danger" title="Suspend — blocks login and API access"
                         onClick={() => statusMutation.mutate({ id: u.id, status: 'suspended' })}
                         disabled={statusMutation.isPending}>
-                        <UserX size={13} /> Suspend
+                        <UserX size={14} />
                       </button>
                     )}
                     {me?.id !== u.id && (u.account_status || 'active') !== 'on_leave' && (
                       <button className="btn btn-sm" title="Place on leave"
                         onClick={() => statusMutation.mutate({ id: u.id, status: 'on_leave' })}
                         disabled={statusMutation.isPending}>
-                        <Clock size={13} /> On Leave
+                        <Clock size={14} />
                       </button>
                     )}
                     {me?.id !== u.id && (u.account_status || 'active') !== 'active' && (
                       <button className="btn btn-sm btn-primary" title="Reactivate — restores roles, departments and permissions"
                         onClick={() => statusMutation.mutate({ id: u.id, status: 'active' })}
                         disabled={statusMutation.isPending}>
-                        <UserCheck size={13} /> Reactivate
+                        <UserCheck size={14} />
                       </button>
                     )}
                   </div>

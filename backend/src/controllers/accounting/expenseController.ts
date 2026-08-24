@@ -71,9 +71,12 @@ export const createExpenseRecord = async (req: AuthRequest, res: Response) => {
     const payment_method = (b.payment_method || '').toLowerCase().replace(/\s+/g, '_');
     const genExpenseNumber = b.expense_number || `EXP-${Date.now()}`;
     const status = b.status === 'pending' ? 'pending' : 'confirmed';
+    // Business date defaults to server-side today when not provided; the
+    // record's creation timestamp (created_at) is always set by the database.
+    const recordDate = b.date || new Date().toISOString().split('T')[0];
     const [result]: any = await pool.query(
       `INSERT INTO expense_records (expense_number, category_id, description, amount, payment_method, vendor, notes, date, department_id, status) VALUES (?,?,?,?,?,?,?,?,?,?)`,
-      [genExpenseNumber, category_id, b.description || null, b.amount, payment_method || null, b.vendor || null, b.notes || null, b.date || null, b.department_id || null, status]
+      [genExpenseNumber, category_id, b.description || null, b.amount, payment_method || null, b.vendor || null, b.notes || null, recordDate, b.department_id || null, status]
     );
     await logAudit(req, createAuditEntry(req, 'Create Expense', 'Accounting', `Expense record ${genExpenseNumber} created`, req.body));
     return created(res, { id: result.insertId }, 'Expense record created');

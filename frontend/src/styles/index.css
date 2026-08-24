@@ -589,3 +589,13 @@ button, a, .nav-link, .sub-link, .dropdown-item, .btn, .option-btn, .dept-link, 
 @media (max-width: 480px) {
   .table-container button[class*="btn"] { min-height: 44px; min-width: 44px; }
 }
+
+/* Compact table variant (Admin Settings → User Management) */
+.table-compact th,
+.table-compact td {
+  padding: 6px 8px;
+  font-size: 0.8rem;
+}
+.table-compact .btn-sm {
+  padding: 4px 6px;
+}

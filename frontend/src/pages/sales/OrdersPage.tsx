@@ -6,6 +6,7 @@ import { useConfirm } from '../../components/ConfirmDialog';
 import client from '../../api/client';
 import ModulePage from '../../components/ModulePage';
 import DataTable from '../../components/DataTable';
+import RecordedDate from '../../components/RecordedDate';
 import Modal from '../../components/Modal';
 import FormField from '../../components/FormField';
 import type { Column } from '../../components/DataTable';
@@ -148,7 +149,8 @@ export default function OrdersPage() {
     },
     { key: 'status', label: 'Status' },
     {
-      key: 'actions', label: 'Actions',
+      key: 'recorded', label: 'Recorded', render: (r: any) => <RecordedDate value={r.created_at} />},
+      { key: 'actions', label: 'Actions',
       render: (o: any) => (
         <div style={{ display: 'flex', gap: 4 }}>
           <button className="btn btn-sm" onClick={() => handleEdit(o)}>Edit</button>
