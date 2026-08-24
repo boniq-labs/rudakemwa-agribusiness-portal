@@ -43,9 +43,13 @@ export default function Breeding() {
      283-day cattle gestation without waiting. Empty = real dates. */
   const [simDate, setSimDate] = useState('');
 
-  // Pregnancy Check is restricted to: Admin, Farm Owner, Animal Production Manager, Veterinary Manager
+  // Pregnancy Check is restricted to: Admin, Farm Owner, Animal Production
+  // Manager, Veterinary Manager — OR any user assigned to the Animal Production
+  // department (backend already authorises department roles identically).
   const role = (user?.role || '').toLowerCase();
-  const isVetChecker = role === 'admin' || role === 'farm_owner' || role === 'animal' || role === 'veterinarian';
+  const inAnimalDept = (user as any)?.departments?.some((d: any) =>
+    /animal production/i.test(d?.name || '') || d?.slug === 'animal');
+  const isVetChecker = ['admin', 'farm_owner', 'animal', 'veterinarian'].includes(role) || !!inAnimalDept;
 
   const [form, setForm] = useState({
     mother_id: '', father_id: '', breeding_date: new Date().toISOString().split('T')[0],

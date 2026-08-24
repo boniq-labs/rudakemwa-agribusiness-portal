@@ -85,7 +85,15 @@ const enrichPregnancy = (row: PregnancyRow, now: Date = new Date()) => {
   let heatWindowStart: string | null = null;
   let heatWindowEnd: string | null = null;
   let inHeatWindow = false;
+  // AUTHORITATIVE expected delivery for Pig/Cattle: always derived from the
+  // insemination date + species gestation (114d / 283d). A stale stored value
+  // from older data can never override the correct calculation. Non-pig/cattle
+  // species keep whatever is stored.
   let expectedDelivery: string | null = toISODate(row.expected_delivery_date);
+  if (inseminationDate && !isNaN(new Date(inseminationDate).getTime())) {
+    if (sp === 'pig') expectedDelivery = toISODate(addDays(inseminationDate, PIG_GESTATION_DAYS));
+    else if (sp === 'cattle') expectedDelivery = toISODate(addDays(inseminationDate, CATTLE_GESTATION_DAYS));
+  }
   let daysUntilDelivery: number | null = null;
   let dueSoon = false;
   let nextAction = '';
@@ -365,6 +373,30 @@ export const updateBreedingRecord = async (req: AuthRequest, res: Response) => {
 
     values.push(req.params.id);
     await pool.query(`UPDATE breeding_records SET ${fields.join(', ')} WHERE id=?`, values);
+
+    // AUTOMATIC derived-date refresh: if the breeding/insemination date changed,
+    // recompute the linked pregnancy's Day 0 + expected delivery (species rules).
+    const dateChanged = fields.some(f => f.startsWith('breeding_date') || f.startsWith('insemination_date'));
+    if (dateChanged) {
+      const [fresh]: any = await pool.query('SELECT * FROM breeding_records WHERE id = ?', [req.params.id]);
+      const rec = fresh[0];
+      const newBase = rec.insemination_date || rec.breeding_date;
+      if (newBase) {
+        const [spRows]: any = await pool.query(
+          `SELECT a.animal_category_id, ac.name AS category_name
+           FROM animals a LEFT JOIN animal_categories ac ON a.animal_category_id = ac.id
+           WHERE a.id = ?`, [rec.mother_id]);
+        const sp2 = speciesOf(spRows[0]?.animal_category_id, spRows[0]?.category_name);
+        const expAuto = sp2 === 'cattle' ? toISODate(addDays(newBase, CATTLE_GESTATION_DAYS))
+          : sp2 === 'pig' ? toISODate(addDays(newBase, PIG_GESTATION_DAYS))
+          : null;
+        await pool.query(
+          `UPDATE pregnancies SET pregnancy_date = ?, expected_delivery_date = COALESCE(?, expected_delivery_date)
+           WHERE breeding_record_id = ? AND deleted_at IS NULL`,
+          [newBase, expAuto, req.params.id]
+        );
+      }
+    }
 
     await logAudit(req, createAuditEntry(req, 'Update Breeding Record', 'BreedingRecords', `Updated breeding record ${req.params.id}`, req.body, old[0]));
     return success(res, null, 'Breeding record updated');
