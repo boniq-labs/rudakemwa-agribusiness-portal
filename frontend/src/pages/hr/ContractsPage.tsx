@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import ModulePage from '../../components/ModulePage';
 import DataTable from '../../components/DataTable';
+import RecordedDate from '../../components/RecordedDate';
 import StatusBadge from '../../components/StatusBadge';
 import FormField from '../../components/FormField';
 import { contractsAPI, usersAPI } from '../../api/endpoints';
@@ -94,7 +95,8 @@ export default function ContractsPage() {
     { key: 'end_date', label: 'End Date', render: (c: any) => c.end_date || 'Open-ended' },
     { key: 'status', label: 'Status', render: (c: any) => <StatusBadge status={c.status || 'active'} /> },
     {
-      key: 'actions', label: 'Actions',
+      key: 'recorded', label: 'Recorded', render: (r: any) => <RecordedDate value={r.created_at} />},
+      { key: 'actions', label: 'Actions',
       render: (c: any) => (
         <div className="actions">
           <button className="btn btn-sm" style={{ background: 'var(--primary-light)', color: 'var(--primary)' }} onClick={() => openEdit(c)}>

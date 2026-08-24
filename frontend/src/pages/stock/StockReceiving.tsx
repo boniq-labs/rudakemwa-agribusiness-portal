@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import ModulePage from '../../components/ModulePage';
 import DataTable from '../../components/DataTable';
+import RecordedDate from '../../components/RecordedDate';
 import FormField from '../../components/FormField';
 import { stockAPI, procurementAPI } from '../../api/endpoints';
 import { ArrowDownToLine } from 'lucide-react';
@@ -54,6 +55,7 @@ export default function StockReceiving() {
     { key: 'quantity', label: 'Qty' },
     { key: 'unit_price', label: 'Unit Price', render: (t: any) => t.unit_price ? `RWF ${Number(t.unit_price).toLocaleString()}` : '-' },
     { key: 'total_value', label: 'Total', render: (t: any) => (t.quantity * t.unit_price) ? `RWF ${(Number(t.quantity) * Number(t.unit_price)).toLocaleString()}` : '-' },
+    { key: 'recorded', label: 'Recorded', render: (t: any) => <RecordedDate value={t.created_at} /> },
     { key: 'supplier', label: 'Supplier', render: (t: any) => typeof t.supplier === 'object' ? t.supplier?.name : t.supplier || '-' },
     { key: 'notes', label: 'Notes', render: (t: any) => t.notes || '-' },
   ];

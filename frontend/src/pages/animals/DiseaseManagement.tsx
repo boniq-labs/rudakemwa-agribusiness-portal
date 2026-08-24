@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import client from '../../api/client';
 import ModulePage from '../../components/ModulePage';
 import DataTable from '../../components/DataTable';
+import RecordedDate from '../../components/RecordedDate';
 import StatusBadge from '../../components/StatusBadge';
 import type { Column } from '../../components/DataTable';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recharts';
@@ -222,7 +223,8 @@ export default function DiseaseManagement() {
       render: (item: any) => item.date ? new Date(item.date).toLocaleDateString() : '-',
     },
     {
-      key: 'actions', label: 'Actions',
+      key: 'recorded', label: 'Recorded', render: (r: any) => <RecordedDate value={r.created_at} />},
+      { key: 'actions', label: 'Actions',
       render: (item: any) => (
         <div className="actions">
           <button className="btn btn-sm" title="Edit" onClick={() => openDiseaseEdit(item)}><Edit2 size={14} /></button>
@@ -247,7 +249,8 @@ export default function DiseaseManagement() {
       render: (item: any) => item.recorded_by_name || item.recorded_by || '-',
     },
     {
-      key: 'actions', label: 'Actions',
+      key: 'recorded', label: 'Recorded', render: (r: any) => <RecordedDate value={r.created_at} />},
+      { key: 'actions', label: 'Actions',
       render: (item: any) => (
         <div className="actions">
           <button className="btn btn-sm" title="Edit" onClick={() => openDeathEdit(item)}><Edit2 size={14} /></button>

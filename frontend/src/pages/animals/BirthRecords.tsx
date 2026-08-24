@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import client from '../../api/client';
 import ModulePage from '../../components/ModulePage';
 import DataTable from '../../components/DataTable';
+import RecordedDate from '../../components/RecordedDate';
 import FormField from '../../components/FormField';
 import type { Column } from '../../components/DataTable';
 import { Plus, Baby, Eye, Edit2, Trash2 } from 'lucide-react';
@@ -196,7 +197,8 @@ export default function BirthRecords() {
     },
     { key: 'category_name', label: 'Category', render: (item: any) => item.category_name || '-' },
     {
-      key: 'actions', label: 'Actions',
+      key: 'recorded', label: 'Recorded', render: (r: any) => <RecordedDate value={r.created_at} />},
+      { key: 'actions', label: 'Actions',
       render: (item: BirthRecord) => (
         <div className="actions">
           <button className="btn btn-sm" title="View" onClick={() => setViewItem(item)}><Eye size={14} /></button>

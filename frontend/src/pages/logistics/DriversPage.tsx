@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import ModulePage from '../../components/ModulePage';
 import DataTable from '../../components/DataTable';
+import RecordedDate from '../../components/RecordedDate';
 import FormField from '../../components/FormField';
 import Modal from '../../components/Modal';
 import client from '../../api/client';
@@ -137,7 +138,8 @@ export default function DriversPage() {
     { key: 'license_number', label: 'License No.', render: (d: any) => d.license_number || '-' },
     { key: 'status', label: 'Status', render: (d: any) => statusBadge(d.status) },
     {
-      key: 'actions', label: 'Actions',
+      key: 'recorded', label: 'Recorded', render: (r: any) => <RecordedDate value={r.created_at} />},
+      { key: 'actions', label: 'Actions',
       render: (d: any) => (
         <div style={{ display: 'flex', gap: 4 }}>
           <button className="btn btn-sm" style={{ background: '#dbeafe', color: '#1e40af', border: 'none' }}

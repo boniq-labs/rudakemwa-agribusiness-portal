@@ -4,6 +4,7 @@ import { animalAPI } from '../../api/endpoints';
 import client from '../../api/client';
 import ModulePage from '../../components/ModulePage';
 import DataTable from '../../components/DataTable';
+import RecordedDate from '../../components/RecordedDate';
 import type { Column } from '../../components/DataTable';
 import { Plus, Edit2, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -68,7 +69,8 @@ export default function AnimalBreeds() {
     },
     { key: 'description', label: 'Description', render: (item) => item.description || '-' },
     {
-      key: 'actions', label: 'Actions',
+      key: 'recorded', label: 'Recorded', render: (r: any) => <RecordedDate value={r.created_at} />},
+      { key: 'actions', label: 'Actions',
       render: (item) => (
         <div className="actions">
           <button className="btn btn-sm btn-secondary" onClick={() => openEdit(item)}><Edit2 size={14} /> Edit</button>

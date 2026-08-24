@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import ModulePage from '../../components/ModulePage';
 import StatsCard from '../../components/StatsCard';
 import DataTable from '../../components/DataTable';
+import RecordedDate from '../../components/RecordedDate';
 import StatusBadge from '../../components/StatusBadge';
 import { Clock, UserCheck, UserX, AlertTriangle, LogIn, LogOut } from 'lucide-react';
 import type { Column } from '../../components/DataTable';
@@ -65,7 +66,8 @@ export default function AttendancePage() {
     { key: 'hours', label: 'Hours Worked', render: (r: any) => calcHours(r.check_in, r.check_out) },
     { key: 'status', label: 'Status', render: (r: any) => <StatusBadge status={r.status || 'absent'} /> },
     {
-      key: 'actions', label: 'Actions',
+      key: 'recorded', label: 'Recorded', render: (r: any) => <RecordedDate value={r.created_at} />},
+      { key: 'actions', label: 'Actions',
       render: (r: any) => (
         <div className="actions">
           {(!r.check_in || r.status === 'absent') && (

@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { animalAPI } from '../../api/endpoints';
 import ModulePage from '../../components/ModulePage';
 import DataTable from '../../components/DataTable';
+import RecordedDate from '../../components/RecordedDate';
 import StatusBadge from '../../components/StatusBadge';
 import { Plus, Search, Camera } from 'lucide-react';
 import type { Column } from '../../components/DataTable';
@@ -62,7 +63,8 @@ export default function Pigs() {
     { key: 'weight', label: 'Weight', render: (p: any) => p.weight ? `${p.weight} kg` : '-' },
     { key: 'date_of_birth', label: 'Date of Birth', render: (p: any) => p.date_of_birth ? new Date(p.date_of_birth).toLocaleDateString() : '-' },
     {
-      key: 'actions', label: 'Actions',
+      key: 'recorded', label: 'Recorded', render: (r: any) => <RecordedDate value={r.created_at} />},
+      { key: 'actions', label: 'Actions',
       render: (p: any) => (
         <div className="actions">
           <button className="btn btn-sm" style={{ background: 'var(--bg)', border: '1px solid var(--border)' }} onClick={(e) => { e.stopPropagation(); navigate(`/animals/profile/${p.id}`); }}>View</button>

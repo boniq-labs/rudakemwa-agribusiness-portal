@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Users, Edit2, Trash2 } from 'lucide-react';
 import ModulePage from '../../components/ModulePage';
 import DataTable from '../../components/DataTable';
+import RecordedDate from '../../components/RecordedDate';
 import StatusBadge from '../../components/StatusBadge';
 import type { Column } from '../../components/DataTable';
 import { salesAPI } from '../../api/endpoints';
@@ -122,7 +123,8 @@ export default function MilkCustomers() {
       key: 'status', label: 'Status',
       render: (c) => c.status ? <StatusBadge status={c.status} /> : '-',
     },
-    { key: 'actions', label: 'Actions', render: (c) => (
+    { key: 'recorded', label: 'Recorded', render: (r: any) => <RecordedDate value={r.created_at} />},
+      { key: 'actions', label: 'Actions', render: (c) => (
       <div className="actions">
         <button className="btn btn-sm" onClick={(e) => { e.stopPropagation(); openEdit(c); }} style={{ background: 'var(--bg)', border: '1px solid var(--border)' }}><Edit2 size={14} /></button>
         <button className="btn btn-sm" onClick={async (e) => { e.stopPropagation(); if (await confirm('Delete this customer?')) deleteMutation.mutate(c.id); }} style={{ background: '#fef2f2', border: '1px solid #fecaca', color: 'var(--danger)' }} disabled={deleteMutation.isPending}><Trash2 size={14} /></button>

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import ModulePage from '../../components/ModulePage';
 import DataTable from '../../components/DataTable';
+import RecordedDate from '../../components/RecordedDate';
 import FormField from '../../components/FormField';
 import Modal from '../../components/Modal';
 import client from '../../api/client';
@@ -169,7 +170,8 @@ export default function TripsPage() {
     { key: 'end_date', label: 'End', render: (t: any) => t.end_date ? new Date(t.end_date).toLocaleDateString() : (t.end_time ? new Date(t.end_time).toLocaleDateString() : '-') },
     { key: 'status', label: 'Status', render: (t: any) => statusBadge(t.status) },
     {
-      key: 'actions', label: 'Actions',
+      key: 'recorded', label: 'Recorded', render: (r: any) => <RecordedDate value={r.created_at} />},
+      { key: 'actions', label: 'Actions',
       render: (t: any) => (
         <div style={{ display: 'flex', gap: 4 }}>
           <button className="btn btn-sm" style={{ background: '#dbeafe', color: '#1e40af', border: 'none' }}

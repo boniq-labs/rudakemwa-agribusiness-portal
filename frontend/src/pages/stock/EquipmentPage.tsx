@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import ModulePage from '../../components/ModulePage';
 import DataTable from '../../components/DataTable';
+import RecordedDate from '../../components/RecordedDate';
 import StatusBadge from '../../components/StatusBadge';
 import FormField from '../../components/FormField';
 import { stockAPI } from '../../api/endpoints';
@@ -124,7 +125,8 @@ export default function EquipmentPage() {
     { key: 'status', label: 'Status', render: (e: any) => <StatusBadge status={e.status || 'Available'} /> },
     { key: 'location', label: 'Location', render: (e: any) => e.location || '-' },
     {
-      key: 'actions', label: 'Actions',
+      key: 'recorded', label: 'Recorded', render: (r: any) => <RecordedDate value={r.created_at} />},
+      { key: 'actions', label: 'Actions',
       render: (e: any) => (
         <div className="actions">
           <button className="btn btn-sm" onClick={(ev) => { ev.stopPropagation(); setMaintForm({ ...initialMaint, equipment_id: String(e.id) }); setShowMaint({ show: true, equipId: e.id }); setErrors({}); }}

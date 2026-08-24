@@ -4,6 +4,7 @@ import client from '../../api/client';
 import { useAuth } from '../../contexts/AuthContext';
 import ModulePage from '../../components/ModulePage';
 import DataTable from '../../components/DataTable';
+import RecordedDate from '../../components/RecordedDate';
 import type { Column } from '../../components/DataTable';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Plus, Wheat, Edit2, Trash2 } from 'lucide-react';
@@ -133,7 +134,8 @@ export default function Feeding() {
       render: (item: any) => item.recorded_by_name || item.recorded_by || '-',
     },
     {
-      key: 'actions', label: 'Actions',
+      key: 'recorded', label: 'Recorded', render: (r: any) => <RecordedDate value={r.created_at} />},
+      { key: 'actions', label: 'Actions',
       render: (item: any) => (
         <div className="actions">
           <button className="btn btn-sm" title="Edit" onClick={() => openEdit(item)}><Edit2 size={14} /></button>

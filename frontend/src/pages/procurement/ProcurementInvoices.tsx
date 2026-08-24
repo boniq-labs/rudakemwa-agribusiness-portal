@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import ModulePage from '../../components/ModulePage';
 import DataTable from '../../components/DataTable';
+import RecordedDate from '../../components/RecordedDate';
 import StatusBadge from '../../components/StatusBadge';
 import FormField from '../../components/FormField';
 import { procurementAPI } from '../../api/endpoints';
@@ -148,7 +149,8 @@ export default function ProcurementInvoices() {
     },
     { key: 'status', label: 'Status', render: (i: any) => <StatusBadge status={i.status || 'pending'} /> },
     {
-      key: 'actions', label: 'Actions',
+      key: 'recorded', label: 'Recorded', render: (r: any) => <RecordedDate value={r.created_at} />},
+      { key: 'actions', label: 'Actions',
       render: (i: any) => (
         <div style={{ display: 'flex', gap: 4 }}>
           <button className="btn btn-sm" style={{ background: '#dbeafe', color: '#1e40af', border: 'none' }}

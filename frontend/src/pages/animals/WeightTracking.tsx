@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import client from '../../api/client';
 import ModulePage from '../../components/ModulePage';
 import DataTable from '../../components/DataTable';
+import RecordedDate from '../../components/RecordedDate';
 import FormField from '../../components/FormField';
 import type { Column } from '../../components/DataTable';
 import { Plus, Weight, Edit2, Trash2 } from 'lucide-react';
@@ -132,7 +133,8 @@ export default function WeightTracking() {
     },
     { key: 'notes', label: 'Notes', render: (item: any) => item.notes || '-' },
     {
-      key: 'actions', label: 'Actions',
+      key: 'recorded', label: 'Recorded', render: (r: any) => <RecordedDate value={r.created_at} />},
+      { key: 'actions', label: 'Actions',
       render: (item: WeightRecord) => (
         <div className="actions">
           <button className="btn btn-sm" title="Edit" onClick={() => openEdit(item)}><Edit2 size={14} /></button>

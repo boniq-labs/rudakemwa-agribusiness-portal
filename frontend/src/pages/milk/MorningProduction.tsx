@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import client from '../../api/client';
 import toast from 'react-hot-toast';
 import ModulePage from '../../components/ModulePage';
+import RecordedDate from '../../components/RecordedDate';
 import DataTable from '../../components/DataTable';
 import StatsCard from '../../components/StatsCard';
 import type { Column } from '../../components/DataTable';
@@ -89,7 +90,8 @@ export default function MorningProduction() {
     { key: 'number_of_animals', label: 'Animals', render: (c: any) => c.number_of_animals != null ? c.number_of_animals : '-' },
     { key: 'notes', label: 'Notes', render: (c: any) => c.notes || '-' },
     {
-      key: 'actions', label: 'Actions',
+      key: 'recorded', label: 'Recorded', render: (r: any) => <RecordedDate value={r.created_at} />},
+      { key: 'actions', label: 'Actions',
       render: (c: any) => (
         <div className="actions">
           <button className="btn btn-sm" onClick={() => openEdit(c)} style={{ background: 'var(--bg)', border: '1px solid var(--border)' }}><Edit2 size={14} /></button>

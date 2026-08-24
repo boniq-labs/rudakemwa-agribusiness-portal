@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import ModulePage from '../../components/ModulePage';
 import DataTable from '../../components/DataTable';
+import RecordedDate from '../../components/RecordedDate';
 import StatusBadge from '../../components/StatusBadge';
 import FormField from '../../components/FormField';
 import { logisticsAPI, departmentsAPI } from '../../api/endpoints';
@@ -133,7 +134,8 @@ export default function TransportRequests() {
     { key: 'priority', label: 'Priority', render: (r: any) => renderPriority(r.priority) },
     { key: 'status', label: 'Status', render: (r: any) => <StatusBadge status={r.status} /> },
     {
-      key: 'actions', label: 'Actions',
+      key: 'recorded', label: 'Recorded', render: (r: any) => <RecordedDate value={r.created_at} />},
+      { key: 'actions', label: 'Actions',
       render: (r: any) => (
         <div className="actions">
           {(r.status === 'pending' || r.status === 'pending_review') && (

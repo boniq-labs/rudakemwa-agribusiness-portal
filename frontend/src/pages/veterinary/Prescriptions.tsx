@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import client from '../../api/client';
 import ModulePage from '../../components/ModulePage';
 import DataTable from '../../components/DataTable';
+import RecordedDate from '../../components/RecordedDate';
 import Modal from '../../components/Modal';
 import FormField from '../../components/FormField';
 import type { Column } from '../../components/DataTable';
@@ -119,7 +120,8 @@ export default function Prescriptions() {
     { key: 'duration', label: 'Duration', render: (p: any) => p.duration ? `${p.duration} days` : '-' },
     { key: 'notes', label: 'Notes', render: (p: any) => p.notes || '-' },
     {
-      key: 'actions', label: 'Actions',
+      key: 'recorded', label: 'Recorded', render: (r: any) => <RecordedDate value={r.created_at} />},
+      { key: 'actions', label: 'Actions',
       render: (p: any) => (
         <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
           <button className="btn btn-sm" onClick={() => handleEdit(p)}>Edit</button>

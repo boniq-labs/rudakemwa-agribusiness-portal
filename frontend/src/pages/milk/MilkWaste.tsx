@@ -5,6 +5,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import ModulePage from '../../components/ModulePage';
 import StatsCard from '../../components/StatsCard';
 import DataTable from '../../components/DataTable';
+import RecordedDate from '../../components/RecordedDate';
 import StatusBadge from '../../components/StatusBadge';
 import type { Column } from '../../components/DataTable';
 import { milkAPI } from '../../api/endpoints';
@@ -131,7 +132,8 @@ export default function MilkWaste() {
     { key: 'waste_date', label: 'Date' },
     { key: 'reported_by_name', label: 'Reported By' },
     {
-      key: 'actions', label: 'Actions', render: (r) => (
+      key: 'recorded', label: 'Recorded', render: (r: any) => <RecordedDate value={r.created_at} />},
+      { key: 'actions', label: 'Actions', render: (r) => (
         <div className="actions">
           <button className="btn btn-sm" onClick={(e) => { e.stopPropagation(); openEdit(r); }} style={{ background: 'var(--bg)', border: '1px solid var(--border)' }}><Edit2 size={14} /></button>
           <button className="btn btn-sm" onClick={async (e) => { e.stopPropagation(); if (await confirm('Delete this waste record?')) deleteMutation.mutate(r.id); }} style={{ background: '#fef2f2', border: '1px solid #fecaca', color: 'var(--danger)' }} disabled={deleteMutation.isPending}><Trash2 size={14} /></button>

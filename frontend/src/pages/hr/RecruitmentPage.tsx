@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import ModulePage from '../../components/ModulePage';
 import DataTable from '../../components/DataTable';
+import RecordedDate from '../../components/RecordedDate';
 import StatusBadge from '../../components/StatusBadge';
 import FormField from '../../components/FormField';
 import { recruitmentAPI } from '../../api/endpoints';
@@ -63,7 +64,8 @@ export default function RecruitmentPage() {
     { key: 'job_title', label: 'Position', render: (a: any) => a.job_title || '-' },
     { key: 'status', label: 'Status', render: (a: any) => <StatusBadge status={a.status || 'new'} /> },
     {
-      key: 'actions', label: 'Update Status',
+      key: 'recorded', label: 'Recorded', render: (r: any) => <RecordedDate value={r.created_at} />},
+      { key: 'actions', label: 'Update Status',
       render: (a: any) => (
         <select
           value={a.status || 'new'}

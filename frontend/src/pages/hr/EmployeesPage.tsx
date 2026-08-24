@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import ModulePage from '../../components/ModulePage';
 import DataTable from '../../components/DataTable';
+import RecordedDate from '../../components/RecordedDate';
 import StatusBadge from '../../components/StatusBadge';
 import FormField from '../../components/FormField';
 import { usersAPI, departmentsAPI, positionsAPI } from '../../api/endpoints';
@@ -149,7 +150,8 @@ export default function EmployeesPage() {
     { key: 'phone', label: 'Phone', render: (u: any) => u.phone || '-' },
     { key: 'status', label: 'Status', render: (u: any) => <StatusBadge status={u.is_active != null ? (u.is_active ? 'active' : 'inactive') : 'active'} /> },
     {
-      key: 'actions', label: 'Actions',
+      key: 'recorded', label: 'Recorded', render: (r: any) => <RecordedDate value={r.created_at} />},
+      { key: 'actions', label: 'Actions',
       render: (u: any) => (
         <div className="actions">
           <button className="btn btn-sm" style={{ background: 'var(--primary-light)', color: 'var(--primary)' }} onClick={(e) => { e.stopPropagation(); openEdit(u); }}>

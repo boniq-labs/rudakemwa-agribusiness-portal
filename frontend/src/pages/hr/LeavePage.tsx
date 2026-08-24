@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import ModulePage from '../../components/ModulePage';
 import DataTable from '../../components/DataTable';
+import RecordedDate from '../../components/RecordedDate';
 import StatusBadge from '../../components/StatusBadge';
 import FormField from '../../components/FormField';
 import { leaveAPI } from '../../api/endpoints';
@@ -78,7 +79,8 @@ export default function LeavePage() {
     { key: 'end_date', label: 'End Date' },
     { key: 'status', label: 'Status', render: (r: any) => <StatusBadge status={r.status} /> },
     {
-      key: 'actions', label: 'Actions',
+      key: 'recorded', label: 'Recorded', render: (r: any) => <RecordedDate value={r.created_at} />},
+      { key: 'actions', label: 'Actions',
       render: (r: any) => r.status === 'pending' ? (
         <button className="btn btn-sm" style={{ background: '#fef2f2', color: 'var(--danger)' }} onClick={() => cancelMutation.mutate(r.id)} disabled={cancelMutation.isPending}>
           <Trash2 size={14} /> Cancel
@@ -90,7 +92,8 @@ export default function LeavePage() {
   const pendingColumns: Column<any>[] = [
     ...requestColumns,
     {
-      key: 'actions', label: 'Actions',
+      key: 'recorded', label: 'Recorded', render: (r: any) => <RecordedDate value={r.created_at} />},
+      { key: 'actions', label: 'Actions',
       render: (r: any) => (
         <div className="actions">
           <button className="btn btn-sm btn-primary" onClick={() => approveMutation.mutate(r.id)} disabled={approveMutation.isPending}>

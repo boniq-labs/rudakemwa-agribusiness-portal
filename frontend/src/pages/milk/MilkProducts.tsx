@@ -4,6 +4,7 @@ import client from '../../api/client';
 import toast from 'react-hot-toast';
 import { Plus, Pencil, Trash2, Package } from 'lucide-react';
 import ModulePage from '../../components/ModulePage';
+import RecordedDate from '../../components/RecordedDate';
 import { useConfirm } from '../../components/ConfirmDialog';
 
 interface Product {
@@ -176,6 +177,7 @@ export default function MilkProducts() {
               {product.quantity > 0 && (
                 <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Qty: {product.quantity}</div>
               )}
+              <RecordedDate value={(product as any).created_at} />
               {product.description && (
                 <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{product.description}</div>
               )}

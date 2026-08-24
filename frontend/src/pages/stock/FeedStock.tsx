@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import ModulePage from '../../components/ModulePage';
 import StatsCard from '../../components/StatsCard';
 import DataTable from '../../components/DataTable';
+import RecordedDate from '../../components/RecordedDate';
 import FormField from '../../components/FormField';
 import { stockAPI } from '../../api/endpoints';
 import { Plus, X, Wheat, ClipboardList, AlertTriangle, UtensilsCrossed, Edit2, Trash2 } from 'lucide-react';
@@ -117,7 +118,8 @@ export default function FeedStock() {
     { key: 'unit', label: 'Unit', render: (f: any) => f.unit || '-' },
     { key: 'expiry_date', label: 'Expiry', render: (f: any) => f.expiry_date || '-' },
     { key: 'supplier_name', label: 'Supplier', render: (f: any) => f.supplier_name || '-' },
-    { key: 'actions', label: 'Actions', render: (f: any) => (
+    { key: 'recorded', label: 'Recorded', render: (r: any) => <RecordedDate value={r.created_at} />},
+      { key: 'actions', label: 'Actions', render: (f: any) => (
       <div className="actions">
         <button className="btn btn-sm" onClick={(e) => { e.stopPropagation(); openEdit(f); }} style={{ background: 'var(--bg)', border: '1px solid var(--border)' }}><Edit2 size={14} /></button>
         <button className="btn btn-sm" onClick={async (e) => { e.stopPropagation(); if (await confirm('Delete this feed item?')) deleteMutation.mutate(f.id); }} style={{ background: '#fef2f2', border: '1px solid #fecaca', color: 'var(--danger)' }} disabled={deleteMutation.isPending}><Trash2 size={14} /></button>

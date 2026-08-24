@@ -4,6 +4,7 @@ import { Plus, FlaskConical, CheckCircle, XCircle, Percent, Edit2, Trash2 } from
 import ModulePage from '../../components/ModulePage';
 import StatsCard from '../../components/StatsCard';
 import DataTable from '../../components/DataTable';
+import RecordedDate from '../../components/RecordedDate';
 import StatusBadge from '../../components/StatusBadge';
 import type { Column } from '../../components/DataTable';
 import { milkAPI } from '../../api/endpoints';
@@ -153,7 +154,8 @@ export default function MilkQuality() {
       render: (r) => <StatusBadge status={r.quality_status} />,
     },
     {
-      key: 'actions', label: 'Actions', render: (r) => (
+      key: 'recorded', label: 'Recorded', render: (r: any) => <RecordedDate value={r.created_at} />},
+      { key: 'actions', label: 'Actions', render: (r) => (
         <div className="actions">
           <button className="btn btn-sm" onClick={(e) => { e.stopPropagation(); openEdit(r); }} style={{ background: 'var(--bg)', border: '1px solid var(--border)' }}><Edit2 size={14} /></button>
           <button className="btn btn-sm" onClick={async (e) => { e.stopPropagation(); if (await confirm('Delete this quality test?')) deleteMutation.mutate(r.id); }} style={{ background: '#fef2f2', border: '1px solid #fecaca', color: 'var(--danger)' }} disabled={deleteMutation.isPending}><Trash2 size={14} /></button>

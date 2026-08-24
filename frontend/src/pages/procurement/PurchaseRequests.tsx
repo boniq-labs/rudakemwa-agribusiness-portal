@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import client from '../../api/client';
 import ModulePage from '../../components/ModulePage';
 import DataTable from '../../components/DataTable';
+import RecordedDate from '../../components/RecordedDate';
 import StatusBadge from '../../components/StatusBadge';
 import FormField from '../../components/FormField';
 import toast from 'react-hot-toast';
@@ -112,7 +113,8 @@ export default function PurchaseRequests() {
     { key: 'requested_by', label: 'Requested By' },
     { key: 'status', label: 'Status', render: (r: any) => <StatusBadge status={r.status || 'pending'} /> },
     {
-      key: 'actions', label: 'Actions', render: (r: any) => (
+      key: 'recorded', label: 'Recorded', render: (r: any) => <RecordedDate value={r.created_at} />},
+      { key: 'actions', label: 'Actions', render: (r: any) => (
         <div className="actions">
           <button className="btn btn-sm" onClick={e => { e.stopPropagation(); openEdit(r); }} style={{ background: 'var(--bg)', border: '1px solid var(--border)' }}><Edit2 size={14} /></button>
           <button className="btn btn-sm" onClick={async e => { e.stopPropagation(); if (await confirm('Delete this request?')) deleteMutation.mutate(r.id); }} style={{ background: '#fef2f2', border: '1px solid #fecaca', color: 'var(--danger)' }} disabled={deleteMutation.isPending}><Trash2 size={14} />{deleteMutation.isPending && ' Deleting...'}</button>

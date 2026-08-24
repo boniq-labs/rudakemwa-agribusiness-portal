@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import ModulePage from '../../components/ModulePage';
 import DataTable from '../../components/DataTable';
+import RecordedDate from '../../components/RecordedDate';
 import StatsCard from '../../components/StatsCard';
 import FormField from '../../components/FormField';
 import Modal from '../../components/Modal';
@@ -163,7 +164,8 @@ export default function FuelPage() {
     { key: 'date', label: 'Date', render: (f: any) => f.date ? new Date(f.date).toLocaleDateString() : '-' },
     { key: 'fuel_type', label: 'Station', render: (f: any) => f.fuel_type || '-' },
     {
-      key: 'actions', label: 'Actions',
+      key: 'recorded', label: 'Recorded', render: (r: any) => <RecordedDate value={r.created_at} />},
+      { key: 'actions', label: 'Actions',
       render: (f: any) => (
         <div style={{ display: 'flex', gap: 4 }}>
           <button className="btn btn-sm" style={{ background: '#dbeafe', color: '#1e40af', border: 'none' }}

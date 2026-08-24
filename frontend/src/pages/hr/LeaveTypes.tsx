@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import ModulePage from '../../components/ModulePage';
 import DataTable from '../../components/DataTable';
+import RecordedDate from '../../components/RecordedDate';
 import FormField from '../../components/FormField';
 import client from '../../api/client';
 import { Plus, Edit2, Trash2, X } from 'lucide-react';
@@ -104,7 +105,8 @@ export default function LeaveTypesPage() {
     { key: 'description', label: 'Description', render: (d: any) => d.description || '-' },
     { key: 'days_allowed', label: 'Days Allowed', render: (d: any) => d.days_allowed ?? '-' },
     {
-      key: 'actions', label: 'Actions',
+      key: 'recorded', label: 'Recorded', render: (r: any) => <RecordedDate value={r.created_at} />},
+      { key: 'actions', label: 'Actions',
       render: (d: any) => (
         <div className="actions">
           <button className="btn btn-sm" style={{ background: 'var(--primary-light)', color: 'var(--primary)' }} onClick={() => openEdit(d)}>

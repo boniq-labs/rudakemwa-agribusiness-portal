@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Thermometer } from 'lucide-react';
 import ModulePage from '../../components/ModulePage';
 import DataTable from '../../components/DataTable';
+import RecordedDate from '../../components/RecordedDate';
 import StatusBadge from '../../components/StatusBadge';
 import type { Column } from '../../components/DataTable';
 import { milkAPI } from '../../api/endpoints';
@@ -93,6 +94,7 @@ export default function MilkStorage() {
     { key: 'quantity_liters', label: 'Quantity', render: (r) => `${r.quantity_liters} L` },
     { key: 'production_date', label: 'Production Date' },
     { key: 'expiry_date', label: 'Expiry' },
+    { key: 'recorded', label: 'Recorded', render: (r: any) => <RecordedDate value={r.created_at} /> },
     { key: 'status', label: 'Status', render: (r) => <StatusBadge status={r.status} /> },
   ];
 

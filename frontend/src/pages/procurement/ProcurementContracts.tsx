@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import ModulePage from '../../components/ModulePage';
 import DataTable from '../../components/DataTable';
+import RecordedDate from '../../components/RecordedDate';
 import StatusBadge from '../../components/StatusBadge';
 import FormField from '../../components/FormField';
 import { Plus, X, AlertTriangle, Edit2, Trash2 } from 'lucide-react';
@@ -145,7 +146,8 @@ export default function ProcurementContracts() {
     },
     { key: 'status', label: 'Status', render: (c: any) => <StatusBadge status={c.status || 'active'} /> },
     {
-      key: 'actions', label: '',
+      key: 'recorded', label: 'Recorded', render: (r: any) => <RecordedDate value={r.created_at} />},
+      { key: 'actions', label: '',
       render: (c: any) => (
         <div className="actions">
           <button className="btn btn-sm btn-ghost" onClick={(e) => { e.stopPropagation(); openEdit(c); }}>

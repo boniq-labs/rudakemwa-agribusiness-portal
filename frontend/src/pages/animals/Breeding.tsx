@@ -5,6 +5,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import client from '../../api/client';
 import ModulePage from '../../components/ModulePage';
 import DataTable from '../../components/DataTable';
+import RecordedDate from '../../components/RecordedDate';
 import StatsCard from '../../components/StatsCard';
 import type { Column } from '../../components/DataTable';
 import { Plus, Edit2, Trash2, HeartPulse, Eye, RefreshCw, CalendarClock, Baby, Flame, Repeat } from 'lucide-react';
@@ -189,7 +190,8 @@ export default function Breeding() {
       } },
     { key: 'expected', label: 'Expected Delivery', render: (i: any) => i.expected_delivery_auto ? new Date(i.expected_delivery_auto).toLocaleDateString() : '-' },
     {
-      key: 'actions', label: 'Actions',
+      key: 'recorded', label: 'Recorded', render: (r: any) => <RecordedDate value={r.created_at} />},
+      { key: 'actions', label: 'Actions',
       render: (i: any) => (
         <div className="actions">
           <button className="btn btn-sm" title="Edit" onClick={() => openEdit(i)}><Edit2 size={14} /></button>
@@ -230,7 +232,8 @@ export default function Breeding() {
       <span style={{ fontSize: '0.8rem' }}>{p.next_action}{p.ready_to_rebreed ? ' 🔄' : ''}</span>
     ) },
     {
-      key: 'actions', label: 'Actions',
+      key: 'recorded', label: 'Recorded', render: (r: any) => <RecordedDate value={r.created_at} />},
+      { key: 'actions', label: 'Actions',
       render: (p: any) => {
         const st = (p.status || '').toLowerCase();
         const decided = ['pregnant', 'confirmed', 'returned heat', 'returned_heat', 'rebred', 'rebreed', 'delivered'].includes(st);

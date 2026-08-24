@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { animalAPI } from '../../api/endpoints';
 import ModulePage from '../../components/ModulePage';
 import DataTable from '../../components/DataTable';
+import RecordedDate from '../../components/RecordedDate';
 import StatusBadge from '../../components/StatusBadge';
 import { Plus, Search, Camera } from 'lucide-react';
 import type { Column } from '../../components/DataTable';
@@ -62,7 +63,8 @@ export default function Cattle() {
     { key: 'weight', label: 'Weight', render: (c: any) => c.weight ? `${c.weight} kg` : '-' },
     { key: 'date_of_birth', label: 'Date of Birth', render: (c: any) => c.date_of_birth ? new Date(c.date_of_birth).toLocaleDateString() : '-' },
     {
-      key: 'actions', label: 'Actions',
+      key: 'recorded', label: 'Recorded', render: (r: any) => <RecordedDate value={r.created_at} />},
+      { key: 'actions', label: 'Actions',
       render: (c: any) => (
         <div className="actions">
           <button className="btn btn-sm" style={{ background: 'var(--bg)', border: '1px solid var(--border)' }} onClick={(e) => { e.stopPropagation(); navigate(`/animals/profile/${c.id}`); }}>View</button>

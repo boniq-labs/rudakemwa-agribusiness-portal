@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import ModulePage from '../../components/ModulePage';
 import DataTable from '../../components/DataTable';
+import RecordedDate from '../../components/RecordedDate';
 import FormField from '../../components/FormField';
 import { performanceAPI, usersAPI } from '../../api/endpoints';
 import { Plus, Edit2, X } from 'lucide-react';
@@ -85,7 +86,8 @@ export default function PerformancePage() {
     },
     { key: 'review_date', label: 'Date', render: (r: any) => r.review_date ? new Date(r.review_date).toLocaleDateString() : '-' },
     {
-      key: 'actions', label: 'Actions',
+      key: 'recorded', label: 'Recorded', render: (r: any) => <RecordedDate value={r.created_at} />},
+      { key: 'actions', label: 'Actions',
       render: (r: any) => (
         <div className="actions">
           <button className="btn btn-sm" style={{ background: 'var(--primary-light)', color: 'var(--primary)' }} onClick={() => openEdit(r)}>

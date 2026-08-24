@@ -4,6 +4,7 @@ import { Plus, Package, Edit2, Trash2 } from 'lucide-react';
 import ModulePage from '../../components/ModulePage';
 import { useConfirm } from '../../components/ConfirmDialog';
 import DataTable from '../../components/DataTable';
+import RecordedDate from '../../components/RecordedDate';
 import type { Column } from '../../components/DataTable';
 import { milkAPI } from '../../api/endpoints';
 import toast from 'react-hot-toast';
@@ -216,7 +217,8 @@ export default function MilkProcessing() {
     { key: 'output_quantity', label: 'Output', render: (r) => `${r.output_quantity}` },
     { key: 'notes', label: 'Notes', render: (r) => r.notes || '-' },
     {
-      key: 'actions', label: 'Actions', render: (r) => (
+      key: 'recorded', label: 'Recorded', render: (r: any) => <RecordedDate value={r.created_at} />},
+      { key: 'actions', label: 'Actions', render: (r) => (
         <div className="actions">
           <button className="btn btn-sm" onClick={(e) => { e.stopPropagation(); openEdit(r); }} style={{ background: 'var(--bg)', border: '1px solid var(--border)' }}><Edit2 size={14} /></button>
           <button className="btn btn-sm" onClick={async (e) => { e.stopPropagation(); if (await confirm('Delete this processing record?')) deleteMutation.mutate(r.id); }} style={{ background: '#fef2f2', border: '1px solid #fecaca', color: 'var(--danger)' }} disabled={deleteMutation.isPending}><Trash2 size={14} /></button>

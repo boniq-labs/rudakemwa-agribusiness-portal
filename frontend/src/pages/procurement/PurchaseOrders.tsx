@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import client from '../../api/client';
 import ModulePage from '../../components/ModulePage';
 import DataTable from '../../components/DataTable';
+import RecordedDate from '../../components/RecordedDate';
 import StatusBadge from '../../components/StatusBadge';
 import FormField from '../../components/FormField';
 import toast from 'react-hot-toast';
@@ -109,7 +110,8 @@ export default function PurchaseOrders() {
     { key: 'payment_method', label: 'Payment Method', render: (o: any) => o.payment_method || '-' },
     { key: 'status', label: 'Status', render: (o: any) => <StatusBadge status={o.status || 'pending'} /> },
     {
-      key: 'actions', label: 'Actions', render: (o: any) => (
+      key: 'recorded', label: 'Recorded', render: (r: any) => <RecordedDate value={r.created_at} />},
+      { key: 'actions', label: 'Actions', render: (o: any) => (
         <div className="actions">
           <button className="btn btn-sm" onClick={e => { e.stopPropagation(); openEdit(o); }} style={{ background: 'var(--bg)', border: '1px solid var(--border)' }}><Edit2 size={14} /></button>
           <button className="btn btn-sm" onClick={async e => { e.stopPropagation(); if (await confirm('Delete this order?')) deleteMutation.mutate(o.id); }} style={{ background: '#fef2f2', border: '1px solid #fecaca', color: 'var(--danger)' }} disabled={deleteMutation.isPending}><Trash2 size={14} />{deleteMutation.isPending && ' Deleting...'}</button>
