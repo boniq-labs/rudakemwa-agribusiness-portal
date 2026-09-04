@@ -26,6 +26,7 @@ import * as m023 from './migrations/023_extend_breeding_pregnancy_enums_workflow
 import * as m024 from './migrations/024_grant_feeding_permissions_to_animal_role';
 import * as m025 from './migrations/025_fix_rugwiza_042_2025_breeding_year';
 import * as m026 from './migrations/026_add_user_account_status';
+import * as m027 from './migrations/027_add_deleted_at_to_purchase_orders';
 
 const migrations = [
   { name: m001.name, up: m001.up },
@@ -54,6 +55,7 @@ const migrations = [
   { name: m024.name, up: m024.up },
   { name: m025.name, up: m025.up },
   { name: m026.name, up: m026.up },
+  { name: m027.name, up: m027.up },
 ];
 
 export async function runMigrations(conn: mysql.Connection): Promise<void> {
