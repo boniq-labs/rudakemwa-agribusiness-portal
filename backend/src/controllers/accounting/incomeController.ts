@@ -15,7 +15,13 @@ export const getIncomeRecords = async (req: AuthRequest, res: Response) => {
     if (ed) { where += ' AND date <= ?'; params.push(ed); }
     if (source) { where += ' AND source = ?'; params.push(source); }
     if (status) { where += ' AND status = ?'; params.push(status); }
-    const [rows]: any = await pool.query(`SELECT * FROM income_records ${where} ORDER BY date DESC`, params);
+    const [rows]: any = await pool.query(
+      `SELECT ir.*, CONCAT(u.first_name, ' ', u.last_name) as created_by_name
+       FROM income_records ir
+       LEFT JOIN users u ON ir.created_by = u.id
+       ${where} ORDER BY ir.date DESC`,
+      params
+    );
     return success(res, rows);
   } catch (err: any) { return error(res, err.message); }
 };
@@ -32,8 +38,8 @@ export const createIncomeRecord = async (req: AuthRequest, res: Response) => {
     const date = b.date || new Date().toISOString().split('T')[0];
     const status = b.status === 'pending' ? 'pending' : 'confirmed';
     const [result]: any = await pool.query(
-      `INSERT INTO income_records (income_number, source, customer_id, amount, payment_method, date, description, status) VALUES (?,?,?,?,?,?,?,?)`,
-      [income_number, source, customer_id || null, amount, payment_method || null, date || null, description || null, status]
+      `INSERT INTO income_records (income_number, source, customer_id, amount, payment_method, date, description, status, created_by) VALUES (?,?,?,?,?,?,?,?,?)`,
+      [income_number, source, customer_id || null, amount, payment_method || null, date || null, description || null, status, req.user?.id || null]
     );
     await logAudit(req, createAuditEntry(req, 'Create Income', 'Accounting', `Income record ${income_number} created`, req.body));
     return created(res, { id: result.insertId }, 'Income record created');

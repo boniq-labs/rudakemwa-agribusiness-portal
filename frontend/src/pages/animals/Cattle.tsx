@@ -63,7 +63,7 @@ export default function Cattle() {
     { key: 'weight', label: 'Weight', render: (c: any) => c.weight ? `${c.weight} kg` : '-' },
     { key: 'date_of_birth', label: 'Date of Birth', render: (c: any) => c.date_of_birth ? new Date(c.date_of_birth).toLocaleDateString() : '-' },
     {
-      key: 'recorded', label: 'Recorded', render: (r: any) => <RecordedDate value={r.created_at} />},
+      key: 'recorded', label: 'Recorded', render: (r: any) => <RecordedDate value={r.created_at} createdByName={r.created_by_name} />},
       { key: 'actions', label: 'Actions',
       render: (c: any) => (
         <div className="actions">

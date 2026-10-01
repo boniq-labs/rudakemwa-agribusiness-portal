@@ -37,13 +37,16 @@ export const getCustomers = async (req: AuthRequest, res: Response) => {
     if (search) { where += ' AND (CONCAT(c.first_name,\' \',c.last_name) LIKE ? OR c.company_name LIKE ? OR c.email LIKE ? OR c.phone LIKE ?)'; params.push(`%${search}%`, `%${search}%`, `%${search}%`, `%${search}%`); }
     const [rows]: any = await pool.query(
       `SELECT c.*, CONCAT(c.first_name, ' ', c.last_name) as name,
+       CONCAT(u.first_name, ' ', u.last_name) as created_by_name,
        COALESCE((SELECT SUM(total_amount) FROM sales_orders WHERE customer_id = c.id AND status = 'completed' AND deleted_at IS NULL), 0) as total_purchase_amount,
        (SELECT COUNT(*) FROM sales_order_items soi JOIN sales_orders so2 ON soi.order_id = so2.id WHERE so2.customer_id = c.id AND so2.deleted_at IS NULL) as product_sale_count,
        (SELECT COUNT(*) FROM sales_orders WHERE customer_id = c.id AND status='completed' AND deleted_at IS NULL) as completed_order_count,
        (SELECT amount FROM income_records WHERE customer_id = c.id AND description LIKE 'Other Sale -%' AND deleted_at IS NULL ORDER BY id DESC LIMIT 1) as last_other_amount,
        (SELECT payment_method FROM income_records WHERE customer_id = c.id AND description LIKE 'Other Sale -%' AND deleted_at IS NULL ORDER BY id DESC LIMIT 1) as last_other_payment_method,
        (SELECT description FROM income_records WHERE customer_id = c.id AND description LIKE 'Other Sale -%' AND deleted_at IS NULL ORDER BY id DESC LIMIT 1) as last_other_description
-       FROM customers c ${where} ORDER BY c.created_at DESC`, params
+       FROM customers c
+       LEFT JOIN users u ON c.created_by = u.id
+       ${where} ORDER BY c.created_at DESC`, params
     );
     return success(res, rows);
   } catch (err: any) { return error(res, err.message); }
@@ -136,9 +139,9 @@ export const createCustomer = async (req: AuthRequest, res: Response) => {
         // balance follows existing convention = payment amount (product sale or other sale)
         const initialBalance = (isSale || isOtherSale) ? paymentAmount : Math.max(0, Number(b.initial_payment) || 0);
         const [result]: any = await conn.query(
-          `INSERT INTO customers (first_name, last_name, company_name, phone, email, address, customer_type, credit_limit, payment_terms, customer_code, balance)
-           VALUES (?,?,?,?,?,?,?,?,?,?,?)`,
-          [first_name, last_name, company_name || null, phone || null, email || null, address || null, customer_type, credit_limit || null, payment_terms || null, customer_code, initialBalance]
+          `INSERT INTO customers (first_name, last_name, company_name, phone, email, address, customer_type, credit_limit, payment_terms, customer_code, balance, created_by)
+           VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`,
+          [first_name, last_name, company_name || null, phone || null, email || null, address || null, customer_type, credit_limit || null, payment_terms || null, customer_code, initialBalance, req.user?.id || null]
         );
         return result.insertId;
       }

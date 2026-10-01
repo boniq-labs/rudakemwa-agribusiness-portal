@@ -190,7 +190,7 @@ export default function CustomersPage() {
     { key: 'type', label: 'Type', render: (c: any) => c.type || 'regular' },
     { key: 'total_purchase_amount', label: 'Total Purchase', render: (c: any) => `RWF ${Number(c.total_purchase_amount || 0).toLocaleString()}` },
     {
-      key: 'recorded', label: 'Recorded', render: (r: any) => <RecordedDate value={r.created_at} />},
+      key: 'recorded', label: 'Recorded', render: (r: any) => <RecordedDate value={r.created_at} createdByName={r.created_by_name} />},
       { key: 'actions', label: 'Actions',
       render: (c: any) => (
         <div style={{ display: 'flex', gap: 4 }}>

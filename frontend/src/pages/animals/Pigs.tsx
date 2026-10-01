@@ -63,7 +63,7 @@ export default function Pigs() {
     { key: 'weight', label: 'Weight', render: (p: any) => p.weight ? `${p.weight} kg` : '-' },
     { key: 'date_of_birth', label: 'Date of Birth', render: (p: any) => p.date_of_birth ? new Date(p.date_of_birth).toLocaleDateString() : '-' },
     {
-      key: 'recorded', label: 'Recorded', render: (r: any) => <RecordedDate value={r.created_at} />},
+      key: 'recorded', label: 'Recorded', render: (r: any) => <RecordedDate value={r.created_at} createdByName={r.created_by_name} />},
       { key: 'actions', label: 'Actions',
       render: (p: any) => (
         <div className="actions">

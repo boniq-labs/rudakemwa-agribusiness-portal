@@ -19,10 +19,8 @@ export default function IncomePage() {
   const queryClient = useQueryClient();
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState<any>(null);
-  const [dateFrom, setDateFrom] = useState(() => {
-    const d = new Date(); d.setDate(1); return d.toISOString().split('T')[0];
-  });
-  const [dateTo, setDateTo] = useState(() => new Date().toISOString().split('T')[0]);
+  const [dateFrom, setDateFrom] = useState(() => '');
+  const [dateTo, setDateTo] = useState(() => '');
   const [form, setForm] = useState({ amount: '', category: '', date: new Date().toISOString().split('T')[0], description: '', payment_method: 'Cash', reference: '' });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const confirm = useConfirm();
@@ -133,7 +131,7 @@ export default function IncomePage() {
       ),
     },
     {
-      key: 'recorded', label: 'Recorded', render: (r: any) => <RecordedDate value={r.created_at} />},
+      key: 'recorded', label: 'Recorded', render: (r: any) => <RecordedDate value={r.created_at} createdByName={r.created_by_name} />},
       { key: 'actions', label: 'Actions',
       render: (i: any) => (
         <div className="actions">

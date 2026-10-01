@@ -145,11 +145,13 @@ export const getAnimals = async (req: AuthRequest, res: Response) => {
     const [[{ total }]]: any = await pool.query(countQuery, params);
 
     const dataQuery = `
-      SELECT a.*, ac.name as category_name, b.name as breed_name, l.name as location_name
+      SELECT a.*, ac.name as category_name, b.name as breed_name, l.name as location_name,
+             CONCAT(u.first_name, ' ', u.last_name) as created_by_name
       FROM animals a
       JOIN animal_categories ac ON a.animal_category_id = ac.id
       LEFT JOIN breeds b ON a.breed_id = b.id
       LEFT JOIN animal_locations l ON a.location_id = l.id
+      LEFT JOIN users u ON a.created_by = u.id
       WHERE a.deleted_at IS NULL ${where} ${filters}
       ORDER BY a.${pag.sort} ${pag.order} LIMIT ? OFFSET ?`;
     const [rows]: any = await pool.query(dataQuery, [...params, pag.limit, pag.offset]);
@@ -162,11 +164,13 @@ export const getAnimalProfile = async (req: AuthRequest, res: Response) => {
   try {
     const [rows]: any = await pool.query(
       `SELECT a.*, ac.name as category_name, b.name as breed_name, l.name as location_name,
-              (SELECT weight FROM weight_records WHERE animal_id = a.id ORDER BY date DESC LIMIT 1) as latest_weight
+              (SELECT weight FROM weight_records WHERE animal_id = a.id ORDER BY date DESC LIMIT 1) as latest_weight,
+              CONCAT(u.first_name, ' ', u.last_name) as created_by_name
        FROM animals a
        JOIN animal_categories ac ON a.animal_category_id = ac.id
        LEFT JOIN breeds b ON a.breed_id = b.id
        LEFT JOIN animal_locations l ON a.location_id = l.id
+       LEFT JOIN users u ON a.created_by = u.id
        WHERE a.id = ? AND a.deleted_at IS NULL`,
       [req.params.id]
     );
@@ -184,9 +188,9 @@ export const createAnimal = async (req: AuthRequest, res: Response) => {
     if (existing.length > 0) return error(res, 'Tag number already exists', 400);
 
     const [result]: any = await pool.query(
-      `INSERT INTO animals (tag_number, name, animal_category_id, breed_id, gender, color, date_of_birth, weight, height, source, purchase_price, is_dairy, location_id, group_id, photo, feed_type, animal_status, status)
-       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
-      [tag_number, name, animal_category_id, breed_id || null, gender, color, date_of_birth || null, weight, height, source, purchase_price, is_dairy ?? false, location_id || null, group_id || null, photo || null, feed_type || null, animal_status || null, 'active']
+      `INSERT INTO animals (tag_number, name, animal_category_id, breed_id, gender, color, date_of_birth, weight, height, source, purchase_price, is_dairy, location_id, group_id, photo, feed_type, animal_status, status, created_by)
+       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+      [tag_number, name, animal_category_id, breed_id || null, gender, color, date_of_birth || null, weight, height, source, purchase_price, is_dairy ?? false, location_id || null, group_id || null, photo || null, feed_type || null, animal_status || null, 'active', req.user?.id || null]
     );
 
     await logAudit(req, createAuditEntry(req, 'Create Animal', 'Animals', `Created animal ${tag_number}`, { tag_number, name, animal_category_id, breed_id, gender }));
