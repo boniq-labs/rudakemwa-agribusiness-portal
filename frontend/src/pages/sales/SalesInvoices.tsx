@@ -145,7 +145,7 @@ export default function SalesInvoices() {
     },
     { key: 'status', label: 'Status' },
     {
-      key: 'recorded', label: 'Recorded', render: (r: any) => <RecordedDate value={r.created_at} />},
+      key: 'recorded', label: 'Recorded', render: (r: any) => <RecordedDate value={r.created_at} createdByName={r.created_by_name} />},
       { key: 'actions', label: 'Actions',
       render: (inv: any) => (
         <div style={{ display: 'flex', gap: 4 }}>

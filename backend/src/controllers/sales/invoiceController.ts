@@ -16,8 +16,11 @@ export const getSalesInvoices = async (req: AuthRequest, res: Response) => {
     if (sd) { where += ' AND si.invoice_date >= ?'; params.push(sd); }
     if (ed) { where += ' AND si.invoice_date <= ?'; params.push(ed); }
     const [rows]: any = await pool.query(
-      `SELECT si.*, CONCAT(c.first_name, ' ', c.last_name) as customer_name, c.company_name
-       FROM sales_invoices si LEFT JOIN customers c ON si.customer_id = c.id
+      `SELECT si.*, CONCAT(c.first_name, ' ', c.last_name) as customer_name, c.company_name,
+              CONCAT(u.first_name, ' ', u.last_name) as created_by_name
+       FROM sales_invoices si
+       LEFT JOIN customers c ON si.customer_id = c.id
+       LEFT JOIN users u ON si.created_by = u.id
        ${where} ORDER BY si.created_at DESC`, params
     );
     return success(res, rows);
@@ -40,8 +43,8 @@ export const createSalesInvoice = async (req: AuthRequest, res: Response) => {
     const invoiceNumber = b.invoice_number || `INV-${Date.now()}`;
     const invoice_date = b.invoice_date || new Date().toISOString().split('T')[0];
     const [result]: any = await pool.query(
-      `INSERT INTO sales_invoices (invoice_number, customer_id, order_id, subtotal, tax, total_amount, due_date, invoice_date, notes) VALUES (?,?,?,?,?,?,?,?,?)`,
-      [invoiceNumber, customer_id || null, order_id || null, subtotal || null, taxAmount, total_amount, b.due_date || null, invoice_date, b.notes || null]
+      `INSERT INTO sales_invoices (invoice_number, customer_id, order_id, subtotal, tax, total_amount, due_date, invoice_date, notes, created_by) VALUES (?,?,?,?,?,?,?,?,?,?)`,
+      [invoiceNumber, customer_id || null, order_id || null, subtotal || null, taxAmount, total_amount, b.due_date || null, invoice_date, b.notes || null, req.user?.id || null]
     );
     for (const item of items) {
       await pool.query(

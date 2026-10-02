@@ -149,7 +149,7 @@ export default function OrdersPage() {
     },
     { key: 'status', label: 'Status' },
     {
-      key: 'recorded', label: 'Recorded', render: (r: any) => <RecordedDate value={r.created_at} />},
+      key: 'recorded', label: 'Recorded', render: (r: any) => <RecordedDate value={r.created_at} createdByName={r.created_by_name} />},
       { key: 'actions', label: 'Actions',
       render: (o: any) => (
         <div style={{ display: 'flex', gap: 4 }}>

@@ -16,8 +16,11 @@ export const getSalesOrders = async (req: AuthRequest, res: Response) => {
     if (sd) { where += ' AND so.order_date >= ?'; params.push(sd); }
     if (ed) { where += ' AND so.order_date <= ?'; params.push(ed); }
     const [rows]: any = await pool.query(
-      `SELECT so.*, CONCAT(c.first_name, ' ', c.last_name) as customer_name, c.company_name
-       FROM sales_orders so LEFT JOIN customers c ON so.customer_id = c.id
+      `SELECT so.*, CONCAT(c.first_name, ' ', c.last_name) as customer_name, c.company_name,
+              CONCAT(u.first_name, ' ', u.last_name) as created_by_name
+       FROM sales_orders so
+       LEFT JOIN customers c ON so.customer_id = c.id
+       LEFT JOIN users u ON so.created_by = u.id
        ${where} ORDER BY so.created_at DESC`, params
     );
     if (rows.length > 0) {
@@ -47,8 +50,8 @@ export const createSalesOrder = async (req: AuthRequest, res: Response) => {
     const total_amount = (b.total_amount && b.total_amount > 0) ? b.total_amount : items.reduce((sum: number, item: any) => sum + (item.quantity * item.unit_price), 0);
     const order_date = b.order_date || new Date().toISOString().split('T')[0];
     const [result]: any = await pool.query(
-      `INSERT INTO sales_orders (order_number, customer_id, total_amount, order_date, notes) VALUES (?,?,?,?,?)`,
-      [order_number, b.customer_id, total_amount, order_date, b.notes || null]
+      `INSERT INTO sales_orders (order_number, customer_id, total_amount, order_date, notes, created_by) VALUES (?,?,?,?,?,?)`,
+      [order_number, b.customer_id, total_amount, order_date, b.notes || null, req.user?.id || null]
     );
     for (const item of items) {
       await pool.query(
@@ -92,8 +95,11 @@ export const getQuotations = async (req: AuthRequest, res: Response) => {
     if (customer_id) { where += ' AND q.customer_id = ?'; params.push(customer_id); }
     if (status) { where += ' AND q.status = ?'; params.push(status); }
     const [rows]: any = await pool.query(
-      `SELECT q.*, CONCAT(c.first_name, ' ', c.last_name) as customer_name, c.company_name
-       FROM sales_quotations q LEFT JOIN customers c ON q.customer_id = c.id
+      `SELECT q.*, CONCAT(c.first_name, ' ', c.last_name) as customer_name, c.company_name,
+              CONCAT(u.first_name, ' ', u.last_name) as created_by_name
+       FROM sales_quotations q
+       LEFT JOIN customers c ON q.customer_id = c.id
+       LEFT JOIN users u ON q.created_by = u.id
        ${where} ORDER BY q.created_at DESC`, params
     );
     return success(res, rows);
@@ -106,8 +112,8 @@ export const createQuotation = async (req: AuthRequest, res: Response) => {
     const qNumber = quotation_number || `QTN-${Date.now()}`;
     const total_amount = items ? items.reduce((sum: number, item: any) => sum + (item.quantity * item.unit_price), 0) : 0;
     const [result]: any = await pool.query(
-      `INSERT INTO sales_quotations (quotation_number, customer_id, total_amount) VALUES (?,?,?)`,
-      [qNumber, customer_id, total_amount]
+      `INSERT INTO sales_quotations (quotation_number, customer_id, total_amount, created_by) VALUES (?,?,?,?)`,
+      [qNumber, customer_id, total_amount, req.user?.id || null]
     );
     for (const item of items || []) {
       await pool.query(
@@ -127,8 +133,8 @@ export const convertQuotationToOrder = async (req: AuthRequest, res: Response) =
     const [qItems]: any = await pool.query('SELECT * FROM sales_quotation_items WHERE quotation_id = ?', [req.params.id]);
     const orderNumber = `ORD-${Date.now()}`;
     const [orderResult]: any = await pool.query(
-      `INSERT INTO sales_orders (order_number, customer_id, total_amount, notes) VALUES (?,?,?,?)`,
-      [orderNumber, quotation[0].customer_id, quotation[0].total_amount, quotation[0].notes]
+      `INSERT INTO sales_orders (order_number, customer_id, total_amount, notes, created_by) VALUES (?,?,?,?,?)`,
+      [orderNumber, quotation[0].customer_id, quotation[0].total_amount, quotation[0].notes, req.user?.id || null]
     );
     for (const item of qItems) {
       await pool.query(
