@@ -132,9 +132,10 @@ export const convertQuotationToOrder = async (req: AuthRequest, res: Response) =
     if (quotation.length === 0) return error(res, 'Quotation not found', 404);
     const [qItems]: any = await pool.query('SELECT * FROM sales_quotation_items WHERE quotation_id = ?', [req.params.id]);
     const orderNumber = `ORD-${Date.now()}`;
+    const orderDate = new Date().toISOString().split('T')[0];
     const [orderResult]: any = await pool.query(
-      `INSERT INTO sales_orders (order_number, customer_id, total_amount, notes, created_by) VALUES (?,?,?,?,?)`,
-      [orderNumber, quotation[0].customer_id, quotation[0].total_amount, quotation[0].notes, req.user?.id || null]
+      `INSERT INTO sales_orders (order_number, customer_id, total_amount, order_date, notes, created_by) VALUES (?,?,?,?,?,?)`,
+      [orderNumber, quotation[0].customer_id, quotation[0].total_amount, orderDate, quotation[0].notes, req.user?.id || null]
     );
     for (const item of qItems) {
       await pool.query(
