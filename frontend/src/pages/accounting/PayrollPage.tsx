@@ -107,7 +107,7 @@ const deleteMutation = useMutation({
       ),
     },
     {
-      key: 'recorded', label: 'Recorded', render: (r: any) => <RecordedDate value={r.created_at} />},
+      key: 'recorded', label: 'Recorded', render: (r: any) => <RecordedDate value={r.created_at} createdByName={r.created_by_name} />},
       { key: 'actions', label: 'Actions',
       render: (p: any) => (
         <div className="actions">

@@ -153,7 +153,7 @@ export default function AccountingInvoices() {
     { key: 'due_date', label: 'Due Date', render: (inv: any) => inv.due_date ? new Date(inv.due_date).toLocaleDateString() : '-' },
     { key: 'status', label: 'Status', render: (inv: any) => <StatusBadge status={inv.status} /> },
     {
-      key: 'recorded', label: 'Recorded', render: (r: any) => <RecordedDate value={r.created_at} />},
+      key: 'recorded', label: 'Recorded', render: (r: any) => <RecordedDate value={r.created_at} createdByName={r.created_by_name} />},
       { key: 'actions', label: '',
       render: (inv: any) => (
         <div className="actions">

@@ -156,7 +156,7 @@ export default function BudgetsPage() {
       return pct > 100 ? <span style={{ color: 'var(--danger)' }}>Over budget</span> : pct > 80 ? <span style={{ color: 'var(--warning)' }}>Nearly Exhausted</span> : <span style={{ color: 'var(--success)' }}>On Track</span>;
     }},
     {
-      key: 'recorded', label: 'Recorded', render: (r: any) => <RecordedDate value={r.created_at} />},
+      key: 'recorded', label: 'Recorded', render: (r: any) => <RecordedDate value={r.created_at} createdByName={r.created_by_name} />},
       { key: 'actions', label: '',
       render: (b: any) => (
         <div className="actions">

@@ -13,8 +13,11 @@ export const getInvoices = async (req: AuthRequest, res: Response) => {
     if (type) { where += ' AND i.type = ?'; params.push(type); }
     if (status) { where += ' AND i.status = ?'; params.push(status); }
     const [rows]: any = await pool.query(
-      `SELECT i.*, c.first_name, c.last_name, c.company_name
-       FROM invoices i LEFT JOIN customers c ON i.customer_id = c.id
+      `SELECT i.*, c.first_name, c.last_name, c.company_name,
+              CONCAT(u.first_name, ' ', u.last_name) as created_by_name
+       FROM invoices i
+       LEFT JOIN customers c ON i.customer_id = c.id
+       LEFT JOIN users u ON i.created_by = u.id
        ${where} ORDER BY i.created_at DESC`, params
     );
     return success(res, rows);
@@ -29,8 +32,8 @@ export const createInvoice = async (req: AuthRequest, res: Response) => {
     const computedTotal = safeItems.reduce((sum: number, item: any) => sum + (item.quantity * item.unit_price), 0);
     const finalTotal = total_amount || computedTotal + (Number(tax) || 0);
     const [result]: any = await pool.query(
-      `INSERT INTO invoices (invoice_number, customer_id, type, total_amount, tax, due_date, notes) VALUES (?,?,?,?,?,?,?)`,
-      [invNumber, customer_id || null, type || 'income', finalTotal, Number(tax) || 0, due_date || null, notes || null]
+      `INSERT INTO invoices (invoice_number, customer_id, type, total_amount, tax, due_date, notes, created_by) VALUES (?,?,?,?,?,?,?,?)`,
+      [invNumber, customer_id || null, type || 'income', finalTotal, Number(tax) || 0, due_date || null, notes || null, req.user?.id || null]
     );
     for (const item of safeItems) {
       await pool.query(

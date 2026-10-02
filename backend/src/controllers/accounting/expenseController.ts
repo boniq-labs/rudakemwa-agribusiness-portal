@@ -44,10 +44,12 @@ export const getExpenseRecords = async (req: AuthRequest, res: Response) => {
     if (ed) { where += ' AND e.date <= ?'; params.push(ed); }
     if (status) { where += ' AND e.status = ?'; params.push(status); }
     const [rows]: any = await pool.query(
-      `SELECT e.*, ec.name as category_name, d.name as department_name
+      `SELECT e.*, ec.name as category_name, d.name as department_name,
+              CONCAT(u.first_name, ' ', u.last_name) as created_by_name
        FROM expense_records e
        LEFT JOIN expense_categories ec ON e.category_id = ec.id
        LEFT JOIN departments d ON e.department_id = d.id
+       LEFT JOIN users u ON e.created_by = u.id
        ${where} ORDER BY e.date DESC`, params
     );
     return success(res, rows);
@@ -75,8 +77,8 @@ export const createExpenseRecord = async (req: AuthRequest, res: Response) => {
     // record's creation timestamp (created_at) is always set by the database.
     const recordDate = b.date || new Date().toISOString().split('T')[0];
     const [result]: any = await pool.query(
-      `INSERT INTO expense_records (expense_number, category_id, description, amount, payment_method, vendor, notes, date, department_id, status) VALUES (?,?,?,?,?,?,?,?,?,?)`,
-      [genExpenseNumber, category_id, b.description || null, b.amount, payment_method || null, b.vendor || null, b.notes || null, recordDate, b.department_id || null, status]
+      `INSERT INTO expense_records (expense_number, category_id, description, amount, payment_method, vendor, notes, date, department_id, status, created_by) VALUES (?,?,?,?,?,?,?,?,?,?,?)`,
+      [genExpenseNumber, category_id, b.description || null, b.amount, payment_method || null, b.vendor || null, b.notes || null, recordDate, b.department_id || null, status, req.user?.id || null]
     );
     await logAudit(req, createAuditEntry(req, 'Create Expense', 'Accounting', `Expense record ${genExpenseNumber} created`, req.body));
     return created(res, { id: result.insertId }, 'Expense record created');

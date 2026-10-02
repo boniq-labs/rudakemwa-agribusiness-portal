@@ -12,9 +12,11 @@ export const getPayrollRecords = async (req: AuthRequest, res: Response) => {
     if (month) { where += ' AND p.month = ?'; params.push(month); }
     if (status) { where += ' AND p.status = ?'; params.push(status); }
     const [rows]: any = await pool.query(
-      `SELECT p.*, COUNT(pi.id) as total_employees, SUM(pi.net_salary) as total_payroll
+      `SELECT p.*, CONCAT(u.first_name, ' ', u.last_name) as created_by_name,
+              COUNT(pi.id) as total_employees, SUM(pi.net_salary) as total_payroll
        FROM payroll_records p
        LEFT JOIN payroll_items pi ON p.id = pi.payroll_id
+       LEFT JOIN users u ON p.created_by = u.id
        ${where} GROUP BY p.id ORDER BY p.created_at DESC`, params
     );
     return success(res, rows);
@@ -36,7 +38,7 @@ export const createPayroll = async (req: AuthRequest, res: Response) => {
     const total_net = employees.reduce((sum: number, e: any) => sum + Number(e.net_salary || 0), 0);
     const prNumber = `PR-${month}-${Date.now()}`;
     const [result]: any = await pool.query(
-      'INSERT INTO payroll_records (payroll_number, month, total_gross, total_deductions, total_net, status) VALUES (?,?,?,?,?,?)', [prNumber, month, total_gross, total_deductions, total_net, 'pending']
+      'INSERT INTO payroll_records (payroll_number, month, total_gross, total_deductions, total_net, status, created_by) VALUES (?,?,?,?,?,?,?)', [prNumber, month, total_gross, total_deductions, total_net, 'pending', req.user?.id || null]
     );
     for (const emp of employees) {
       await pool.query(
@@ -134,8 +136,8 @@ export const createSalaryPayment = async (req: AuthRequest, res: Response) => {
     const notes = `Salary payment for ${name}${comment ? ` - ${comment}` : ''}`;
 
     const [result]: any = await pool.query(
-      `INSERT INTO expense_records (expense_number, category_id, description, amount, payment_method, vendor, notes, date, department_id, status) VALUES (?,?,?,?,?,?,?,?,?,?)`,
-      [expenseNumber, categoryId, `Salary payment for ${name} (Phone: ${phone})`, salaryAmount, paymentMethod || null, name, notes, date, null, 'pending']
+      `INSERT INTO expense_records (expense_number, category_id, description, amount, payment_method, vendor, notes, date, department_id, status, created_by) VALUES (?,?,?,?,?,?,?,?,?,?,?)`,
+      [expenseNumber, categoryId, `Salary payment for ${name} (Phone: ${phone})`, salaryAmount, paymentMethod || null, name, notes, date, null, 'pending', req.user?.id || null]
     );
 
     await logAudit(req, createAuditEntry(req, 'Create Salary Payment', 'Accounting', `Salary payment for ${name} recorded (pending)`, { name, salary: salaryAmount, date, phone, payment_method, comment }));
@@ -151,9 +153,11 @@ export const getSalaryPayments = async (req: AuthRequest, res: Response) => {
     const params: any[] = ['Salaries'];
     if (status) { where += ' AND e.status = ?'; params.push(status); }
     const [rows]: any = await pool.query(
-      `SELECT e.*, ec.name as category_name
+      `SELECT e.*, ec.name as category_name,
+              CONCAT(u.first_name, ' ', u.last_name) as created_by_name
        FROM expense_records e
        LEFT JOIN expense_categories ec ON e.category_id = ec.id
+       LEFT JOIN users u ON e.created_by = u.id
        ${where} ORDER BY e.date DESC, e.id DESC`, params
     );
     return success(res, rows);

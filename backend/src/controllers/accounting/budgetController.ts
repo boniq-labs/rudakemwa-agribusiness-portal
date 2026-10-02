@@ -12,8 +12,11 @@ export const getBudgets = async (req: AuthRequest, res: Response) => {
     if (department_id) { where += ' AND b.department_id = ?'; params.push(department_id); }
     if (fiscal_year) { where += ' AND b.fiscal_year = ?'; params.push(fiscal_year); }
     const [rows]: any = await pool.query(
-      `SELECT b.*, d.name as department_name
-       FROM budgets b LEFT JOIN departments d ON b.department_id = d.id
+      `SELECT b.*, d.name as department_name,
+              CONCAT(u.first_name, ' ', u.last_name) as created_by_name
+       FROM budgets b
+       LEFT JOIN departments d ON b.department_id = d.id
+       LEFT JOIN users u ON b.created_by = u.id
        ${where} ORDER BY b.created_at DESC`, params
     );
     return success(res, rows);
@@ -24,8 +27,8 @@ export const createBudget = async (req: AuthRequest, res: Response) => {
   try {
     const { name, department_id, fiscal_year, total_amount, items } = req.body;
     const [result]: any = await pool.query(
-      `INSERT INTO budgets (name, department_id, fiscal_year, total_amount) VALUES (?,?,?,?)`,
-      [name, department_id, fiscal_year, total_amount]
+      `INSERT INTO budgets (name, department_id, fiscal_year, total_amount, created_by) VALUES (?,?,?,?,?)`,
+      [name, department_id, fiscal_year, total_amount, req.user?.id || null]
     );
     for (const item of items || []) {
       const catId = item.category_id || item.expense_category_id;
