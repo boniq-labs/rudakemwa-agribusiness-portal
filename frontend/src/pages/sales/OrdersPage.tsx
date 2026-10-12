@@ -11,6 +11,7 @@ import Modal from '../../components/Modal';
 import FormField from '../../components/FormField';
 import type { Column } from '../../components/DataTable';
 import { Plus, Search } from 'lucide-react';
+import VoiceRecorder from '../../components/VoiceRecorder';
 
 interface OrderForm {
   customer_id: string;
@@ -36,6 +37,7 @@ export default function OrdersPage() {
   const [search, setSearch] = useState('');
   const [editId, setEditId] = useState<number | null>(null);
   const [form, setForm] = useState<OrderForm>(initialForm);
+  const [orderJustCreated, setOrderJustCreated] = useState(false);
   const confirm = useConfirm();
 
   useEffect(() => {
@@ -43,6 +45,14 @@ export default function OrdersPage() {
       setShowModal(true);
     }
   }, [searchParams, editId]);
+
+  // Reset orderJustCreated after VoiceRecorder uses it
+  useEffect(() => {
+    if (orderJustCreated) {
+      const timer = setTimeout(() => setOrderJustCreated(false), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [orderJustCreated]);
 
   const { data, isLoading } = useQuery({
     queryKey: ['sales-orders'],
@@ -59,12 +69,21 @@ export default function OrdersPage() {
     queryFn: () => client.get('/sales/products').then(r => r.data.data || []),
   });
 
+  const [pendingRecorder, setPendingRecorder] = useState<{ upload: (ids: { salesOrderId?: number; customerId?: number }) => Promise<void>; cancel: () => void } | null>(null);
+
   const createMutation = useMutation({
     mutationFn: (d: any) => client.post('/sales/orders', d),
-    onSuccess: () => {
+    onSuccess: (response) => {
       queryClient.invalidateQueries({ queryKey: ['sales-orders'] });
       queryClient.invalidateQueries({ queryKey: ['sales-dashboard'] });
       toast.success('Order created');
+
+      // If there's a pending recording, upload it with the new order ID
+      if (pendingRecorder && response.data?.id) {
+        pendingRecorder.upload({ salesOrderId: response.data.id });
+      }
+
+      setOrderJustCreated(true);
       setShowModal(false);
       setForm(initialForm);
     },
@@ -223,6 +242,17 @@ export default function OrdersPage() {
           <FormField label="Notes">
             <textarea className="form-input" value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} rows={2} />
           </FormField>
+{!editId && (
+            <VoiceRecorder
+              salesOrderId={undefined}
+              shouldStop={orderJustCreated}
+              onSaved={(recording) => console.log('Recording saved:', recording)}
+              onReadyToUpload={(recorder) => {
+                // Store the recorder to upload later when we have the order ID
+                setPendingRecorder(recorder);
+              }}
+            />
+          )}
           <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 20 }}>
             <button type="button" className="btn" onClick={() => setShowModal(false)}>Cancel</button>
             <button type="submit" className="btn btn-primary" disabled={createMutation.isPending || updateMutation.isPending}>

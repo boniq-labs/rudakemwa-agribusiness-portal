@@ -29,6 +29,7 @@ import * as m026 from './migrations/026_add_user_account_status';
 import * as m027 from './migrations/027_add_deleted_at_to_purchase_orders';
 import * as m028 from './migrations/028_add_created_by_to_customers';
 import * as m029 from './migrations/029_add_created_by_to_animals';
+import * as m030 from './migrations/030_create_sales_voice_recordings';
 
 const migrations = [
   { name: m001.name, up: m001.up },
@@ -60,6 +61,7 @@ const migrations = [
   { name: m027.name, up: m027.up },
   { name: m028.name, up: m028.up },
   { name: m029.name, up: m029.up },
+  { name: m030.name, up: m030.up },
 ];
 
 export async function runMigrations(conn: mysql.Connection): Promise<void> {

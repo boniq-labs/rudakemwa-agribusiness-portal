@@ -33,6 +33,7 @@ import { getDepartments, createDepartment, updateDepartment, deleteDepartment } 
 import { getRoles, createRole, updateRole, deleteRole } from '../controllers/roleController';
 import { getSettings, updateSettings } from '../controllers/settingsController';
 import { uploadSingle } from '../middlewares/upload';
+import { uploadVoiceRecording } from '../middlewares/voiceUpload';
 import { uploadFile } from '../controllers/uploadController';
 import { getShiftEmployees, getShifts, getMyShift, createShift, updateShift, deleteShift } from '../controllers/shiftController';
 
@@ -71,6 +72,7 @@ import { getCustomers, createCustomer, updateCustomer, deleteCustomer } from '..
 import { getProductCategories, createProductCategory, updateProductCategory, getProducts, createProduct, updateProduct, deleteProduct, updateProductStock } from '../controllers/sales/productController';
 import { getSalesOrders, createSalesOrder, updateSalesOrderStatus, getQuotations, createQuotation, convertQuotationToOrder } from '../controllers/sales/orderController';
 import { getSalesInvoices, createSalesInvoice, recordCustomerPayment } from '../controllers/sales/invoiceController';
+import { createVoiceRecording, getVoiceRecordings, deleteVoiceRecording } from '../controllers/sales/voiceRecordingController';
 
 import { getIncomeRecords, createIncomeRecord, updateIncomeRecord, deleteIncomeRecord, confirmIncomeRecord, getIncomeSummary } from '../controllers/accounting/incomeController';
 import { getExpenseCategories, createExpenseCategory, updateExpenseCategory, getExpenseRecords, createExpenseRecord, updateExpenseRecord, deleteExpenseRecord, confirmExpenseRecord, getExpenseSummary } from '../controllers/accounting/expenseController';
@@ -1067,6 +1069,11 @@ router.get('/accounting/summary', authenticate, authorize(['reports.view']), get
 
 // Sales aliases
 router.put('/sales/invoices/:id/pay', authenticate, authorize(['sales_invoices.update']), recordCustomerPayment);
+
+// Sales Voice Recordings
+router.post('/sales/voice-recordings', authenticate, authorize(['orders.create']), uploadVoiceRecording, createVoiceRecording);
+router.get('/sales/voice-recordings', authenticate, authorize(['orders.view']), getVoiceRecordings);
+router.delete('/sales/voice-recordings/:id', authenticate, authorize(['orders.delete']), deleteVoiceRecording);
 
 // Veterinary aliases
 router.get('/veterinary/health-records', authenticate, authorize(['veterinary.view']), getVeterinaryHealth);

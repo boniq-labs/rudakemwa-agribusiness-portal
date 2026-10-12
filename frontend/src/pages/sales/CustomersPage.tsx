@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useState, type FormEvent, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { useConfirm } from '../../components/ConfirmDialog';
@@ -10,6 +10,7 @@ import Modal from '../../components/Modal';
 import FormField from '../../components/FormField';
 import type { Column } from '../../components/DataTable';
 import { Plus, Search } from 'lucide-react';
+import VoiceRecorder from '../../components/VoiceRecorder';
 
 const PAYMENT_METHODS = ['Cash', 'Bank Transfer', 'Mobile Money', 'Cheque', 'Credit Card', 'Other'];
 
@@ -35,7 +36,26 @@ export default function CustomersPage() {
   const [search, setSearch] = useState('');
   const [editId, setEditId] = useState<number | null>(null);
   const [form, setForm] = useState<CustomerForm>(initialForm);
+  const [customerSaleJustCreated, setCustomerSaleJustCreated] = useState(false);
+  const [otherSaleJustCreated, setOtherSaleJustCreated] = useState(false);
+  const [pendingCustomerRecorder, setPendingCustomerRecorder] = useState<{ upload: (ids: { customerId?: number }) => Promise<void>; cancel: () => void } | null>(null);
+  const [pendingOtherSaleRecorder, setPendingOtherSaleRecorder] = useState<{ upload: (ids: { customerId?: number }) => Promise<void>; cancel: () => void } | null>(null);
   const confirm = useConfirm();
+
+  // Reset just-created flags after VoiceRecorder uses them
+  useEffect(() => {
+    if (customerSaleJustCreated) {
+      const timer = setTimeout(() => setCustomerSaleJustCreated(false), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [customerSaleJustCreated]);
+
+  useEffect(() => {
+    if (otherSaleJustCreated) {
+      const timer = setTimeout(() => setOtherSaleJustCreated(false), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [otherSaleJustCreated]);
 
   const { data, isLoading } = useQuery({
     queryKey: ['sales-customers'],
@@ -49,13 +69,20 @@ export default function CustomersPage() {
 
   const createMutation = useMutation({
     mutationFn: (d: any) => client.post('/sales/customers', d),
-    onSuccess: () => {
+    onSuccess: (response) => {
       queryClient.invalidateQueries({ queryKey: ['sales-customers'] });
       queryClient.invalidateQueries({ queryKey: ['sales-dashboard'] });
       queryClient.invalidateQueries({ queryKey: ['sales-orders'] });
       queryClient.invalidateQueries({ queryKey: ['sales-products'] });
       queryClient.invalidateQueries({ queryKey: ['accounting-income'] });
       toast.success('Customer created');
+
+      // If there's a pending recording, upload it with the new customer ID
+      if (pendingCustomerRecorder && response.data?.id) {
+        pendingCustomerRecorder.upload({ customerId: response.data.id });
+      }
+
+      setCustomerSaleJustCreated(true);
       setShowModal(false);
       setForm(initialForm);
     },
@@ -158,11 +185,18 @@ export default function CustomersPage() {
      reuses the existing Customer → Payment → pending Income flow. */
   const otherSaleMutation = useMutation({
     mutationFn: (d: any) => (otherEditId ? client.put(`/sales/customers/${otherEditId}`, d) : client.post('/sales/customers', d)),
-    onSuccess: () => {
+    onSuccess: (response) => {
       queryClient.invalidateQueries({ queryKey: ['sales-customers'] });
       queryClient.invalidateQueries({ queryKey: ['accounting-income'] });
       queryClient.invalidateQueries({ queryKey: ['sales-dashboard'] });
       toast.success('Other sale saved');
+
+      // If there's a pending recording, upload it with the new customer ID
+      if (pendingOtherSaleRecorder && response.data?.id) {
+        pendingOtherSaleRecorder.upload({ customerId: response.data.id });
+      }
+
+      setOtherSaleJustCreated(true);
       setShowOtherSale(false);
       setOtherEditId(null);
       setOtherForm({ name: '', other_product: '', phone: '', cost: '', payment_method: 'Cash' });
@@ -274,10 +308,17 @@ export default function CustomersPage() {
               </FormField>
             </>
           )}
-          {editId && (
+{editId && (
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginTop: 8 }}>
-              Editing customer profile only. Use &quot;Sales Orders&quot; to record a new sale.
+              Editing customer profile only. Use "Sales Orders" to record a new sale.
             </p>
+          )}
+          {!editId && (
+            <VoiceRecorder
+              shouldStop={customerSaleJustCreated}
+              onSaved={(recording) => console.log('Customer sale recording saved:', recording)}
+              onReadyToUpload={(recorder) => setPendingCustomerRecorder(recorder)}
+            />
           )}
           <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 20 }}>
             <button type="button" className="btn" onClick={() => setShowModal(false)}>Cancel</button>
@@ -311,6 +352,14 @@ export default function CustomersPage() {
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginTop: 8 }}>
             Goes to Accounting → Income as pending for Accountant confirmation.
           </p>
+          {!otherEditId && (
+            <VoiceRecorder
+              customerId={undefined}
+              shouldStop={otherSaleJustCreated}
+              onSaved={(recording) => console.log('Other sale recording saved:', recording)}
+              onReadyToUpload={(recorder) => setPendingOtherSaleRecorder(recorder)}
+            />
+          )}
           <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 20 }}>
             <button type="button" className="btn" onClick={() => { setShowOtherSale(false); setOtherEditId(null); }}>Cancel</button>
             <button type="submit" className="btn btn-primary" disabled={otherSaleMutation.isPending}>

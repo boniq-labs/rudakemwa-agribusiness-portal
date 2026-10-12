@@ -381,3 +381,12 @@ export const reportsAPI = {
   approve: (id: number, comment?: string) => api.put(`/reports/${id}/approve`, { comment }),
   reject: (id: number, comment: string) => api.put(`/reports/${id}/reject`, { comment }),
 };
+
+export const voiceRecordingAPI = {
+  create: (formData: FormData) => api.post('/sales/voice-recordings', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  }),
+  getByOrder: (orderId: number) => api.get('/sales/voice-recordings', { params: { order_id: orderId } }),
+  getByCustomer: (customerId: number) => api.get('/sales/voice-recordings', { params: { customer_id: customerId } }),
+  delete: (id: number) => api.delete(`/sales/voice-recordings/${id}`),
+};
