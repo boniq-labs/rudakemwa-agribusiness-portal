@@ -38,6 +38,8 @@ export default function CustomersPage() {
   const [form, setForm] = useState<CustomerForm>(initialForm);
   const [customerSaleJustCreated, setCustomerSaleJustCreated] = useState(false);
   const [otherSaleJustCreated, setOtherSaleJustCreated] = useState(false);
+  const [createdCustomerId, setCreatedCustomerId] = useState<number | null>(null);
+  const [createdOtherSaleCustomerId, setCreatedOtherSaleCustomerId] = useState<number | null>(null);
   const [pendingCustomerRecorder, setPendingCustomerRecorder] = useState<{ upload: (ids: { customerId?: number }) => Promise<void>; cancel: () => void } | null>(null);
   const [pendingOtherSaleRecorder, setPendingOtherSaleRecorder] = useState<{ upload: (ids: { customerId?: number }) => Promise<void>; cancel: () => void } | null>(null);
   const confirm = useConfirm();
@@ -76,6 +78,11 @@ export default function CustomersPage() {
       queryClient.invalidateQueries({ queryKey: ['sales-products'] });
       queryClient.invalidateQueries({ queryKey: ['accounting-income'] });
       toast.success('Customer created');
+
+      // Store the created customer ID for voice recording linkage
+      if (response.data?.id) {
+        setCreatedCustomerId(response.data.id);
+      }
 
       // If there's a pending recording, upload it with the new customer ID
       if (pendingCustomerRecorder && response.data?.id) {
@@ -190,6 +197,11 @@ export default function CustomersPage() {
       queryClient.invalidateQueries({ queryKey: ['accounting-income'] });
       queryClient.invalidateQueries({ queryKey: ['sales-dashboard'] });
       toast.success('Other sale saved');
+
+      // Store the created customer ID for voice recording linkage
+      if (response.data?.id) {
+        setCreatedOtherSaleCustomerId(response.data.id);
+      }
 
       // If there's a pending recording, upload it with the new customer ID
       if (pendingOtherSaleRecorder && response.data?.id) {
@@ -315,6 +327,7 @@ export default function CustomersPage() {
           )}
           {!editId && (
             <VoiceRecorder
+              customerId={createdCustomerId ?? undefined}
               shouldStop={customerSaleJustCreated}
               onSaved={(recording) => console.log('Customer sale recording saved:', recording)}
               onReadyToUpload={(recorder) => setPendingCustomerRecorder(recorder)}
@@ -354,7 +367,7 @@ export default function CustomersPage() {
           </p>
           {!otherEditId && (
             <VoiceRecorder
-              customerId={undefined}
+              customerId={createdOtherSaleCustomerId ?? undefined}
               shouldStop={otherSaleJustCreated}
               onSaved={(recording) => console.log('Other sale recording saved:', recording)}
               onReadyToUpload={(recorder) => setPendingOtherSaleRecorder(recorder)}

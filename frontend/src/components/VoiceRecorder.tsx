@@ -301,6 +301,16 @@ export default function VoiceRecorder({
     }
   }, [shouldStop, stopRecording]);
 
+  // If we're waiting for IDs and they become available, upload the recording
+  useEffect(() => {
+    if (state === 'waiting_for_ids' && (salesOrderId !== undefined || customerId !== undefined)) {
+      const ids = { salesOrderId, customerId };
+      if (ids.salesOrderId || ids.customerId) {
+        uploadWithIds(ids);
+      }
+    }
+  }, [state, salesOrderId, customerId, uploadWithIds]);
+
   // Render based on state
   const getStatusDisplay = () => {
     switch (state) {
